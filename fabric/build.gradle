@@ -1,0 +1,112 @@
+plugins {
+	id 'com.gradleup.shadow' version '8.3.6'
+}
+
+architectury {
+	platformSetupLoomIde()
+	fabric()
+}
+
+configurations {
+	common
+	shadowCommon // Don't use shadow from the shadow plugin since it conflicts with Loom.
+	compileClasspath.extendsFrom common
+	runtimeClasspath.extendsFrom common
+	developmentFabric.extendsFrom common
+}
+
+repositories {
+	maven {
+		url = "https://api.modrinth.com/maven"
+	}
+	maven {
+		url = "https://maven.terraformersmc.com/releases/"
+	}
+	maven {
+		url "https://maven.shedaniel.me/"
+		name "Shedaniel Maven"
+	}
+}
+
+dependencies {
+	implementation project(":common")
+	common(project(path: ":common", configuration: "namedElements")) { transitive = false }
+	shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive = false }
+	
+	// Fabric Loader
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	
+	// Fabric API
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	modImplementation "me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}"
+	modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+	modLocalRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
+	
+	// Architectury API - 内嵌到模组中
+	modImplementation("dev.architectury:architectury-fabric:9.2.14") {
+		exclude group: "net.fabricmc.fabric-api"
+	}
+	include("dev.architectury:architectury-fabric:9.2.14")
+}
+
+processResources {
+	inputs.property "version", project.version
+	inputs.property "mod_name", project.mod_name
+	inputs.property "mod_id", project.mod_id
+
+	filesMatching("fabric.mod.json") {
+		expand "version": project.version, "mod_name": project.mod_name, "mod_id": project.mod_id
+	}
+}
+
+shadowJar {
+    exclude "architectury.common.json"
+    configurations = [project.configurations.shadowCommon]
+    archiveClassifier.set("dev-shadow")
+    
+    // 排除不需要的文件
+    exclude 'META-INF/versions/**'
+    
+    // 强制更新 META-INF/services 里的类名
+    mergeServiceFiles()
+    
+    // 排除 module-info.class 避免 JPMS 冲突
+    exclude 'module-info.class'
+}
+
+remapJar {
+	inputFile.set shadowJar.archiveFile
+	dependsOn shadowJar
+	archiveClassifier.set(null)
+}
+
+jar {
+	archiveClassifier.set("dev")
+	from("${rootProject.projectDir}/LICENSE") {
+		rename { "${it}_${base.archivesName.get()}.txt" }
+	}
+}
+sourcesJar {
+    // Avoid duplicate entries when merging common sources
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    def commonSources = project(':common').sourcesJar
+    dependsOn commonSources
+    from commonSources.archiveFile.map { zipTree(it) }
+}
+
+components.java {
+    withVariantsFromConfiguration(project.configurations.shadowRuntimeElements) {
+        skip()
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            // Avoid JPMS split-package with shaded common (network package) in dev runtime
+        }
+        resources {
+            exclude 'assets/wa/lang/*.json'
+        }
+    }
+}

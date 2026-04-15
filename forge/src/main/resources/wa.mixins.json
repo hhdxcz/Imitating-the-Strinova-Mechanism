@@ -1,0 +1,30 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.hhdxcz.wa.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "wa-common-common-refmap.json",
+  "mixins": [
+    "EntityCollisionAccessor",
+    "EntitySetBoundingBoxMixin",
+    "PlayerMixin",
+    "FireworkRocketItemMixin"
+  ],
+  "client": [
+    "client.AbstractContainerScreenMixin",
+    "client.CameraMixin",
+    "client.EntityPosePreviewMixin",
+    "client.EntityRenderDispatcherMixin",
+    "client.LivingEntityFallFlyingTicksPreviewMixin",
+    "client.MinecraftMixin",
+    "client.PoseStackAccessor",
+    "client.LevelRendererMixin",
+    "client.ScreenMixin",
+    "client.PlayerRendererMixin",
+    "client.LocalPlayerMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
