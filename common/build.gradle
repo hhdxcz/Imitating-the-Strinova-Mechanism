@@ -1,0 +1,30 @@
+ architectury {
+    common("fabric", "forge")
+}
+
+loom {
+    mixin {
+        defaultRefmapName = "wa-common-common-refmap.json"
+    }
+}
+
+dependencies {
+    // Architectury API（作为 mod 依赖以启用 Loom 重映射）
+    modImplementation("dev.architectury:architectury:9.2.14")
+    compileOnly("net.fabricmc:fabric-loader:${project.loader_version}")
+
+    annotationProcessor("org.spongepowered:mixin:0.8.7:processor")
+}
+ 
+sourceSets {
+    main {
+        // 无特殊排除设置
+    }
+}
+
+// 避免 Architectury Transformer 处理 dev JAR 时因顶层文件触发 StringIndexOutOfBounds
+// 排除 JPMS 的 module-info 以及多版本类目录
+tasks.withType(Jar).configureEach {
+    exclude 'module-info.class'
+    exclude 'META-INF/versions/**'
+}
