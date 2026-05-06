@@ -1,4 +1,4 @@
- architectury {
+architectury {
     common("fabric", "forge")
 }
 

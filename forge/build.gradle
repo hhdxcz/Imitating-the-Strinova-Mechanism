@@ -106,7 +106,7 @@ tasks.named('processResources', ProcessResources).configure {
         mod_name: project.mod_name,
         mod_version: project.version,
         mod_authors: 'hhdxcz',
-        mod_description: 'wa'
+        mod_description: project.mod_description
     ]
 
     inputs.properties replaceProperties
