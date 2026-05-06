@@ -1,0 +1,7 @@
+.gradle
+build
+.idea
+*.jar
+common/build
+forge/build
+fabric/build
