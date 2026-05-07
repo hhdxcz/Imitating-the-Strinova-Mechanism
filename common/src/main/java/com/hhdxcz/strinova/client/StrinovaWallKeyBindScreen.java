@@ -49,14 +49,14 @@ public class StrinovaWallKeyBindScreen extends Screen {
             this.status = Component.translatable("config.strinova.wall_key.invalid").getString();
             return;
         }
-        sendCommand("wa_client key wall " + key);
+        sendCommand("strinova_client key wall " + key);
     }
 
     private void applyPreset(String preset) {
         if (this.keyInput != null) {
             this.keyInput.setValue(preset);
         }
-        sendCommand("wa_client key wall " + preset);
+        sendCommand("strinova_client key wall " + preset);
     }
 
     private void sendCommand(String command) {

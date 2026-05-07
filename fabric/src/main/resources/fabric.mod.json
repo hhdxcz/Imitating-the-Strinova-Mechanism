@@ -18,7 +18,7 @@
           "com.hhdxcz.strinova.fabric.StrinovaModFabric"
 		],
 		"client": [
-          "com.hhdxcz.strinova.fabric.client.StrinovalientInitFabric"
+          "com.hhdxcz.strinova.fabric.client.StrinovaClientInitFabric"
 		]
 	},
 	"mixins": [

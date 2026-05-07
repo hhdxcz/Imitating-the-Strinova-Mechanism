@@ -653,7 +653,7 @@ public final class StrinovaServerCommands {
         boxLenFly.then(boxLenFlyX);
         boxLen.then(boxLenFly);
 
-        dispatcher.register(Commands.literal("wa").then(outline).then(wall).then(paper).then(jump).then(boxPos).then(boxLen));
+        dispatcher.register(Commands.literal("strinova").then(outline).then(wall).then(paper).then(jump).then(boxPos).then(boxLen));
     }
 
     private static int setOutlineColorSelf(com.mojang.brigadier.context.CommandContext<CommandSourceStack> ctx, String color, String zh) {

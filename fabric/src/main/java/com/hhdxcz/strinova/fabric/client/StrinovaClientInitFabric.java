@@ -17,7 +17,7 @@ import com.hhdxcz.strinova.client.StrinovaCollisionMenuScreen;
 
 import java.util.List;
 
-public class StrinovalientInitFabric implements ClientModInitializer {
+public class StrinovaClientInitFabric implements ClientModInitializer {
     private static final List<String> WALL_KEY_OPTIONS = List.of(
             "r", "f", "g", "v", "c", "x", "z", "q", "e", "t",
             "1", "2", "3", "4", "5",
@@ -45,7 +45,7 @@ public class StrinovalientInitFabric implements ClientModInitializer {
             StrinovaCollisionBoxTuning.clearAll();
         });
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
-                ClientCommandManager.literal("wa_client")
+                ClientCommandManager.literal("strinova_client")
                         .then(ClientCommandManager.literal("edit_collision")
                                 .executes(ctx -> {
                                     Minecraft client = Minecraft.getInstance();

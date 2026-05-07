@@ -54,7 +54,7 @@ public final class StrinovaClientInitForge {
     }
 
     private static void onRegisterClientCommands(RegisterClientCommandsEvent event) {
-        var root = Commands.literal("wa_client")
+        var root = Commands.literal("strinova_client")
                 .then(Commands.literal("edit_collision")
                         .executes(ctx -> {
                             Minecraft client = Minecraft.getInstance();
