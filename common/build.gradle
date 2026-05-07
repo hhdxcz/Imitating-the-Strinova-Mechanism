@@ -4,7 +4,7 @@ architectury {
 
 loom {
     mixin {
-        defaultRefmapName = "wa-common-common-refmap.json"
+        defaultRefmapName = "strinova-common-common-refmap.json"
     }
 }
 

@@ -9,7 +9,7 @@ architectury {
 
 loom {
     forge {
-        mixinConfig "wa.mixins.json"
+        mixinConfig "strinova.mixins.json"
     }
     runs {
         client {
@@ -65,7 +65,7 @@ jar {
 	
 	manifest {
 		attributes([
-			'Specification-Title'     : 'wa',
+			'Specification-Title'     : 'strinova',
 			'Specification-Vendor'    : 'hhdxcz',
 			'Specification-Version'   : '1',
 			'Implementation-Title'    : project.name,

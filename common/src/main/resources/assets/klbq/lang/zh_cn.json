@@ -2,7 +2,7 @@
   "key.categories.wa": "弦化机制",
   "key.wa.stringify": "切换弦化/飘飞",
   "key.wa.wall": "切换贴墙",
-  "config.klbq.title": "弦化机制配置",
+  "config.strinova.title": "弦化机制配置",
   "config.klbq.category.gameplay": "玩法参数",
   "config.klbq.category.compat": "兼容参数",
   "config.klbq.category.command": "指令参数",
