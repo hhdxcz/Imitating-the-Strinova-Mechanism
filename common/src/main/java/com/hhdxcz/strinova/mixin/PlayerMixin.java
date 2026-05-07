@@ -662,7 +662,7 @@ public abstract class PlayerMixin {
         }
         boolean hitWall = false;
         if (self instanceof EntityCollisionAccessor accessor) {
-            hitWall = accessor.klbq$isHorizontalCollision() || accessor.klbq$isMinorHorizontalCollision();
+            hitWall = accessor.strinova$isHorizontalCollision() || accessor.strinova$isMinorHorizontalCollision();
         }
         if (self.onGround() || self.isInWater() || self.isInLava() || self.isPassenger() || WaPaperState.isWall(playerId) || hitWall) {
             WaPaperState.setFly(playerId, false);

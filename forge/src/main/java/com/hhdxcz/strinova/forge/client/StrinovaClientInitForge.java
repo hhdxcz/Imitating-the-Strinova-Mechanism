@@ -62,7 +62,7 @@ public final class StrinovaClientInitForge {
                                 client.tell(() -> client.setScreen(new StrinovaCollisionMenuScreen(client.screen, client.player)));
                                 return 1;
                             }
-                            ctx.getSource().sendFailure(Component.translatable("command.klbq.client.no_player"));
+                            ctx.getSource().sendFailure(Component.translatable("command.strinova.client.no_player"));
                             return 0;
                         }))
                 .then(Commands.literal("key")

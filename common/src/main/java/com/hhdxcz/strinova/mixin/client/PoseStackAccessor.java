@@ -9,6 +9,6 @@ import java.util.Deque;
 @Mixin(PoseStack.class)
 public interface PoseStackAccessor {
     @Accessor("poseStack")
-    Deque<PoseStack.Pose> klbq$getPoseStack();
+    Deque<PoseStack.Pose> strinova$getPoseStack();
 }
 

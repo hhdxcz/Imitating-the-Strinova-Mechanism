@@ -38,22 +38,22 @@ public final class StrinovaKeyBindingsForge {
     private static boolean lastWallDown;
     private static boolean airJumpArmed;
     private static int clientAirJumpsUsed;
-    private static boolean wa$clearPaperAfterFly;
-    private static boolean wa$flyUsedInAir;
+    private static boolean strinova$clearPaperAfterFly;
+    private static boolean strinova$flyUsedInAir;
 
     private StrinovaKeyBindingsForge() {
     }
 
     public static void register(RegisterKeyMappingsEvent event) {
         stringifyKey = new KeyMapping(
-                "key.wa.stringify",
+                "key.strinova.stringify",
                 GLFW.GLFW_KEY_LEFT_CONTROL,
-                "key.categories.wa"
+                "key.categories.strinova"
         );
         wallKey = new KeyMapping(
-                "key.wa.wall",
+                "key.strinova.wall",
                 GLFW.GLFW_KEY_R,
-                "key.categories.wa"
+                "key.categories.strinova"
         );
         wallKeyName = "key.keyboard.r";
         event.register(stringifyKey);
@@ -95,11 +95,11 @@ public final class StrinovaKeyBindingsForge {
         boolean jumpDown = client.options.keyJump.isDown();
         boolean grounded = player.onGround() || player.isInWater() || player.isInLava();
         boolean wallDown = wallKey != null && wallKey.isDown();
-        if (wallDown && wa$isHoldingTaczGun(player)) {
+        if (wallDown && strinova$isHoldingTaczGun(player)) {
             wallDown = false;
         }
 
-        if (wa$shouldSkipInputsForCompat(client)) {
+        if (strinova$shouldSkipInputsForCompat(client)) {
             lastCtrlDown = ctrlDown;
             lastJumpDown = jumpDown;
             lastGrounded = grounded;
@@ -115,7 +115,7 @@ public final class StrinovaKeyBindingsForge {
             StrinovaNetwork.sendFly(false);
             isFly = false;
             player.setDeltaMovement(0.0D, 0.0D, 0.0D);
-            wa$onFlyEnded(playerId);
+            strinova$onFlyEnded(playerId);
         }
 
         if (!WaPaperState.isWall(playerId) && WaPaperState.isCtrlPaper(playerId) && (player.isInWater() || player.isInLava())) {
@@ -128,7 +128,7 @@ public final class StrinovaKeyBindingsForge {
         if (grounded) {
             airJumpArmed = false;
             clientAirJumpsUsed = 0;
-            wa$flyUsedInAir = false;
+            strinova$flyUsedInAir = false;
         } else {
             if (lastGrounded) {
                 airJumpArmed = false;
@@ -155,7 +155,7 @@ public final class StrinovaKeyBindingsForge {
 
         if (justPressed) {
             boolean inAir = !player.onGround() && !player.isInWater() && !player.isInLava();
-            if (!isFly && inAir && !wa$flyUsedInAir) {
+            if (!isFly && inAir && !strinova$flyUsedInAir) {
                 Vec3 look = player.getViewVector(1.0F);
                 double fx = look.x;
                 double fz = look.z;
@@ -171,15 +171,15 @@ public final class StrinovaKeyBindingsForge {
                 WaPaperState.setFly(playerId, true);
                 StrinovaNetwork.sendFly(true);
                 isFly = true;
-                wa$flyUsedInAir = true;
-                wa$clearPaperAfterFly = WaPaperState.isCtrlPaper(playerId);
+                strinova$flyUsedInAir = true;
+                strinova$clearPaperAfterFly = WaPaperState.isCtrlPaper(playerId);
             } else if (isFly) {
                 WaPaperState.setFly(playerId, false);
                 StrinovaNetwork.sendFly(false);
                 isFly = false;
                 Vec3 motion = player.getDeltaMovement();
                 player.setDeltaMovement(0.0D, motion.y, 0.0D);
-                wa$onFlyEnded(playerId);
+                strinova$onFlyEnded(playerId);
             } else {
                 if (!WaPaperState.isWall(playerId)) {
                     boolean ctrlPaper = WaPaperState.isCtrlPaper(playerId);
@@ -208,7 +208,7 @@ public final class StrinovaKeyBindingsForge {
                     Vec3 motion = player.getDeltaMovement();
                     player.setDeltaMovement(0.0D, motion.y, 0.0D);
                     isFly = false;
-                    wa$onFlyEnded(playerId);
+                    strinova$onFlyEnded(playerId);
                 }
                 Direction dir = player.getDirection();
                 boolean synced = false;
@@ -245,7 +245,7 @@ public final class StrinovaKeyBindingsForge {
                 if (WaPaperState.isFly(playerId)) {
                     WaPaperState.setFly(playerId, false);
                     StrinovaNetwork.sendFly(false);
-                    wa$onFlyEnded(playerId);
+                    strinova$onFlyEnded(playerId);
                 }
             }
         }
@@ -259,19 +259,19 @@ public final class StrinovaKeyBindingsForge {
         }
     }
     
-    private static void wa$onFlyEnded(java.util.UUID playerId) {
+    private static void strinova$onFlyEnded(java.util.UUID playerId) {
         if (playerId == null) {
-            wa$clearPaperAfterFly = false;
+            strinova$clearPaperAfterFly = false;
             return;
         }
-        if (wa$clearPaperAfterFly && WaPaperState.isCtrlPaper(playerId)) {
+        if (strinova$clearPaperAfterFly && WaPaperState.isCtrlPaper(playerId)) {
             WaPaperState.setPaper(playerId, false);
             StrinovaNetwork.sendPaper(false);
         }
-        wa$clearPaperAfterFly = false;
+        strinova$clearPaperAfterFly = false;
     }
 
-    private static boolean wa$isHoldingTaczGun(LocalPlayer player) {
+    private static boolean strinova$isHoldingTaczGun(LocalPlayer player) {
         if (player == null) {
             return false;
         }
@@ -283,7 +283,7 @@ public final class StrinovaKeyBindingsForge {
         return id != null && id.toString().contains("tacz:modern_kinetic_gun");
     }
 
-    private static boolean wa$shouldSkipInputsForCompat(Minecraft client) {
+    private static boolean strinova$shouldSkipInputsForCompat(Minecraft client) {
         if (client == null || client.screen == null) {
             return false;
         }

@@ -42,7 +42,7 @@ public class StrinovaCollisionPreviewScreen extends Screen {
     }
 
     public StrinovaCollisionPreviewScreen(Screen parent, AbstractClientPlayer previewPlayer, StrinovaCollisionPreviewState.Mode initialMode) {
-        super(Component.translatable("config.klbq.collision_preview.title"));
+        super(Component.translatable("config.strinova.collision_preview.title"));
         this.parent = parent;
         this.previewPlayer = previewPlayer;
         this.initialMode = initialMode;
@@ -75,7 +75,7 @@ public class StrinovaCollisionPreviewScreen extends Screen {
 
     protected final void updateModeButton() {
         if (modeButton != null) {
-            modeButton.setMessage(Component.translatable("config.klbq.collision_preview.toggle_mode"));
+            modeButton.setMessage(Component.translatable("config.strinova.collision_preview.toggle_mode"));
         }
     }
 
@@ -160,8 +160,8 @@ public class StrinovaCollisionPreviewScreen extends Screen {
                 graphics.drawString(this.font, Component.literal("[WA-X0]" + x), x, y + 70, 0x00FF00, false);
                 graphics.drawString(this.font, Component.literal("[WA-X1]" + x), x, y + 84, 0x0000FF, false);
 
-                Component modeText = Component.translatable("config.klbq.collision_preview.mode",
-                        Component.translatable(mode == StrinovaCollisionPreviewState.Mode.SYNC ? "config.klbq.collision_preview.mode.sync" : "config.klbq.collision_preview.mode.fly"));
+                Component modeText = Component.translatable("config.strinova.collision_preview.mode",
+                        Component.translatable(mode == StrinovaCollisionPreviewState.Mode.SYNC ? "config.strinova.collision_preview.mode.sync" : "config.strinova.collision_preview.mode.fly"));
                 graphics.drawString(this.font, modeText, x, y + 14, 0xB0B0B0, false);
 
                 if (tuning != null) {
@@ -174,7 +174,7 @@ public class StrinovaCollisionPreviewScreen extends Screen {
                     graphics.drawString(this.font, sizeText, x, y + 40, 0xA0A0A0, false);
                 }
 
-                graphics.drawString(this.font, Component.translatable("config.klbq.collision_preview.tip"), x, y + 56, 0x707070, false);
+                graphics.drawString(this.font, Component.translatable("config.strinova.collision_preview.tip"), x, y + 56, 0x707070, false);
             } finally {
             }
         } finally {

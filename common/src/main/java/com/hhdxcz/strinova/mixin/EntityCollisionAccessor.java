@@ -8,8 +8,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface EntityCollisionAccessor {
 
     @Accessor("horizontalCollision")
-    boolean klbq$isHorizontalCollision();
+    boolean strinova$isHorizontalCollision();
 
     @Accessor("minorHorizontalCollision")
-    boolean klbq$isMinorHorizontalCollision();
+    boolean strinova$isMinorHorizontalCollision();
 }

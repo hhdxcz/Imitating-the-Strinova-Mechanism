@@ -13,7 +13,7 @@ public class StrinovaOutlineCommandScreen extends Screen {
     private String status = "";
 
     public StrinovaOutlineCommandScreen(Screen parent) {
-        super(Component.translatable("config.klbq.command_menu.outline"));
+        super(Component.translatable("config.strinova.command_menu.outline"));
         this.parent = parent;
     }
 
@@ -21,19 +21,19 @@ public class StrinovaOutlineCommandScreen extends Screen {
     protected void init() {
         int centerX = this.width / 2;
         int top = this.height / 2 - 54;
-        this.colorInput = new EditBox(this.font, centerX - 140, top + 28, 132, 20, Component.translatable("config.klbq.command.outline.color"));
+        this.colorInput = new EditBox(this.font, centerX - 140, top + 28, 132, 20, Component.translatable("config.strinova.command.outline.color"));
         this.colorInput.setValue("white");
         addRenderableWidget(this.colorInput);
-        this.targetsInput = new EditBox(this.font, centerX - 4, top + 28, 144, 20, Component.translatable("config.klbq.command.outline.targets"));
+        this.targetsInput = new EditBox(this.font, centerX - 4, top + 28, 144, 20, Component.translatable("config.strinova.command.outline.targets"));
         addRenderableWidget(this.targetsInput);
 
-        addRenderableWidget(Button.builder(Component.translatable("config.klbq.command.outline.apply"), b -> applyOutline())
+        addRenderableWidget(Button.builder(Component.translatable("config.strinova.command.outline.apply"), b -> applyOutline())
                 .bounds(centerX - 140, top + 56, 86, 20)
                 .build());
-        addRenderableWidget(Button.builder(Component.translatable("config.klbq.command.outline.clear"), b -> clearOutline(false))
+        addRenderableWidget(Button.builder(Component.translatable("config.strinova.command.outline.clear"), b -> clearOutline(false))
                 .bounds(centerX - 50, top + 56, 86, 20)
                 .build());
-        addRenderableWidget(Button.builder(Component.translatable("config.klbq.command.outline.off"), b -> clearOutline(true))
+        addRenderableWidget(Button.builder(Component.translatable("config.strinova.command.outline.off"), b -> clearOutline(true))
                 .bounds(centerX + 40, top + 56, 64, 20)
                 .build());
         addRenderableWidget(Button.builder(Component.translatable("gui.back"), b -> onClose())
@@ -45,7 +45,7 @@ public class StrinovaOutlineCommandScreen extends Screen {
     private void applyOutline() {
         String color = this.colorInput == null ? "" : this.colorInput.getValue().trim();
         if (color.isEmpty()) {
-            this.status = Component.translatable("config.klbq.command.invalid").getString();
+            this.status = Component.translatable("config.strinova.command.invalid").getString();
             return;
         }
         String targets = this.targetsInput == null ? "" : this.targetsInput.getValue().trim();
@@ -68,11 +68,11 @@ public class StrinovaOutlineCommandScreen extends Screen {
 
     private void sendCommand(String command) {
         if (minecraft == null || minecraft.player == null || minecraft.player.connection == null) {
-            this.status = Component.translatable("command.klbq.client.no_player").getString();
+            this.status = Component.translatable("command.strinova.client.no_player").getString();
             return;
         }
         minecraft.player.connection.sendCommand(command);
-        this.status = Component.translatable("config.klbq.command.sent").getString();
+        this.status = Component.translatable("config.strinova.command.sent").getString();
     }
 
     @Override
@@ -84,7 +84,7 @@ public class StrinovaOutlineCommandScreen extends Screen {
         int bottom = this.height / 2 + 92;
         graphics.fill(left, top, right, bottom, 0xA0101010);
         graphics.drawCenteredString(this.font, this.title, this.width / 2, top + 10, 0xFFFFFF);
-        graphics.drawString(this.font, Component.translatable("config.klbq.command.outline.tip"), this.width / 2 - 140, top + 16, 0xB0B0B0, false);
+        graphics.drawString(this.font, Component.translatable("config.strinova.command.outline.tip"), this.width / 2 - 140, top + 16, 0xB0B0B0, false);
         graphics.drawString(this.font, Component.literal(this.status), this.width / 2 - 140, top + 86, 0xA0E0A0, false);
         super.render(graphics, mouseX, mouseY, partialTick);
     }

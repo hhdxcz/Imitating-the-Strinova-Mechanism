@@ -53,7 +53,7 @@ public class StrinovalientInitFabric implements ClientModInitializer {
                                         client.tell(() -> client.setScreen(new StrinovaCollisionMenuScreen(client.screen, client.player)));
                                         return 1;
                                     }
-                                    ctx.getSource().sendFeedback(Component.translatable("command.klbq.client.no_player"));
+                                    ctx.getSource().sendFeedback(Component.translatable("command.strinova.client.no_player"));
                                     return 0;
                                 }))
                         .then(ClientCommandManager.literal("key")

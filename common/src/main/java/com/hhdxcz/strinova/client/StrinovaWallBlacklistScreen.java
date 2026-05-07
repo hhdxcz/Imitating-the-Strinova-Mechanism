@@ -28,7 +28,7 @@ public class StrinovaWallBlacklistScreen extends Screen {
     private int blacklistScrollOffset = 0;
 
     public StrinovaWallBlacklistScreen(Screen parent) {
-        super(Component.translatable("config.klbq.wall_blacklist.title"));
+        super(Component.translatable("config.strinova.wall_blacklist.title"));
         this.parent = parent;
     }
 
@@ -36,20 +36,20 @@ public class StrinovaWallBlacklistScreen extends Screen {
     protected void init() {
         int centerX = this.width / 2;
         int top = 44;
-        this.blockInput = new EditBox(this.font, centerX - 150, top + 28, 300, 20, Component.translatable("config.klbq.wall_blacklist.input"));
+        this.blockInput = new EditBox(this.font, centerX - 150, top + 28, 300, 20, Component.translatable("config.strinova.wall_blacklist.input"));
         this.blockInput.setMaxLength(120);
         addRenderableWidget(this.blockInput);
 
-        addRenderableWidget(Button.builder(Component.translatable("config.klbq.wall_blacklist.add"), b -> executeAdd())
+        addRenderableWidget(Button.builder(Component.translatable("config.strinova.wall_blacklist.add"), b -> executeAdd())
                 .bounds(centerX - 150, top + 56, 72, 20)
                 .build());
-        addRenderableWidget(Button.builder(Component.translatable("config.klbq.wall_blacklist.remove"), b -> executeRemove())
+        addRenderableWidget(Button.builder(Component.translatable("config.strinova.wall_blacklist.remove"), b -> executeRemove())
                 .bounds(centerX - 74, top + 56, 72, 20)
                 .build());
-        addRenderableWidget(Button.builder(Component.translatable("config.klbq.wall_blacklist.list"), b -> executeList())
+        addRenderableWidget(Button.builder(Component.translatable("config.strinova.wall_blacklist.list"), b -> executeList())
                 .bounds(centerX + 2, top + 56, 72, 20)
                 .build());
-        addRenderableWidget(Button.builder(Component.translatable("config.klbq.wall_blacklist.clear"), b -> executeClear())
+        addRenderableWidget(Button.builder(Component.translatable("config.strinova.wall_blacklist.clear"), b -> executeClear())
                 .bounds(centerX + 78, top + 56, 72, 20)
                 .build());
 
@@ -138,7 +138,7 @@ public class StrinovaWallBlacklistScreen extends Screen {
     private void executeAdd() {
         String id = readBlockId();
         if (id == null) {
-            status = Component.translatable("config.klbq.wall_blacklist.invalid_input").getString();
+            status = Component.translatable("config.strinova.wall_blacklist.invalid_input").getString();
             return;
         }
         sendCommand("wa wall blacklist add " + id);
@@ -147,7 +147,7 @@ public class StrinovaWallBlacklistScreen extends Screen {
     private void executeRemove() {
         String id = readBlockId();
         if (id == null) {
-            status = Component.translatable("config.klbq.wall_blacklist.invalid_input").getString();
+            status = Component.translatable("config.strinova.wall_blacklist.invalid_input").getString();
             return;
         }
         sendCommand("wa wall blacklist remove " + id);
@@ -241,7 +241,7 @@ public class StrinovaWallBlacklistScreen extends Screen {
 
     private void sendCommand(String command) {
         if (minecraft == null || minecraft.player == null || minecraft.player.connection == null) {
-            status = Component.translatable("command.klbq.client.no_player").getString();
+            status = Component.translatable("command.strinova.client.no_player").getString();
             return;
         }
         minecraft.player.connection.sendCommand(command);
@@ -250,7 +250,7 @@ public class StrinovaWallBlacklistScreen extends Screen {
 
     private void refreshStatusFromClientList() {
         int size = StrinovaWallBlacklist.listClient().size();
-        status = Component.translatable("config.klbq.wall_blacklist.count", size).getString();
+        status = Component.translatable("config.strinova.wall_blacklist.count", size).getString();
     }
 
     @Override
@@ -333,14 +333,14 @@ public class StrinovaWallBlacklistScreen extends Screen {
         int bottom = this.height - 36;
         graphics.fill(left, top, right, bottom, 0xA0101010);
         graphics.drawCenteredString(this.font, this.title, this.width / 2, top + 10, 0xFFFFFF);
-        graphics.drawString(this.font, Component.translatable("config.klbq.wall_blacklist.input"), this.width / 2 - 150, top + 16, 0xB0B0B0, false);
-        graphics.drawString(this.font, Component.translatable("config.klbq.wall_blacklist.tip"), this.width / 2 - 150, this.height - 52, 0x909090, false);
+        graphics.drawString(this.font, Component.translatable("config.strinova.wall_blacklist.input"), this.width / 2 - 150, top + 16, 0xB0B0B0, false);
+        graphics.drawString(this.font, Component.translatable("config.strinova.wall_blacklist.tip"), this.width / 2 - 150, this.height - 52, 0x909090, false);
         graphics.drawString(this.font, Component.literal(status), this.width / 2 - 150, this.height - 64, 0xA0E0A0, false);
 
         List<ResourceLocation> list = StrinovaWallBlacklist.listClient();
         list.sort(ResourceLocation::compareTo);
         int listY = 204;
-        graphics.drawString(this.font, Component.translatable("config.klbq.wall_blacklist.current"), this.width / 2 - 150, listY, 0xFFFFFF, false);
+        graphics.drawString(this.font, Component.translatable("config.strinova.wall_blacklist.current"), this.width / 2 - 150, listY, 0xFFFFFF, false);
         int maxRows = getBlacklistMaxRows();
         int maxOffset = Math.max(0, list.size() - maxRows);
         if (blacklistScrollOffset > maxOffset) {

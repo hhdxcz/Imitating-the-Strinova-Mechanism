@@ -454,7 +454,7 @@ public abstract class LocalPlayerMixin {
 
         var playerId = self.getUUID();
         if (WaPaperState.isFly(playerId) && self instanceof EntityCollisionAccessor accessor) {
-            boolean hitWall = accessor.klbq$isHorizontalCollision() || accessor.klbq$isMinorHorizontalCollision();
+            boolean hitWall = accessor.strinova$isHorizontalCollision() || accessor.strinova$isMinorHorizontalCollision();
             if (hitWall) {
                 WaPaperState.setFly(playerId, false);
                 StrinovaNetwork.sendFly(false);

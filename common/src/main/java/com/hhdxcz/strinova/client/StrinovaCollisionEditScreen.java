@@ -100,7 +100,7 @@ public class StrinovaCollisionEditScreen extends StrinovaCollisionPreviewScreen 
         allFields.clear();
         buildEditors(leftX, previewTop);
 
-        modeButton = addRenderableWidget(Button.builder(Component.translatable("config.klbq.collision_preview.toggle_mode"), b -> {
+        modeButton = addRenderableWidget(Button.builder(Component.translatable("config.strinova.collision_preview.toggle_mode"), b -> {
                     togglePreviewMode();
                     onModeChanged();
                 })
@@ -109,7 +109,7 @@ public class StrinovaCollisionEditScreen extends StrinovaCollisionPreviewScreen 
         stepButton = addRenderableWidget(Button.builder(stepMessage(), b -> cycleStep())
                 .bounds(leftX + 128, this.height - 28, 92, 20)
                 .build());
-        resetCurrentButton = addRenderableWidget(Button.builder(Component.translatable("config.klbq.collision_edit.reset_current"), b -> resetCurrentMode())
+        resetCurrentButton = addRenderableWidget(Button.builder(Component.translatable("config.strinova.collision_edit.reset_current"), b -> resetCurrentMode())
                 .bounds(leftX + 228, this.height - 28, 110, 20)
                 .build());
         cancelButton = addRenderableWidget(Button.builder(Component.translatable("gui.cancel"), b -> close(false))
@@ -130,12 +130,12 @@ public class StrinovaCollisionEditScreen extends StrinovaCollisionPreviewScreen 
         int syncCols = computeColumns(3);
         int syncFieldWidth = computeFieldWidth(syncCols);
         y = addGrid(y, leftX, syncCols, syncFieldWidth, syncFields, List.of(
-                new FieldSpec("config.klbq.collision_edit.offset_x", syncTuning.offsetX()),
-                new FieldSpec("config.klbq.collision_edit.offset_y", syncTuning.offsetY()),
-                new FieldSpec("config.klbq.collision_edit.offset_z", syncTuning.offsetZ()),
-                new FieldSpec("config.klbq.collision_edit.size_x", syncTuning.sizeX()),
-                new FieldSpec("config.klbq.collision_edit.size_y", syncTuning.sizeY()),
-                new FieldSpec("config.klbq.collision_edit.size_z", syncTuning.sizeZ())
+                new FieldSpec("config.strinova.collision_edit.offset_x", syncTuning.offsetX()),
+                new FieldSpec("config.strinova.collision_edit.offset_y", syncTuning.offsetY()),
+                new FieldSpec("config.strinova.collision_edit.offset_z", syncTuning.offsetZ()),
+                new FieldSpec("config.strinova.collision_edit.size_x", syncTuning.sizeX()),
+                new FieldSpec("config.strinova.collision_edit.size_y", syncTuning.sizeY()),
+                new FieldSpec("config.strinova.collision_edit.size_z", syncTuning.sizeZ())
         ));
         syncOffsetX = syncFields.get(0);
         syncOffsetY = syncFields.get(1);
@@ -151,12 +151,12 @@ public class StrinovaCollisionEditScreen extends StrinovaCollisionPreviewScreen 
         int flyCols = computeColumns(3);
         int flyFieldWidth = computeFieldWidth(flyCols);
         addGrid(y, leftX, flyCols, flyFieldWidth, flyFields, List.of(
-                new FieldSpec("config.klbq.collision_edit.offset_x", flyTuning.offsetX()),
-                new FieldSpec("config.klbq.collision_edit.offset_y", flyTuning.offsetY()),
-                new FieldSpec("config.klbq.collision_edit.offset_z", flyTuning.offsetZ()),
-                new FieldSpec("config.klbq.collision_edit.size_x", flyTuning.sizeX()),
-                new FieldSpec("config.klbq.collision_edit.size_y", flyTuning.sizeY()),
-                new FieldSpec("config.klbq.collision_edit.size_z", flyTuning.sizeZ())
+                new FieldSpec("config.strinova.collision_edit.offset_x", flyTuning.offsetX()),
+                new FieldSpec("config.strinova.collision_edit.offset_y", flyTuning.offsetY()),
+                new FieldSpec("config.strinova.collision_edit.offset_z", flyTuning.offsetZ()),
+                new FieldSpec("config.strinova.collision_edit.size_x", flyTuning.sizeX()),
+                new FieldSpec("config.strinova.collision_edit.size_y", flyTuning.sizeY()),
+                new FieldSpec("config.strinova.collision_edit.size_z", flyTuning.sizeZ())
         ));
         flyOffsetX = flyFields.get(0);
         flyOffsetY = flyFields.get(1);
@@ -224,12 +224,12 @@ public class StrinovaCollisionEditScreen extends StrinovaCollisionPreviewScreen 
 
         graphics.fill(this.width / 2, 0, this.width, this.height, 0xBB121212);
         graphics.fill(this.width / 2 + 2, 36, this.width / 2 + 4, this.height - 36, 0xFF4CC7FF);
-        graphics.drawString(this.font, Component.translatable("config.klbq.collision_edit.hint"), 20, 16, 0xFFFFFF, false);
-        graphics.drawString(this.font, Component.translatable("config.klbq.collision_edit.hint_scroll"), 20, 28, 0xA0A0A0, false);
+        graphics.drawString(this.font, Component.translatable("config.strinova.collision_edit.hint"), 20, 16, 0xFFFFFF, false);
+        graphics.drawString(this.font, Component.translatable("config.strinova.collision_edit.hint_scroll"), 20, 28, 0xA0A0A0, false);
 
         boolean sync = currentMode() == StrinovaCollisionPreviewState.Mode.SYNC;
-        graphics.drawString(this.font, Component.translatable("config.klbq.collision_edit.section.sync"), leftX, syncTitleY, sync ? 0xFFFFFF : 0x707070, false);
-        graphics.drawString(this.font, Component.translatable("config.klbq.collision_edit.section.fly"), leftX, flyTitleY, sync ? 0x707070 : 0xFFFFFF, false);
+        graphics.drawString(this.font, Component.translatable("config.strinova.collision_edit.section.sync"), leftX, syncTitleY, sync ? 0xFFFFFF : 0x707070, false);
+        graphics.drawString(this.font, Component.translatable("config.strinova.collision_edit.section.fly"), leftX, flyTitleY, sync ? 0x707070 : 0xFFFFFF, false);
 
         for (LabeledField field : labeledFields) {
             EditBox box = field.box();
@@ -411,7 +411,7 @@ public class StrinovaCollisionEditScreen extends StrinovaCollisionPreviewScreen 
     }
 
     private Component stepMessage() {
-        return Component.translatable("config.klbq.collision_edit.step", format(step));
+        return Component.translatable("config.strinova.collision_edit.step", format(step));
     }
 
     private void resetCurrentMode() {

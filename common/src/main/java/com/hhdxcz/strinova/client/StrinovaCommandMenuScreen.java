@@ -9,7 +9,7 @@ public class StrinovaCommandMenuScreen extends Screen {
     private final Screen parent;
 
     public StrinovaCommandMenuScreen(Screen parent) {
-        super(Component.translatable("config.klbq.command_menu.title"));
+        super(Component.translatable("config.strinova.command_menu.title"));
         this.parent = parent;
     }
 
@@ -17,14 +17,14 @@ public class StrinovaCommandMenuScreen extends Screen {
     protected void init() {
         int centerX = this.width / 2;
         int centerY = this.height / 2;
-        addRenderableWidget(Button.builder(Component.translatable("config.klbq.command_menu.paper_jump"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("config.strinova.command_menu.paper_jump"), b -> {
                     if (minecraft != null) {
                         minecraft.setScreen(new StrinovaPaperJumpCommandScreen(this));
                     }
                 })
                 .bounds(centerX - 90, centerY - 18, 180, 20)
                 .build());
-        addRenderableWidget(Button.builder(Component.translatable("config.klbq.command_menu.outline"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("config.strinova.command_menu.outline"), b -> {
                     if (minecraft != null) {
                         minecraft.setScreen(new StrinovaOutlineCommandScreen(this));
                     }

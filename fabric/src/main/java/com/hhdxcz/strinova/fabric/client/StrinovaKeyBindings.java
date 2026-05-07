@@ -34,22 +34,22 @@ public final class StrinovaKeyBindings {
     private static boolean lastWallDown;
     private static boolean airJumpArmed;
     private static int clientAirJumpsUsed;
-    private static boolean wa$clearPaperAfterFly;
-    private static boolean wa$flyUsedInAir;
+    private static boolean strinova$clearPaperAfterFly;
+    private static boolean strinova$flyUsedInAir;
 
     private StrinovaKeyBindings() {
     }
 
     public static void register() {
         stringifyKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key.wa.stringify",
+                "key.strinova.stringify",
                 GLFW.GLFW_KEY_LEFT_CONTROL,
-                "key.categories.wa"
+                "key.categories.strinova"
         ));
         wallKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key.wa.wall",
+                "key.strinova.wall",
                 GLFW.GLFW_KEY_R,
-                "key.categories.wa"
+                "key.categories.strinova"
         ));
         wallKeyName = "key.keyboard.r";
 
@@ -86,11 +86,11 @@ public final class StrinovaKeyBindings {
         boolean jumpDown = client.options.keyJump.isDown();
         boolean grounded = player.onGround() || player.isInWater() || player.isInLava();
         boolean wallDown = wallKey != null && wallKey.isDown();
-        if (wallDown && wa$isHoldingTaczGun(player)) {
+        if (wallDown && strinova$isHoldingTaczGun(player)) {
             wallDown = false;
         }
 
-        if (wa$shouldSkipInputsForCompat(client)) {
+        if (strinova$shouldSkipInputsForCompat(client)) {
             lastCtrlDown = ctrlDown;
             lastJumpDown = jumpDown;
             lastGrounded = grounded;
@@ -107,7 +107,7 @@ public final class StrinovaKeyBindings {
             StrinovaNetwork.sendFly(false);
             isFly = false;
             player.setDeltaMovement(0.0D, 0.0D, 0.0D);
-            wa$onFlyEnded(playerId);
+            strinova$onFlyEnded(playerId);
         }
 
         if (!WaPaperState.isWall(playerId) && WaPaperState.isCtrlPaper(playerId) && (player.isInWater() || player.isInLava())) {
@@ -120,7 +120,7 @@ public final class StrinovaKeyBindings {
         if (grounded) {
             airJumpArmed = false;
             clientAirJumpsUsed = 0;
-            wa$flyUsedInAir = false;
+            strinova$flyUsedInAir = false;
         } else {
             if (lastGrounded) {
                 airJumpArmed = false;
@@ -147,7 +147,7 @@ public final class StrinovaKeyBindings {
 
         if (justPressed) {
             boolean inAir = !player.onGround() && !player.isInWater() && !player.isInLava();
-            if (!isFly && inAir && !wa$flyUsedInAir) {
+            if (!isFly && inAir && !strinova$flyUsedInAir) {
                 Vec3 look = player.getViewVector(1.0F);
                 double fx = look.x;
                 double fz = look.z;
@@ -163,15 +163,15 @@ public final class StrinovaKeyBindings {
                 WaPaperState.setFly(playerId, true);
                 StrinovaNetwork.sendFly(true);
                 isFly = true;
-                wa$flyUsedInAir = true;
-                wa$clearPaperAfterFly = WaPaperState.isCtrlPaper(playerId);
+                strinova$flyUsedInAir = true;
+                strinova$clearPaperAfterFly = WaPaperState.isCtrlPaper(playerId);
             } else if (isFly) {
                 WaPaperState.setFly(playerId, false);
                 StrinovaNetwork.sendFly(false);
                 isFly = false;
                 Vec3 motion = player.getDeltaMovement();
                 player.setDeltaMovement(0.0D, motion.y, 0.0D);
-                wa$onFlyEnded(playerId);
+                strinova$onFlyEnded(playerId);
             } else {
                 if (!WaPaperState.isWall(playerId)) {
                     boolean ctrlPaper = WaPaperState.isCtrlPaper(playerId);
@@ -201,7 +201,7 @@ public final class StrinovaKeyBindings {
                     Vec3 motion = player.getDeltaMovement();
                     player.setDeltaMovement(0.0D, motion.y, 0.0D);
                     lastFly = false;
-                    wa$onFlyEnded(playerId);
+                    strinova$onFlyEnded(playerId);
                 }
                 Direction dir = player.getDirection();
                 boolean synced = false;
@@ -240,7 +240,7 @@ public final class StrinovaKeyBindings {
                 if (WaPaperState.isFly(playerId)) {
                     WaPaperState.setFly(playerId, false);
                     StrinovaNetwork.sendFly(false);
-                    wa$onFlyEnded(playerId);
+                    strinova$onFlyEnded(playerId);
                 }
             }
         }
@@ -256,19 +256,19 @@ public final class StrinovaKeyBindings {
         // 飘飞触发改为：空中按下 Ctrl 即进入飘飞，落地或进液体自动结束
     }
     
-    private static void wa$onFlyEnded(java.util.UUID playerId) {
+    private static void strinova$onFlyEnded(java.util.UUID playerId) {
         if (playerId == null) {
-            wa$clearPaperAfterFly = false;
+            strinova$clearPaperAfterFly = false;
             return;
         }
-        if (wa$clearPaperAfterFly && WaPaperState.isCtrlPaper(playerId)) {
+        if (strinova$clearPaperAfterFly && WaPaperState.isCtrlPaper(playerId)) {
             WaPaperState.setPaper(playerId, false);
             StrinovaNetwork.sendPaper(false);
         }
-        wa$clearPaperAfterFly = false;
+        strinova$clearPaperAfterFly = false;
     }
 
-    private static boolean wa$isHoldingTaczGun(net.minecraft.client.player.LocalPlayer player) {
+    private static boolean strinova$isHoldingTaczGun(net.minecraft.client.player.LocalPlayer player) {
         if (player == null) {
             return false;
         }
@@ -280,7 +280,7 @@ public final class StrinovaKeyBindings {
         return id != null && id.toString().contains("tacz:modern_kinetic_gun");
     }
 
-    private static boolean wa$shouldSkipInputsForCompat(Minecraft client) {
+    private static boolean strinova$shouldSkipInputsForCompat(Minecraft client) {
         if (client == null) {
             return false;
         }

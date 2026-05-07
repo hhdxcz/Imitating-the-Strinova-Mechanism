@@ -79,7 +79,7 @@ public final class StrinovaRenderPoseLeakGuard {
         try {
             int maxPops = leaks;
             if (poseStack instanceof PoseStackAccessor accessor) {
-                Deque<PoseStack.Pose> stack = accessor.klbq$getPoseStack();
+                Deque<PoseStack.Pose> stack = accessor.strinova$getPoseStack();
                 if (stack != null) {
                     maxPops = Math.min(maxPops, Math.max(0, stack.size() - 1));
                 }

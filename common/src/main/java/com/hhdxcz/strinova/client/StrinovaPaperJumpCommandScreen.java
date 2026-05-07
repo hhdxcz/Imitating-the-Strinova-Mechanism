@@ -14,7 +14,7 @@ public class StrinovaPaperJumpCommandScreen extends Screen {
     private String status = "";
 
     public StrinovaPaperJumpCommandScreen(Screen parent) {
-        super(Component.translatable("config.klbq.command_menu.paper_jump"));
+        super(Component.translatable("config.strinova.command_menu.paper_jump"));
         this.parent = parent;
     }
 
@@ -22,25 +22,25 @@ public class StrinovaPaperJumpCommandScreen extends Screen {
     protected void init() {
         int centerX = this.width / 2;
         int top = 36;
-        this.damageInput = new EditBox(this.font, centerX - 140, top + 34, 120, 20, Component.translatable("config.klbq.command.paper.value"));
+        this.damageInput = new EditBox(this.font, centerX - 140, top + 34, 120, 20, Component.translatable("config.strinova.command.paper.value"));
         this.damageInput.setValue("0.8");
         addRenderableWidget(this.damageInput);
-        addRenderableWidget(Button.builder(Component.translatable("config.klbq.command.paper.get"), b -> sendCommand("wa paper damage_reduction get"))
+        addRenderableWidget(Button.builder(Component.translatable("config.strinova.command.paper.get"), b -> sendCommand("wa paper damage_reduction get"))
                 .bounds(centerX - 12, top + 34, 72, 20)
                 .build());
-        addRenderableWidget(Button.builder(Component.translatable("config.klbq.command.paper.set"), b -> applyDamage())
+        addRenderableWidget(Button.builder(Component.translatable("config.strinova.command.paper.set"), b -> applyDamage())
                 .bounds(centerX + 64, top + 34, 76, 20)
                 .build());
 
-        this.segmentsInput = new EditBox(this.font, centerX - 140, top + 82, 120, 20, Component.translatable("config.klbq.command.jump.segments"));
+        this.segmentsInput = new EditBox(this.font, centerX - 140, top + 82, 120, 20, Component.translatable("config.strinova.command.jump.segments"));
         this.segmentsInput.setValue("2");
         addRenderableWidget(this.segmentsInput);
-        this.targetsInput = new EditBox(this.font, centerX - 12, top + 82, 152, 20, Component.translatable("config.klbq.command.jump.targets"));
+        this.targetsInput = new EditBox(this.font, centerX - 12, top + 82, 152, 20, Component.translatable("config.strinova.command.jump.targets"));
         addRenderableWidget(this.targetsInput);
-        addRenderableWidget(Button.builder(Component.translatable("config.klbq.command.jump.get"), b -> sendCommand("wa jump get"))
+        addRenderableWidget(Button.builder(Component.translatable("config.strinova.command.jump.get"), b -> sendCommand("wa jump get"))
                 .bounds(centerX - 140, top + 108, 72, 20)
                 .build());
-        addRenderableWidget(Button.builder(Component.translatable("config.klbq.command.jump.set"), b -> applyJump())
+        addRenderableWidget(Button.builder(Component.translatable("config.strinova.command.jump.set"), b -> applyJump())
                 .bounds(centerX - 64, top + 108, 72, 20)
                 .build());
         addRenderableWidget(Button.builder(Component.literal("ALL"), b -> {
@@ -59,7 +59,7 @@ public class StrinovaPaperJumpCommandScreen extends Screen {
     private void applyDamage() {
         String raw = this.damageInput == null ? "" : this.damageInput.getValue().trim();
         if (raw.isEmpty()) {
-            this.status = Component.translatable("config.klbq.command.invalid").getString();
+            this.status = Component.translatable("config.strinova.command.invalid").getString();
             return;
         }
         sendCommand("wa paper damage_reduction " + raw);
@@ -68,7 +68,7 @@ public class StrinovaPaperJumpCommandScreen extends Screen {
     private void applyJump() {
         String seg = this.segmentsInput == null ? "" : this.segmentsInput.getValue().trim();
         if (seg.isEmpty()) {
-            this.status = Component.translatable("config.klbq.command.invalid").getString();
+            this.status = Component.translatable("config.strinova.command.invalid").getString();
             return;
         }
         String targets = this.targetsInput == null ? "" : this.targetsInput.getValue().trim();
@@ -85,11 +85,11 @@ public class StrinovaPaperJumpCommandScreen extends Screen {
 
     private void sendCommand(String command) {
         if (minecraft == null || minecraft.player == null || minecraft.player.connection == null) {
-            this.status = Component.translatable("command.klbq.client.no_player").getString();
+            this.status = Component.translatable("command.strinova.client.no_player").getString();
             return;
         }
         minecraft.player.connection.sendCommand(command);
-        this.status = Component.translatable("config.klbq.command.sent").getString();
+        this.status = Component.translatable("config.strinova.command.sent").getString();
     }
 
     @Override
@@ -102,8 +102,8 @@ public class StrinovaPaperJumpCommandScreen extends Screen {
         int bottom = 178;
         graphics.fill(left, top, right, bottom, 0xA0101010);
         graphics.drawCenteredString(this.font, this.title, centerX, top + 10, 0xFFFFFF);
-        graphics.drawString(this.font, Component.translatable("config.klbq.command.paper.tip"), centerX - 140, top + 22, 0xB0B0B0, false);
-        graphics.drawString(this.font, Component.translatable("config.klbq.command.jump.tip"), centerX - 140, top + 70, 0xB0B0B0, false);
+        graphics.drawString(this.font, Component.translatable("config.strinova.command.paper.tip"), centerX - 140, top + 22, 0xB0B0B0, false);
+        graphics.drawString(this.font, Component.translatable("config.strinova.command.jump.tip"), centerX - 140, top + 70, 0xB0B0B0, false);
         graphics.drawString(this.font, Component.literal(this.status), centerX - 140, top + 140, 0xA0E0A0, false);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
