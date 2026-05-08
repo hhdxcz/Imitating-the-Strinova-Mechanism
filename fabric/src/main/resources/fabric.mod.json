@@ -3,7 +3,7 @@
 	"id": "${mod_id}",
 	"version": "${version}",
 	"name": "${mod_name}",
-	"description": "wa",
+	"description": "${mod_description}",
 	"authors": [
 		"hhdxcz"
 	],
@@ -15,14 +15,14 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.hhdxcz.wa.fabric.WaModFabric"
+          "com.hhdxcz.strinova.fabric.StrinovaModFabric"
 		],
 		"client": [
-			"com.hhdxcz.wa.fabric.client.ClientInitFabric"
+          "com.hhdxcz.strinova.fabric.client.StrinovaClientInitFabric"
 		]
 	},
 	"mixins": [
-		"wa.mixins.json"
+		"strinova.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.15.0",

@@ -9,7 +9,7 @@ architectury {
 
 loom {
     forge {
-        mixinConfig "wa.mixins.json"
+        mixinConfig "strinova.mixins.json"
     }
     runs {
         client {
@@ -65,7 +65,7 @@ jar {
 	
 	manifest {
 		attributes([
-			'Specification-Title'     : 'wa',
+			'Specification-Title'     : 'strinova',
 			'Specification-Vendor'    : 'hhdxcz',
 			'Specification-Version'   : '1',
 			'Implementation-Title'    : project.name,
@@ -106,7 +106,7 @@ tasks.named('processResources', ProcessResources).configure {
         mod_name: project.mod_name,
         mod_version: project.version,
         mod_authors: 'hhdxcz',
-        mod_description: 'wa'
+        mod_description: project.mod_description
     ]
 
     inputs.properties replaceProperties
