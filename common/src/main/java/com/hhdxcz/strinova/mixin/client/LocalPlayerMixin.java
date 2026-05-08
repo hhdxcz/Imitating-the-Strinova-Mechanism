@@ -23,13 +23,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class LocalPlayerMixin {
 
     @Unique
-    private static Boolean WA_TACZ_LOADED;
+    private static Boolean STRINOVA_TACZ_LOADED;
 
     @Unique
-    private static Boolean WA_SHOULDER_SURFING_LOADED;
+    private static Boolean STRINOVA_SHOULDER_SURFING_LOADED;
 
     @Unique
-    private static Boolean WA_TPS_ZERO_LOADED;
+    private static Boolean STRINOVA_TPS_ZERO_LOADED;
 
     @Unique
     private boolean wa$taczForcedFirstPerson;
@@ -579,7 +579,7 @@ public abstract class LocalPlayerMixin {
 
     @Unique
     private static boolean wa$isTaczLoaded() {
-        Boolean loaded = WA_TACZ_LOADED;
+        Boolean loaded = STRINOVA_TACZ_LOADED;
         if (loaded != null) {
             return loaded.booleanValue();
         }
@@ -589,24 +589,24 @@ public abstract class LocalPlayerMixin {
         } catch (Throwable t) {
             v = false;
         }
-        WA_TACZ_LOADED = v;
+        STRINOVA_TACZ_LOADED = v;
         return v;
     }
 
     @Unique
     private static boolean wa$isThirdPersonShootCompatLoaded() {
-        Boolean shoulderLoaded = WA_SHOULDER_SURFING_LOADED;
+        Boolean shoulderLoaded = STRINOVA_SHOULDER_SURFING_LOADED;
         if (shoulderLoaded == null) {
             shoulderLoaded = wa$isAnyModLoaded("shouldersurfing", "shoulder_surfing");
-            WA_SHOULDER_SURFING_LOADED = shoulderLoaded;
+            STRINOVA_SHOULDER_SURFING_LOADED = shoulderLoaded;
         }
         if (shoulderLoaded.booleanValue()) {
             return true;
         }
-        Boolean tpsLoaded = WA_TPS_ZERO_LOADED;
+        Boolean tpsLoaded = STRINOVA_TPS_ZERO_LOADED;
         if (tpsLoaded == null) {
             tpsLoaded = wa$isAnyModLoaded("tp_shooting", "third_person_shooting", "third_person_shooting_zero");
-            WA_TPS_ZERO_LOADED = tpsLoaded;
+            STRINOVA_TPS_ZERO_LOADED = tpsLoaded;
         }
         return tpsLoaded.booleanValue();
     }

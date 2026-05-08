@@ -26,9 +26,9 @@ import java.util.UUID;
 @Mixin(value = EntityRenderDispatcher.class, priority = 2000)
 public abstract class EntityRenderDispatcherMixin {
 
-    private static final String WA_OUTLINE_TEAM_PREFIX = "wa_outline_";
-    private static final float WA_WALL_RENDER_NUDGE = -0.002F;
-    private static Boolean WA_SHOULDER_API_AVAILABLE;
+    private static final String STRINOVA_OUTLINE_TEAM_PREFIX = "wa_outline_";
+    private static final float STRINOVA_WALL_RENDER_NUDGE = -0.002F;
+    private static Boolean STRINOVA_SHOULDER_API_AVAILABLE;
 
     private static boolean wa$isOutlinedPlayer(Entity entity) {
         if (!(entity instanceof AbstractClientPlayer player)) {
@@ -39,7 +39,7 @@ public abstract class EntityRenderDispatcherMixin {
             return false;
         }
         String name = team.getName();
-        return name != null && name.startsWith(WA_OUTLINE_TEAM_PREFIX);
+        return name != null && name.startsWith(STRINOVA_OUTLINE_TEAM_PREFIX);
     }
 
     private static void wa$applyCornerDeformation(AbstractClientPlayer player, PoseStack poseStack, WaPaperState.WallPlane plane, float tickDelta) {
@@ -261,10 +261,10 @@ public abstract class EntityRenderDispatcherMixin {
                 if (plane != null) {
                     if (plane.axisX) {
                         double sign = plane.value > player.getX() ? 1.0D : -1.0D;
-                        poseStack.translate(WA_WALL_RENDER_NUDGE * sign, 0.0D, 0.0D);
+                        poseStack.translate(STRINOVA_WALL_RENDER_NUDGE * sign, 0.0D, 0.0D);
                     } else {
                         double sign = plane.value > player.getZ() ? 1.0D : -1.0D;
-                        poseStack.translate(0.0D, 0.0D, WA_WALL_RENDER_NUDGE * sign);
+                        poseStack.translate(0.0D, 0.0D, STRINOVA_WALL_RENDER_NUDGE * sign);
                     }
                     wa$applyCornerDeformation(player, poseStack, plane, partialTick);
                 }
@@ -346,7 +346,7 @@ public abstract class EntityRenderDispatcherMixin {
     }
 
     private static boolean wa$isShoulderSurfingActive() {
-        Boolean available = WA_SHOULDER_API_AVAILABLE;
+        Boolean available = STRINOVA_SHOULDER_API_AVAILABLE;
         if (available != null && !available.booleanValue()) {
             return false;
         }
@@ -354,10 +354,10 @@ public abstract class EntityRenderDispatcherMixin {
             Class<?> shoulderClass = Class.forName("com.github.exopandora.shouldersurfing.api.client.ShoulderSurfing");
             Object api = shoulderClass.getMethod("getInstance").invoke(null);
             Object value = api.getClass().getMethod("isShoulderSurfing").invoke(api);
-            WA_SHOULDER_API_AVAILABLE = Boolean.TRUE;
+            STRINOVA_SHOULDER_API_AVAILABLE = Boolean.TRUE;
             return value instanceof Boolean b && b.booleanValue();
         } catch (Throwable ignored) {
-            WA_SHOULDER_API_AVAILABLE = Boolean.FALSE;
+            STRINOVA_SHOULDER_API_AVAILABLE = Boolean.FALSE;
             return false;
         }
     }

@@ -27,29 +27,29 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class EntitySetBoundingBoxMixin {
 
     @Unique
-    private static final ConcurrentHashMap<UUID, Boolean> WA_PAPER_IDLE_THIN_X = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, Boolean> STRINOVA_PAPER_IDLE_THIN_X = new ConcurrentHashMap<>();
 
     @Unique
-    private static final double WA_VANILLA_STANDING_EYE_HEIGHT = 1.62D;
+    private static final double STRINOVA_VANILLA_STANDING_EYE_HEIGHT = 1.62D;
 
     @Unique
-    private static final String WA_TARGET_YSM_MODEL_NAME = "香奈美-世纪歌姬";
+    private static final String STRINOVA_TARGET_YSM_MODEL_NAME = "香奈美-世纪歌姬";
 
     @Unique
-    private static final String WA_TARGET_YSM_MODEL_FILE = "香奈美-世纪歌姬.ysm";
+    private static final String STRINOVA_TARGET_YSM_MODEL_FILE = "香奈美-世纪歌姬.ysm";
 
     @Unique
-    private static Boolean WA_YSM_LOADED;
+    private static Boolean STRINOVA_YSM_LOADED;
 
     @Unique
-    private static final ConcurrentHashMap<UUID, Long> WA_YSM_TARGET_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, Long> STRINOVA_YSM_TARGET_CACHE = new ConcurrentHashMap<>();
 
     @Unique
-    private static final ThreadLocal<Boolean> WA_DISABLE_FLY_EYE_HOOK = ThreadLocal.withInitial(() -> false);
+    private static final ThreadLocal<Boolean> STRINOVA_DISABLE_FLY_EYE_HOOK = ThreadLocal.withInitial(() -> false);
 
     @Unique
     private static boolean wa$isYsmLoaded() {
-        Boolean loaded = WA_YSM_LOADED;
+        Boolean loaded = STRINOVA_YSM_LOADED;
         if (loaded != null) {
             return loaded.booleanValue();
         }
@@ -59,7 +59,7 @@ public abstract class EntitySetBoundingBoxMixin {
         } catch (Throwable t) {
             v = false;
         }
-        WA_YSM_LOADED = v;
+        STRINOVA_YSM_LOADED = v;
         return v;
     }
 
@@ -84,11 +84,11 @@ public abstract class EntitySetBoundingBoxMixin {
             return false;
         }
         int tick = player.tickCount;
-        if ((tick & 0xFF) == 0 && WA_YSM_TARGET_CACHE.size() > 1024) {
-            WA_YSM_TARGET_CACHE.clear();
+        if ((tick & 0xFF) == 0 && STRINOVA_YSM_TARGET_CACHE.size() > 1024) {
+            STRINOVA_YSM_TARGET_CACHE.clear();
         }
         UUID id = player.getUUID();
-        Long packed = WA_YSM_TARGET_CACHE.get(id);
+        Long packed = STRINOVA_YSM_TARGET_CACHE.get(id);
         if (packed != null) {
             int nextCheckTick = wa$unpackNextCheckTick(packed.longValue());
             if (tick < nextCheckTick) {
@@ -96,7 +96,7 @@ public abstract class EntitySetBoundingBoxMixin {
             }
         }
         boolean matched = wa$scanSynchedDataForTarget(player);
-        WA_YSM_TARGET_CACHE.put(id, wa$packYsmCache(tick + 20, matched));
+        STRINOVA_YSM_TARGET_CACHE.put(id, wa$packYsmCache(tick + 20, matched));
         return matched;
     }
 
@@ -126,10 +126,10 @@ public abstract class EntitySetBoundingBoxMixin {
             return false;
         }
         if (value instanceof String s) {
-            return s.contains(WA_TARGET_YSM_MODEL_NAME) || s.contains(WA_TARGET_YSM_MODEL_FILE);
+            return s.contains(STRINOVA_TARGET_YSM_MODEL_NAME) || s.contains(STRINOVA_TARGET_YSM_MODEL_FILE);
         }
         String s = String.valueOf(value);
-        return s.contains(WA_TARGET_YSM_MODEL_NAME) || s.contains(WA_TARGET_YSM_MODEL_FILE);
+        return s.contains(STRINOVA_TARGET_YSM_MODEL_NAME) || s.contains(STRINOVA_TARGET_YSM_MODEL_FILE);
     }
 
     @Unique
@@ -243,17 +243,17 @@ public abstract class EntitySetBoundingBoxMixin {
         if (player == null) {
             return 1.0D;
         }
-        WA_DISABLE_FLY_EYE_HOOK.set(true);
+        STRINOVA_DISABLE_FLY_EYE_HOOK.set(true);
         float eye;
         try {
             eye = player.getEyeHeight(Pose.STANDING);
         } finally {
-            WA_DISABLE_FLY_EYE_HOOK.set(false);
+            STRINOVA_DISABLE_FLY_EYE_HOOK.set(false);
         }
         if (!(eye > 1.0E-4F)) {
             return 1.0D;
         }
-        double scale = (double) eye / WA_VANILLA_STANDING_EYE_HEIGHT;
+        double scale = (double) eye / STRINOVA_VANILLA_STANDING_EYE_HEIGHT;
         if (scale < 0.25D) {
             scale = 0.25D;
         } else if (scale > 4.0D) {
@@ -327,20 +327,20 @@ public abstract class EntitySetBoundingBoxMixin {
                         && Math.abs(motion.y) < 1.0E-6D;
                 boolean thinX;
                 if (idle) {
-                    Boolean cached = WA_PAPER_IDLE_THIN_X.get(playerId);
+                    Boolean cached = STRINOVA_PAPER_IDLE_THIN_X.get(playerId);
                     if (cached != null) {
                         thinX = cached.booleanValue();
                     } else {
                         float yawDeg = self.getYRot();
                         double yawRad = Math.toRadians(yawDeg);
                         thinX = Math.abs(Math.sin(yawRad)) > Math.abs(Math.cos(yawRad));
-                        WA_PAPER_IDLE_THIN_X.put(playerId, thinX);
+                        STRINOVA_PAPER_IDLE_THIN_X.put(playerId, thinX);
                     }
                 } else {
                     float yawDeg = self.getYRot();
                     double yawRad = Math.toRadians(yawDeg);
                     thinX = Math.abs(Math.sin(yawRad)) > Math.abs(Math.cos(yawRad));
-                    WA_PAPER_IDLE_THIN_X.put(playerId, thinX);
+                    STRINOVA_PAPER_IDLE_THIN_X.put(playerId, thinX);
                 }
                 finalSizeX = thinX ? thin : wide;
                 finalSizeZ = thinX ? wide : thin;
@@ -367,7 +367,7 @@ public abstract class EntitySetBoundingBoxMixin {
                     centerX + halfX, maxY, centerZ + halfZ
             );
         }
-        WA_PAPER_IDLE_THIN_X.remove(playerId);
+        STRINOVA_PAPER_IDLE_THIN_X.remove(playerId);
 
         if (targetYsmModel && self.onGround()) {
             box = new AABB(box.minX, box.minY, box.minZ, box.maxX, box.maxY + 1.0D, box.maxZ);
@@ -449,7 +449,7 @@ public abstract class EntitySetBoundingBoxMixin {
         if (!(selfObj instanceof Player player)) {
             return false;
         }
-        if (WA_DISABLE_FLY_EYE_HOOK.get().booleanValue()) {
+        if (STRINOVA_DISABLE_FLY_EYE_HOOK.get().booleanValue()) {
             return false;
         }
         return WaPaperState.isFly(player.getUUID())
@@ -462,7 +462,7 @@ public abstract class EntitySetBoundingBoxMixin {
         double minY = box.minY;
         double maxY = box.maxY;
         if (!Double.isFinite(minY) || !Double.isFinite(maxY) || maxY < minY) {
-            return player.getY() + WA_VANILLA_STANDING_EYE_HEIGHT;
+            return player.getY() + STRINOVA_VANILLA_STANDING_EYE_HEIGHT;
         }
         return (minY + maxY) * 0.5D + 0.02D;
     }

@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Mixin(value = PlayerRenderer.class, priority = 500)
 public abstract class PlayerRendererMixin {
     @Unique
-    private static final ConcurrentHashMap<UUID, Float> WA_PAPER_IDLE_YAW = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, Float> STRINOVA_PAPER_IDLE_YAW = new ConcurrentHashMap<>();
 
     @Unique
     private static boolean wa$isPaperIdle(AbstractClientPlayer player) {
@@ -35,12 +35,12 @@ public abstract class PlayerRendererMixin {
             return yaw;
         }
         if (!idle) {
-            WA_PAPER_IDLE_YAW.put(playerId, yaw);
+            STRINOVA_PAPER_IDLE_YAW.put(playerId, yaw);
             return yaw;
         }
-        Float locked = WA_PAPER_IDLE_YAW.get(playerId);
+        Float locked = STRINOVA_PAPER_IDLE_YAW.get(playerId);
         if (locked == null) {
-            WA_PAPER_IDLE_YAW.put(playerId, yaw);
+            STRINOVA_PAPER_IDLE_YAW.put(playerId, yaw);
             return yaw;
         }
         return locked;
@@ -58,7 +58,7 @@ public abstract class PlayerRendererMixin {
         }
         UUID playerId = player.getUUID();
         if (!WaPaperState.isPaper(playerId) || WaPaperState.isWall(playerId)) {
-            WA_PAPER_IDLE_YAW.remove(playerId);
+            STRINOVA_PAPER_IDLE_YAW.remove(playerId);
             return yaw;
         }
         boolean idle = wa$isPaperIdle(player);
