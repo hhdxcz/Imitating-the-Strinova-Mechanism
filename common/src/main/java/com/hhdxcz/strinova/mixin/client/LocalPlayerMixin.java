@@ -23,37 +23,37 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class LocalPlayerMixin {
 
     @Unique
-    private static Boolean WA_TACZ_LOADED;
+    private static Boolean STRINOVA_TACZ_LOADED;
 
     @Unique
-    private static Boolean WA_SHOULDER_SURFING_LOADED;
+    private static Boolean STRINOVA_SHOULDER_SURFING_LOADED;
 
     @Unique
-    private static Boolean WA_TPS_ZERO_LOADED;
+    private static Boolean STRINOVA_TPS_ZERO_LOADED;
 
     @Unique
-    private boolean wa$taczForcedFirstPerson;
+    private boolean strinova$taczForcedFirstPerson;
 
     @Unique
-    private CameraType wa$taczPrevCameraType;
+    private CameraType strinova$taczPrevCameraType;
 
     @Unique
-    private int wa$taczRestoreTicks;
+    private int strinova$taczRestoreTicks;
 
     @Unique
-    private boolean wa$taczPrevShoulderSurfing;
+    private boolean strinova$taczPrevShoulderSurfing;
 
     @Unique
-    private boolean wa$lastTaczGunMainhand;
+    private boolean strinova$lastTaczGunMainhand;
 
     @Unique
-    private boolean wa$lastTaczAction;
+    private boolean strinova$lastTaczAction;
     
     @Unique
-    private Direction wa$lastMoveDir;
+    private Direction strinova$lastMoveDir;
 
     @Inject(method = "aiStep", at = @At("TAIL"))
-    private void wa$glideStep(CallbackInfo ci) {
+    private void strinova$glideStep(CallbackInfo ci) {
         LocalPlayer self = (LocalPlayer) (Object) this;
 
         if (WaPaperState.isWall(self.getUUID())) {
@@ -101,8 +101,8 @@ public abstract class LocalPlayerMixin {
                 mz = Math.abs(rawMz) > 0.01 ? Math.copySign(strafe, rawMz) : 0.0D;
                 
                 // Fallback for parallel viewing angle: Use last known direction if input persists
-                if (Math.abs(mz) < 1.0E-4D && hasInput && wa$lastMoveDir != null && (wa$lastMoveDir == Direction.SOUTH || wa$lastMoveDir == Direction.NORTH)) {
-                    mz = (wa$lastMoveDir == Direction.SOUTH ? 1.0D : -1.0D) * climbSpeed;
+                if (Math.abs(mz) < 1.0E-4D && hasInput && strinova$lastMoveDir != null && (strinova$lastMoveDir == Direction.SOUTH || strinova$lastMoveDir == Direction.NORTH)) {
+                    mz = (strinova$lastMoveDir == Direction.SOUTH ? 1.0D : -1.0D) * climbSpeed;
                 }
             } else {
                 // Wall Axis Z (Normal is X or -X). We want X motion.
@@ -110,8 +110,8 @@ public abstract class LocalPlayerMixin {
                 mx = Math.abs(rawMx) > 0.01 ? Math.copySign(strafe, rawMx) : 0.0D;
                 
                 // Fallback for parallel viewing angle
-                if (Math.abs(mx) < 1.0E-4D && hasInput && wa$lastMoveDir != null && (wa$lastMoveDir == Direction.EAST || wa$lastMoveDir == Direction.WEST)) {
-                    mx = (wa$lastMoveDir == Direction.EAST ? 1.0D : -1.0D) * climbSpeed;
+                if (Math.abs(mx) < 1.0E-4D && hasInput && strinova$lastMoveDir != null && (strinova$lastMoveDir == Direction.EAST || strinova$lastMoveDir == Direction.WEST)) {
+                    mx = (strinova$lastMoveDir == Direction.EAST ? 1.0D : -1.0D) * climbSpeed;
                 }
             }
 
@@ -129,7 +129,7 @@ public abstract class LocalPlayerMixin {
             }
             
             if (primaryMoveDir != null) {
-                wa$lastMoveDir = primaryMoveDir;
+                strinova$lastMoveDir = primaryMoveDir;
             }
 
             if (plane.axisX) {
@@ -463,13 +463,13 @@ public abstract class LocalPlayerMixin {
             }
         }
 
-        wa$taczTickPerspective(self);
+        strinova$taczTickPerspective(self);
     }
 
     @Unique
-    private void wa$taczTickPerspective(LocalPlayer self) {
-        if (!wa$isTaczLoaded()) {
-            wa$resetTaczPerspectiveState();
+    private void strinova$taczTickPerspective(LocalPlayer self) {
+        if (!strinova$isTaczLoaded()) {
+            strinova$resetTaczPerspectiveState();
             return;
         }
 
@@ -481,25 +481,25 @@ public abstract class LocalPlayerMixin {
         if (current == null) {
             return;
         }
-        boolean gunMainhand = wa$isTaczGunMainhand(self);
+        boolean gunMainhand = strinova$isTaczGunMainhand(self);
         boolean isAction = gunMainhand
                 && (mc.options.keyAttack.isDown() || mc.options.keyUse.isDown());
         boolean allowTpsExitFlyOnAction = StrinovaCommonConfig.isTpsExitFlyOnAction();
-        boolean thirdPersonCompatActive = StrinovaCommonConfig.isThirdPersonCompatBypassEnabled() && wa$isThirdPersonShootCompatLoaded();
+        boolean thirdPersonCompatActive = StrinovaCommonConfig.isThirdPersonCompatBypassEnabled() && strinova$isThirdPersonShootCompatLoaded();
         if (thirdPersonCompatActive) {
             var playerId = self.getUUID();
-            if (allowTpsExitFlyOnAction && isAction && !wa$lastTaczAction && WaPaperState.isFly(playerId)) {
+            if (allowTpsExitFlyOnAction && isAction && !strinova$lastTaczAction && WaPaperState.isFly(playerId)) {
                 WaPaperState.setFly(playerId, false);
                 StrinovaNetwork.sendFly(false);
             }
         }
-        if (wa$taczForcedFirstPerson && current != CameraType.FIRST_PERSON) {
-            wa$resetTaczPerspectiveState();
+        if (strinova$taczForcedFirstPerson && current != CameraType.FIRST_PERSON) {
+            strinova$resetTaczPerspectiveState();
             return;
         }
 
-        wa$lastTaczGunMainhand = gunMainhand;
-        wa$lastTaczAction = isAction;
+        strinova$lastTaczGunMainhand = gunMainhand;
+        strinova$lastTaczAction = isAction;
         boolean taczExitStatesOnAction = StrinovaCommonConfig.isTaczExitStatesOnAction();
         boolean taczForceFirstPerson = StrinovaCommonConfig.isTaczForceFirstPerson();
 
@@ -519,20 +519,20 @@ public abstract class LocalPlayerMixin {
             }
         }
         if (!taczForceFirstPerson) {
-            if (wa$taczForcedFirstPerson) {
-                wa$restoreTaczPerspectiveIfNeeded(mc);
+            if (strinova$taczForcedFirstPerson) {
+                strinova$restoreTaczPerspectiveIfNeeded(mc);
             }
             return;
         }
 
-        if (!wa$taczForcedFirstPerson) {
+        if (!strinova$taczForcedFirstPerson) {
             if (current != CameraType.FIRST_PERSON && isAction) {
-                wa$taczPrevCameraType = current;
-                wa$taczPrevShoulderSurfing = wa$isShoulderSurfingActive();
-                wa$taczForcedFirstPerson = true;
-                wa$taczRestoreTicks = 4;
-                if (wa$taczPrevShoulderSurfing) {
-                    wa$changeShoulderPerspective("FIRST_PERSON");
+                strinova$taczPrevCameraType = current;
+                strinova$taczPrevShoulderSurfing = strinova$isShoulderSurfingActive();
+                strinova$taczForcedFirstPerson = true;
+                strinova$taczRestoreTicks = 4;
+                if (strinova$taczPrevShoulderSurfing) {
+                    strinova$changeShoulderPerspective("FIRST_PERSON");
                 }
                 mc.options.setCameraType(CameraType.FIRST_PERSON);
             }
@@ -540,46 +540,46 @@ public abstract class LocalPlayerMixin {
         }
 
         if (isAction) {
-            wa$taczRestoreTicks = 4;
+            strinova$taczRestoreTicks = 4;
             return;
         }
-        if (wa$taczRestoreTicks > 0) {
-            wa$taczRestoreTicks--;
+        if (strinova$taczRestoreTicks > 0) {
+            strinova$taczRestoreTicks--;
             return;
         }
-        wa$restoreTaczPerspectiveIfNeeded(mc);
+        strinova$restoreTaczPerspectiveIfNeeded(mc);
     }
 
     @Unique
-    private void wa$restoreTaczPerspectiveIfNeeded(Minecraft mc) {
+    private void strinova$restoreTaczPerspectiveIfNeeded(Minecraft mc) {
         boolean restoredShoulder = false;
-        if (wa$taczPrevShoulderSurfing) {
-            restoredShoulder = wa$changeShoulderPerspective("SHOULDER_SURFING");
+        if (strinova$taczPrevShoulderSurfing) {
+            restoredShoulder = strinova$changeShoulderPerspective("SHOULDER_SURFING");
         }
         if (mc != null
                 && mc.options != null
                 && !restoredShoulder
                 && mc.options.getCameraType() == CameraType.FIRST_PERSON
-                && wa$taczPrevCameraType != null
-                && wa$taczPrevCameraType != CameraType.FIRST_PERSON) {
-            mc.options.setCameraType(wa$taczPrevCameraType);
+                && strinova$taczPrevCameraType != null
+                && strinova$taczPrevCameraType != CameraType.FIRST_PERSON) {
+            mc.options.setCameraType(strinova$taczPrevCameraType);
         }
-        wa$resetTaczPerspectiveState();
+        strinova$resetTaczPerspectiveState();
     }
 
     @Unique
-    private void wa$resetTaczPerspectiveState() {
-        wa$taczForcedFirstPerson = false;
-        wa$taczPrevCameraType = null;
-        wa$taczRestoreTicks = 0;
-        wa$taczPrevShoulderSurfing = false;
-        wa$lastTaczGunMainhand = false;
-        wa$lastTaczAction = false;
+    private void strinova$resetTaczPerspectiveState() {
+        strinova$taczForcedFirstPerson = false;
+        strinova$taczPrevCameraType = null;
+        strinova$taczRestoreTicks = 0;
+        strinova$taczPrevShoulderSurfing = false;
+        strinova$lastTaczGunMainhand = false;
+        strinova$lastTaczAction = false;
     }
 
     @Unique
-    private static boolean wa$isTaczLoaded() {
-        Boolean loaded = WA_TACZ_LOADED;
+    private static boolean strinova$isTaczLoaded() {
+        Boolean loaded = STRINOVA_TACZ_LOADED;
         if (loaded != null) {
             return loaded.booleanValue();
         }
@@ -589,30 +589,30 @@ public abstract class LocalPlayerMixin {
         } catch (Throwable t) {
             v = false;
         }
-        WA_TACZ_LOADED = v;
+        STRINOVA_TACZ_LOADED = v;
         return v;
     }
 
     @Unique
-    private static boolean wa$isThirdPersonShootCompatLoaded() {
-        Boolean shoulderLoaded = WA_SHOULDER_SURFING_LOADED;
+    private static boolean strinova$isThirdPersonShootCompatLoaded() {
+        Boolean shoulderLoaded = STRINOVA_SHOULDER_SURFING_LOADED;
         if (shoulderLoaded == null) {
-            shoulderLoaded = wa$isAnyModLoaded("shouldersurfing", "shoulder_surfing");
-            WA_SHOULDER_SURFING_LOADED = shoulderLoaded;
+            shoulderLoaded = strinova$isAnyModLoaded("shouldersurfing", "shoulder_surfing");
+            STRINOVA_SHOULDER_SURFING_LOADED = shoulderLoaded;
         }
         if (shoulderLoaded.booleanValue()) {
             return true;
         }
-        Boolean tpsLoaded = WA_TPS_ZERO_LOADED;
+        Boolean tpsLoaded = STRINOVA_TPS_ZERO_LOADED;
         if (tpsLoaded == null) {
-            tpsLoaded = wa$isAnyModLoaded("tp_shooting", "third_person_shooting", "third_person_shooting_zero");
-            WA_TPS_ZERO_LOADED = tpsLoaded;
+            tpsLoaded = strinova$isAnyModLoaded("tp_shooting", "third_person_shooting", "third_person_shooting_zero");
+            STRINOVA_TPS_ZERO_LOADED = tpsLoaded;
         }
         return tpsLoaded.booleanValue();
     }
 
     @Unique
-    private static boolean wa$isAnyModLoaded(String... modIds) {
+    private static boolean strinova$isAnyModLoaded(String... modIds) {
         if (modIds == null || modIds.length == 0) {
             return false;
         }
@@ -631,8 +631,8 @@ public abstract class LocalPlayerMixin {
     }
 
     @Unique
-    private static boolean wa$isShoulderSurfingActive() {
-        if (!wa$isAnyModLoaded("shouldersurfing", "shoulder_surfing")) {
+    private static boolean strinova$isShoulderSurfingActive() {
+        if (!strinova$isAnyModLoaded("shouldersurfing", "shoulder_surfing")) {
             return false;
         }
         try {
@@ -648,7 +648,7 @@ public abstract class LocalPlayerMixin {
     }
 
     @Unique
-    private static boolean wa$changeShoulderPerspective(String perspectiveName) {
+    private static boolean strinova$changeShoulderPerspective(String perspectiveName) {
         if (perspectiveName == null || perspectiveName.isEmpty()) {
             return false;
         }
@@ -665,7 +665,7 @@ public abstract class LocalPlayerMixin {
     }
 
     @Unique
-    private static boolean wa$isTaczGunMainhand(LocalPlayer player) {
+    private static boolean strinova$isTaczGunMainhand(LocalPlayer player) {
         if (player == null) {
             return false;
         }

@@ -33,10 +33,10 @@ import java.util.UUID;
 public abstract class PlayerMixin {
 
     @Unique
-    private boolean wa$lastPaper;
+    private boolean strinova$lastPaper;
 
     @Unique
-    private boolean wa$lastFly;
+    private boolean strinova$lastFly;
 
     @ModifyVariable(
             method = "hurt(Lnet/minecraft/world/damagesource/DamageSource;F)Z",
@@ -44,7 +44,7 @@ public abstract class PlayerMixin {
             argsOnly = true,
             index = 2
     )
-    private float wa$reduceDamageWhenPaper(float amount, DamageSource source) {
+    private float strinova$reduceDamageWhenPaper(float amount, DamageSource source) {
         if (amount <= 0.0F) {
             return amount;
         }
@@ -62,7 +62,7 @@ public abstract class PlayerMixin {
     }
 
     @Inject(method = "isFallFlying()Z", at = @At("RETURN"), cancellable = true)
-    private void wa$enableGlide(CallbackInfoReturnable<Boolean> cir) {
+    private void strinova$enableGlide(CallbackInfoReturnable<Boolean> cir) {
         if (cir.getReturnValueZ()) {
             return;
         }
@@ -82,7 +82,7 @@ public abstract class PlayerMixin {
     }
 
     @Inject(method = "hurt(Lnet/minecraft/world/damagesource/DamageSource;F)Z", at = @At("HEAD"), cancellable = true)
-    private void wa$disableInWallDamageGlobally(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+    private void strinova$disableInWallDamageGlobally(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         Object selfObj = this;
         if (!(selfObj instanceof LivingEntity self)) {
             return;
@@ -97,7 +97,7 @@ public abstract class PlayerMixin {
     }
 
     @Inject(method = "tick()V", at = @At("HEAD"))
-    private void wa$updatePaperDimensions(CallbackInfo ci) {
+    private void strinova$updatePaperDimensions(CallbackInfo ci) {
         Object selfObj = this;
         if (!(selfObj instanceof Player self)) {
             return;
@@ -108,12 +108,12 @@ public abstract class PlayerMixin {
         boolean now = WaPaperState.isPaper(self.getUUID());
         boolean fly = WaPaperState.isFly(self.getUUID());
         boolean refresh = false;
-        if (now != wa$lastPaper) {
-            wa$lastPaper = now;
+        if (now != strinova$lastPaper) {
+            strinova$lastPaper = now;
             refresh = true;
         }
-        if (fly != wa$lastFly) {
-            wa$lastFly = fly;
+        if (fly != strinova$lastFly) {
+            strinova$lastFly = fly;
             refresh = true;
         }
         if (refresh) {
@@ -122,10 +122,10 @@ public abstract class PlayerMixin {
     }
 
     @Unique
-    private Direction wa$lastMoveDir;
+    private Direction strinova$lastMoveDir;
 
     @Unique
-    private static double wa$getWallOuterCornerNudge(Player self, boolean axisX) {
+    private static double strinova$getWallOuterCornerNudge(Player self, boolean axisX) {
         AABB box = self.getBoundingBox();
         double thin = axisX ? box.getXsize() : box.getZsize();
         if (!(thin > 0.0D)) {
@@ -135,7 +135,7 @@ public abstract class PlayerMixin {
     }
 
     @Inject(method = "tick()V", at = @At("TAIL"))
-    private void wa$stickToWallPlane(CallbackInfo ci) {
+    private void strinova$stickToWallPlane(CallbackInfo ci) {
         Object selfObj = this;
         if (!(selfObj instanceof Player self)) {
             return;
@@ -174,12 +174,12 @@ public abstract class PlayerMixin {
         if (plane.axisX) {
             double zSpeed = currentMotion.z;
             if (Math.abs(zSpeed) > 1.0E-4D) {
-                wa$lastMoveDir = zSpeed > 0 ? Direction.SOUTH : Direction.NORTH;
+                strinova$lastMoveDir = zSpeed > 0 ? Direction.SOUTH : Direction.NORTH;
             }
         } else {
             double xSpeed = currentMotion.x;
             if (Math.abs(xSpeed) > 1.0E-4D) {
-                wa$lastMoveDir = xSpeed > 0 ? Direction.EAST : Direction.WEST;
+                strinova$lastMoveDir = xSpeed > 0 ? Direction.EAST : Direction.WEST;
             }
         }
 
@@ -200,14 +200,14 @@ public abstract class PlayerMixin {
                 if (Math.abs(zSpeed) < 1.0E-4D && hasInput) {
                      // Try to infer from yaw and input (approximate since we don't have exact key states)
                      // Or just rely on history
-                     if (wa$lastMoveDir != null && (wa$lastMoveDir == Direction.SOUTH || wa$lastMoveDir == Direction.NORTH)) {
-                         zSpeed = (wa$lastMoveDir == Direction.SOUTH ? 1.0D : -1.0D) * 0.1D;
+                     if (strinova$lastMoveDir != null && (strinova$lastMoveDir == Direction.SOUTH || strinova$lastMoveDir == Direction.NORTH)) {
+                         zSpeed = (strinova$lastMoveDir == Direction.SOUTH ? 1.0D : -1.0D) * 0.1D;
                      }
                 }
                 
                 if (Math.abs(zSpeed) > 1.0E-4D) {
                     Direction moveDir = zSpeed > 0 ? Direction.SOUTH : Direction.NORTH;
-                    wa$lastMoveDir = moveDir; // Update history
+                    strinova$lastMoveDir = moveDir; // Update history
                     
                     BlockPos nextPos = pos.relative(moveDir);
                     double wallX = plane.value;
@@ -246,7 +246,7 @@ public abstract class PlayerMixin {
                             StrinovaNetwork.broadcastWall(server, playerId, true, false, newVal, self.getY());
                         }
                         
-                        double nudge = wa$getWallOuterCornerNudge(self, true);
+                        double nudge = strinova$getWallOuterCornerNudge(self, true);
                         double targetX = self.getX() + (wallIsEast ? nudge : -nudge);
                         self.setPos(targetX, self.getY(), targetZ);
                         
@@ -262,14 +262,14 @@ public abstract class PlayerMixin {
                 double xSpeed = motion.x;
                 
                 if (Math.abs(xSpeed) < 1.0E-4D && hasInput) {
-                     if (wa$lastMoveDir != null && (wa$lastMoveDir == Direction.EAST || wa$lastMoveDir == Direction.WEST)) {
-                         xSpeed = (wa$lastMoveDir == Direction.EAST ? 1.0D : -1.0D) * 0.1D;
+                     if (strinova$lastMoveDir != null && (strinova$lastMoveDir == Direction.EAST || strinova$lastMoveDir == Direction.WEST)) {
+                         xSpeed = (strinova$lastMoveDir == Direction.EAST ? 1.0D : -1.0D) * 0.1D;
                      }
                 }
 
                 if (Math.abs(xSpeed) > 1.0E-4D) {
                     Direction moveDir = xSpeed > 0 ? Direction.EAST : Direction.WEST;
-                    wa$lastMoveDir = moveDir;
+                    strinova$lastMoveDir = moveDir;
                     
                     BlockPos nextPos = pos.relative(moveDir);
                     double wallZ = plane.value;
@@ -301,7 +301,7 @@ public abstract class PlayerMixin {
                             StrinovaNetwork.broadcastWall(server, playerId, true, true, newVal, self.getY());
                         }
                         
-                        double nudge = wa$getWallOuterCornerNudge(self, false);
+                        double nudge = strinova$getWallOuterCornerNudge(self, false);
                         double targetZ = self.getZ() + (wallIsSouth ? nudge : -nudge);
                         self.setPos(targetX, self.getY(), targetZ);
                         
@@ -335,13 +335,13 @@ public abstract class PlayerMixin {
             if (!handled) {
                 if (plane.axisX) {
                     double zSpeed = motion.z;
-                    if (Math.abs(zSpeed) < 1.0E-4D && hasInput && wa$lastMoveDir != null && (wa$lastMoveDir == Direction.SOUTH || wa$lastMoveDir == Direction.NORTH)) {
-                        zSpeed = (wa$lastMoveDir == Direction.SOUTH ? 1.0D : -1.0D) * 0.1D;
+                    if (Math.abs(zSpeed) < 1.0E-4D && hasInput && strinova$lastMoveDir != null && (strinova$lastMoveDir == Direction.SOUTH || strinova$lastMoveDir == Direction.NORTH)) {
+                        zSpeed = (strinova$lastMoveDir == Direction.SOUTH ? 1.0D : -1.0D) * 0.1D;
                     }
 
                     if (Math.abs(zSpeed) > 1.0E-4D) {
                         Direction moveDir = zSpeed > 0 ? Direction.SOUTH : Direction.NORTH;
-                        wa$lastMoveDir = moveDir;
+                        strinova$lastMoveDir = moveDir;
 
                         BlockPos nextPos = pos.relative(moveDir);
                         double wallX = plane.value;
@@ -369,7 +369,7 @@ public abstract class PlayerMixin {
                                     StrinovaNetwork.broadcastWall(server, playerId, true, false, newVal, self.getY());
                                 }
                                 
-                                double nudge = wa$getWallOuterCornerNudge(self, true);
+                                double nudge = strinova$getWallOuterCornerNudge(self, true);
                                 double targetX = self.getX() + (wallIsEast ? nudge : -nudge);
                                 self.setPos(targetX, self.getY(), targetZ);
                                 
@@ -380,13 +380,13 @@ public abstract class PlayerMixin {
                     }
                 } else {
                     double xSpeed = motion.x;
-                    if (Math.abs(xSpeed) < 1.0E-4D && hasInput && wa$lastMoveDir != null && (wa$lastMoveDir == Direction.EAST || wa$lastMoveDir == Direction.WEST)) {
-                        xSpeed = (wa$lastMoveDir == Direction.EAST ? 1.0D : -1.0D) * 0.1D;
+                    if (Math.abs(xSpeed) < 1.0E-4D && hasInput && strinova$lastMoveDir != null && (strinova$lastMoveDir == Direction.EAST || strinova$lastMoveDir == Direction.WEST)) {
+                        xSpeed = (strinova$lastMoveDir == Direction.EAST ? 1.0D : -1.0D) * 0.1D;
                     }
 
                     if (Math.abs(xSpeed) > 1.0E-4D) {
                         Direction moveDir = xSpeed > 0 ? Direction.EAST : Direction.WEST;
-                        wa$lastMoveDir = moveDir;
+                        strinova$lastMoveDir = moveDir;
 
                         BlockPos nextPos = pos.relative(moveDir);
                         double wallZ = plane.value;
@@ -414,7 +414,7 @@ public abstract class PlayerMixin {
                                     StrinovaNetwork.broadcastWall(server, playerId, true, true, newVal, self.getY());
                                 }
                                 
-                                double nudge = wa$getWallOuterCornerNudge(self, false);
+                                double nudge = strinova$getWallOuterCornerNudge(self, false);
                                 double targetZ = self.getZ() + (wallIsSouth ? nudge : -nudge);
                                 self.setPos(targetX, self.getY(), targetZ);
                                 
@@ -429,13 +429,13 @@ public abstract class PlayerMixin {
             if (!handled) {
                 if (plane.axisX) {
                     double zSpeed = motion.z;
-                    if (Math.abs(zSpeed) < 1.0E-4D && hasInput && wa$lastMoveDir != null && (wa$lastMoveDir == Direction.SOUTH || wa$lastMoveDir == Direction.NORTH)) {
-                        zSpeed = (wa$lastMoveDir == Direction.SOUTH ? 1.0D : -1.0D) * 0.1D;
+                    if (Math.abs(zSpeed) < 1.0E-4D && hasInput && strinova$lastMoveDir != null && (strinova$lastMoveDir == Direction.SOUTH || strinova$lastMoveDir == Direction.NORTH)) {
+                        zSpeed = (strinova$lastMoveDir == Direction.SOUTH ? 1.0D : -1.0D) * 0.1D;
                     }
 
                     if (Math.abs(zSpeed) > 1.0E-4D) {
                         Direction moveDir = zSpeed > 0 ? Direction.SOUTH : Direction.NORTH;
-                        wa$lastMoveDir = moveDir;
+                        strinova$lastMoveDir = moveDir;
 
                         BlockPos nextPos = pos.relative(moveDir);
                         if (!self.level().getBlockState(nextPos).isAir()
@@ -502,13 +502,13 @@ public abstract class PlayerMixin {
                     }
                 } else {
                     double xSpeed = motion.x;
-                    if (Math.abs(xSpeed) < 1.0E-4D && hasInput && wa$lastMoveDir != null && (wa$lastMoveDir == Direction.EAST || wa$lastMoveDir == Direction.WEST)) {
-                        xSpeed = (wa$lastMoveDir == Direction.EAST ? 1.0D : -1.0D) * 0.1D;
+                    if (Math.abs(xSpeed) < 1.0E-4D && hasInput && strinova$lastMoveDir != null && (strinova$lastMoveDir == Direction.EAST || strinova$lastMoveDir == Direction.WEST)) {
+                        xSpeed = (strinova$lastMoveDir == Direction.EAST ? 1.0D : -1.0D) * 0.1D;
                     }
 
                     if (Math.abs(xSpeed) > 1.0E-4D) {
                         Direction moveDir = xSpeed > 0 ? Direction.EAST : Direction.WEST;
-                        wa$lastMoveDir = moveDir;
+                        strinova$lastMoveDir = moveDir;
 
                         BlockPos nextPos = pos.relative(moveDir);
                         if (!self.level().getBlockState(nextPos).isAir()
@@ -608,7 +608,7 @@ public abstract class PlayerMixin {
     }
 
     @Inject(method = "tick()V", at = @At("TAIL"))
-    private void wa$resetDoubleJumpState(CallbackInfo ci) {
+    private void strinova$resetDoubleJumpState(CallbackInfo ci) {
         Object selfObj = this;
         if (!(selfObj instanceof Player self)) {
             return;
@@ -616,7 +616,7 @@ public abstract class PlayerMixin {
         if (self.level().isClientSide) {
             return;
         }
-        if (wa$shouldResetAirState(self)) {
+        if (strinova$shouldResetAirState(self)) {
             StrinovaAirJumpRuntime.reset(self.getUUID());
             StrinovaFlyRuntime.reset(self.getUUID());
             self.removeTag(StrinovaDoubleJump.TAG_USED);
@@ -624,7 +624,7 @@ public abstract class PlayerMixin {
     }
 
     @Unique
-    private static boolean wa$shouldResetAirState(Player self) {
+    private static boolean strinova$shouldResetAirState(Player self) {
         if (self == null) {
             return false;
         }
@@ -648,7 +648,7 @@ public abstract class PlayerMixin {
     }
 
     @Inject(method = "tick()V", at = @At("TAIL"))
-    private void wa$serverStopFlyOnGroundOrLiquid(CallbackInfo ci) {
+    private void strinova$serverStopFlyOnGroundOrLiquid(CallbackInfo ci) {
         Object selfObj = this;
         if (!(selfObj instanceof ServerPlayer self)) {
             return;
@@ -679,7 +679,7 @@ public abstract class PlayerMixin {
     }
 
     @Inject(method = "tick()V", at = @At("TAIL"))
-    private void wa$serverStopPaperOnLiquid(CallbackInfo ci) {
+    private void strinova$serverStopPaperOnLiquid(CallbackInfo ci) {
         Object selfObj = this;
         if (!(selfObj instanceof ServerPlayer self)) {
             return;

@@ -20,13 +20,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class MinecraftMixin {
 
     @Unique
-    private static final String WA_OUTLINE_TEAM_PREFIX = "wa_outline_";
+    private static final String STRINOVA_OUTLINE_TEAM_PREFIX = "wa_outline_";
 
     @Unique
-    private static final ConcurrentHashMap<UUID, Long> WA_OUTLINE_VIS_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, Long> STRINOVA_OUTLINE_VIS_CACHE = new ConcurrentHashMap<>();
 
     @Unique
-    private static long wa$lastCleanupTick;
+    private static long strinova$lastCleanupTick;
 
     @Shadow
     public LocalPlayer player;
@@ -40,7 +40,7 @@ public abstract class MinecraftMixin {
             cancellable = true,
             require = 0
     )
-    private void wa$outlineOnlyWhenVisible(Entity entity, CallbackInfoReturnable<Boolean> cir) {
+    private void strinova$outlineOnlyWhenVisible(Entity entity, CallbackInfoReturnable<Boolean> cir) {
         if (!cir.getReturnValueZ()) {
             return;
         }
@@ -52,7 +52,7 @@ public abstract class MinecraftMixin {
             return;
         }
         String teamName = team.getName();
-        if (teamName == null || !teamName.startsWith(WA_OUTLINE_TEAM_PREFIX)) {
+        if (teamName == null || !teamName.startsWith(STRINOVA_OUTLINE_TEAM_PREFIX)) {
             return;
         }
 
@@ -62,15 +62,15 @@ public abstract class MinecraftMixin {
             return;
         }
         long tick = level.getGameTime();
-        if (!wa$hasLineOfSightCached(self, target, tick)) {
+        if (!strinova$hasLineOfSightCached(self, target, tick)) {
             cir.setReturnValue(false);
         }
     }
 
     @Unique
-    private static boolean wa$hasLineOfSightCached(LocalPlayer self, Entity target, long tick) {
+    private static boolean strinova$hasLineOfSightCached(LocalPlayer self, Entity target, long tick) {
         UUID id = target.getUUID();
-        Long cached = WA_OUTLINE_VIS_CACHE.get(id);
+        Long cached = STRINOVA_OUTLINE_VIS_CACHE.get(id);
         if (cached != null) {
             long packed = cached.longValue();
             long cachedTick = packed >>> 1;
@@ -80,18 +80,18 @@ public abstract class MinecraftMixin {
         }
         boolean visible = self.hasLineOfSight(target);
         long packed = (tick << 1) | (visible ? 1L : 0L);
-        WA_OUTLINE_VIS_CACHE.put(id, Long.valueOf(packed));
-        wa$cleanupCache(tick);
+        STRINOVA_OUTLINE_VIS_CACHE.put(id, Long.valueOf(packed));
+        strinova$cleanupCache(tick);
         return visible;
     }
 
     @Unique
-    private static void wa$cleanupCache(long tick) {
-        if ((tick - wa$lastCleanupTick) < 200L) {
+    private static void strinova$cleanupCache(long tick) {
+        if ((tick - strinova$lastCleanupTick) < 200L) {
             return;
         }
-        wa$lastCleanupTick = tick;
-        WA_OUTLINE_VIS_CACHE.entrySet().removeIf(e -> {
+        strinova$lastCleanupTick = tick;
+        STRINOVA_OUTLINE_VIS_CACHE.entrySet().removeIf(e -> {
             Long packed = e.getValue();
             if (packed == null) {
                 return true;

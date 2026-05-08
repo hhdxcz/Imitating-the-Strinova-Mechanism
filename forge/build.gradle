@@ -151,7 +151,7 @@ sourceSets {
             // Avoid JPMS split-package: keep top-level network package only in common
         }
         resources {
-            exclude 'assets/wa/lang/*.json'
+            exclude 'assets/strinova/lang/*.json'
         }
     }
 }

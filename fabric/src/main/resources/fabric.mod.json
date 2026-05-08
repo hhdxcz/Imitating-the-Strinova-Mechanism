@@ -4,12 +4,13 @@
 	"version": "${version}",
 	"name": "${mod_name}",
 	"description": "${mod_description}",
+    "icon": "assets/strinova/icon.png",
 	"authors": [
 		"hhdxcz"
 	],
 	"contact": {
 		"homepage": "",
-		"sources": ""
+		"sources": "https://github.com/hhdxcz/Imitating-the-Strinova-Mechanism"
 	},
 	"license": "MIT",
 	"environment": "*",

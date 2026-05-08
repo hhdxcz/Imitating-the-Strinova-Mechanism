@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityFallFlyingTicksPreviewMixin {
     @Inject(method = "getFallFlyingTicks()I", at = @At("RETURN"), cancellable = true)
-    private void wa$forceFallFlyingTicksInPreview(CallbackInfoReturnable<Integer> cir) {
+    private void strinova$forceFallFlyingTicksInPreview(CallbackInfoReturnable<Integer> cir) {
         if (cir.getReturnValueI() > 0) {
             return;
         }

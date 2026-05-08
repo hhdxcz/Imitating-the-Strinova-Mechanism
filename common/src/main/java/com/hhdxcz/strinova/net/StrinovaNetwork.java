@@ -369,12 +369,12 @@ public final class StrinovaNetwork {
                 StrinovaCollisionBoxTuning.setSyncSize(playerId, syncSizeX, syncSizeY, syncSizeZ);
                 StrinovaCollisionBoxTuning.setFlyOffset(playerId, flyOffX, flyOffY, flyOffZ);
                 StrinovaCollisionBoxTuning.setFlySize(playerId, flySizeX, flySizeY, flySizeZ);
-                wa$tryRefreshClientPlayerDimensions(playerId);
+                strinova$tryRefreshClientPlayerDimensions(playerId);
             });
         });
     }
 
-    private static void wa$tryRefreshClientPlayerDimensions(UUID playerId) {
+    private static void strinova$tryRefreshClientPlayerDimensions(UUID playerId) {
         if (playerId == null) {
             return;
         }

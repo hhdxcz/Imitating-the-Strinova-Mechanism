@@ -17,7 +17,7 @@ public abstract class CameraMixin {
     private Entity entity;
 
     @Inject(method = "getMaxZoom(D)D", at = @At("HEAD"), cancellable = true)
-    private void wa$disableThirdPersonWallClip(double desiredCameraDistance, CallbackInfoReturnable<Double> cir) {
+    private void strinova$disableThirdPersonWallClip(double desiredCameraDistance, CallbackInfoReturnable<Double> cir) {
         Entity cameraEntity = this.entity;
         if (!(cameraEntity instanceof Player player)) {
             return;
