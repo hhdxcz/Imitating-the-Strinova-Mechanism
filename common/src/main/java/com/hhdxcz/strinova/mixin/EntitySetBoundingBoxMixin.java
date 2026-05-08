@@ -48,7 +48,7 @@ public abstract class EntitySetBoundingBoxMixin {
     private static final ThreadLocal<Boolean> STRINOVA_DISABLE_FLY_EYE_HOOK = ThreadLocal.withInitial(() -> false);
 
     @Unique
-    private static boolean wa$isYsmLoaded() {
+    private static boolean strinova$isYsmLoaded() {
         Boolean loaded = STRINOVA_YSM_LOADED;
         if (loaded != null) {
             return loaded.booleanValue();
@@ -64,22 +64,22 @@ public abstract class EntitySetBoundingBoxMixin {
     }
 
     @Unique
-    private static long wa$packYsmCache(int nextCheckTick, boolean matched) {
+    private static long strinova$packYsmCache(int nextCheckTick, boolean matched) {
         return (((long) nextCheckTick) << 32) | (matched ? 1L : 0L);
     }
 
     @Unique
-    private static int wa$unpackNextCheckTick(long packed) {
+    private static int strinova$unpackNextCheckTick(long packed) {
         return (int) (packed >>> 32);
     }
 
     @Unique
-    private static boolean wa$unpackMatched(long packed) {
+    private static boolean strinova$unpackMatched(long packed) {
         return (packed & 1L) != 0L;
     }
 
     @Unique
-    private static boolean wa$isTargetYsmModel(Player player) {
+    private static boolean strinova$isTargetYsmModel(Player player) {
         if (player == null) {
             return false;
         }
@@ -90,27 +90,27 @@ public abstract class EntitySetBoundingBoxMixin {
         UUID id = player.getUUID();
         Long packed = STRINOVA_YSM_TARGET_CACHE.get(id);
         if (packed != null) {
-            int nextCheckTick = wa$unpackNextCheckTick(packed.longValue());
+            int nextCheckTick = strinova$unpackNextCheckTick(packed.longValue());
             if (tick < nextCheckTick) {
-                return wa$unpackMatched(packed.longValue());
+                return strinova$unpackMatched(packed.longValue());
             }
         }
-        boolean matched = wa$scanSynchedDataForTarget(player);
-        STRINOVA_YSM_TARGET_CACHE.put(id, wa$packYsmCache(tick + 20, matched));
+        boolean matched = strinova$scanSynchedDataForTarget(player);
+        STRINOVA_YSM_TARGET_CACHE.put(id, strinova$packYsmCache(tick + 20, matched));
         return matched;
     }
 
     @Unique
-    private static boolean wa$scanSynchedDataForTarget(Player player) {
+    private static boolean strinova$scanSynchedDataForTarget(Player player) {
         try {
             SynchedEntityData data = player.getEntityData();
-            Iterable<?> items = wa$getSynchedDataItems(data);
+            Iterable<?> items = strinova$getSynchedDataItems(data);
             if (items == null) {
                 return false;
             }
             for (Object item : items) {
-                Object value = wa$getDataItemValue(item);
-                if (wa$isTargetModelValue(value)) {
+                Object value = strinova$getDataItemValue(item);
+                if (strinova$isTargetModelValue(value)) {
                     return true;
                 }
             }
@@ -121,7 +121,7 @@ public abstract class EntitySetBoundingBoxMixin {
     }
 
     @Unique
-    private static boolean wa$isTargetModelValue(Object value) {
+    private static boolean strinova$isTargetModelValue(Object value) {
         if (value == null) {
             return false;
         }
@@ -133,7 +133,7 @@ public abstract class EntitySetBoundingBoxMixin {
     }
 
     @Unique
-    private static Iterable<?> wa$getSynchedDataItems(SynchedEntityData data) {
+    private static Iterable<?> strinova$getSynchedDataItems(SynchedEntityData data) {
         if (data == null) {
             return null;
         }
@@ -150,7 +150,7 @@ public abstract class EntitySetBoundingBoxMixin {
             Field byId = SynchedEntityData.class.getDeclaredField("itemsById");
             byId.setAccessible(true);
             Object map = byId.get(data);
-            Iterable<?> values = wa$tryGetValuesIterable(map);
+            Iterable<?> values = strinova$tryGetValuesIterable(map);
             if (values != null) {
                 return values;
             }
@@ -163,7 +163,7 @@ public abstract class EntitySetBoundingBoxMixin {
             if (res instanceof Iterable<?> iterable) {
                 return iterable;
             }
-            Iterable<?> values = wa$tryGetValuesIterable(res);
+            Iterable<?> values = strinova$tryGetValuesIterable(res);
             if (values != null) {
                 return values;
             }
@@ -176,7 +176,7 @@ public abstract class EntitySetBoundingBoxMixin {
                 if (res instanceof Iterable<?> iterable) {
                     return iterable;
                 }
-                Iterable<?> values = wa$tryGetValuesIterable(res);
+                Iterable<?> values = strinova$tryGetValuesIterable(res);
                 if (values != null) {
                     return values;
                 }
@@ -187,7 +187,7 @@ public abstract class EntitySetBoundingBoxMixin {
     }
 
     @Unique
-    private static Iterable<?> wa$tryGetValuesIterable(Object maybeMap) {
+    private static Iterable<?> strinova$tryGetValuesIterable(Object maybeMap) {
         if (maybeMap == null) {
             return null;
         }
@@ -203,7 +203,7 @@ public abstract class EntitySetBoundingBoxMixin {
     }
 
     @Unique
-    private static Object wa$getDataItemValue(Object item) {
+    private static Object strinova$getDataItemValue(Object item) {
         if (item == null) {
             return null;
         }
@@ -239,7 +239,7 @@ public abstract class EntitySetBoundingBoxMixin {
     }
 
     @Unique
-    private static double wa$getModelHeightScale(Player player) {
+    private static double strinova$getModelHeightScale(Player player) {
         if (player == null) {
             return 1.0D;
         }
@@ -263,7 +263,7 @@ public abstract class EntitySetBoundingBoxMixin {
     }
 
     @Unique
-    private static AABB wa$scaleBoxHeight(AABB box, double scale) {
+    private static AABB strinova$scaleBoxHeight(AABB box, double scale) {
         if (box == null || scale == 1.0D) {
             return box;
         }
@@ -282,7 +282,7 @@ public abstract class EntitySetBoundingBoxMixin {
             at = @At("HEAD"),
             argsOnly = true
     )
-    private AABB wa$adjustBoundingBox(AABB box) {
+    private AABB strinova$adjustBoundingBox(AABB box) {
         Object selfObj = this;
         if (!(selfObj instanceof Player self)) {
             return box;
@@ -292,11 +292,11 @@ public abstract class EntitySetBoundingBoxMixin {
             return null;
         }
 
-        boolean targetYsmModel = wa$isTargetYsmModel(self);
+        boolean targetYsmModel = strinova$isTargetYsmModel(self);
 
-        double heightScale = wa$getModelHeightScale(self);
+        double heightScale = strinova$getModelHeightScale(self);
         if (heightScale != 1.0D) {
-            box = wa$scaleBoxHeight(box, heightScale);
+            box = strinova$scaleBoxHeight(box, heightScale);
         }
 
         if (WaPaperState.isPaper(playerId)) {
@@ -445,7 +445,7 @@ public abstract class EntitySetBoundingBoxMixin {
     }
 
     @Unique
-    private static boolean wa$shouldAdjustFlyEye(Object selfObj) {
+    private static boolean strinova$shouldAdjustFlyEye(Object selfObj) {
         if (!(selfObj instanceof Player player)) {
             return false;
         }
@@ -457,7 +457,7 @@ public abstract class EntitySetBoundingBoxMixin {
     }
 
     @Unique
-    private static double wa$getFlyEyeY(Player player) {
+    private static double strinova$getFlyEyeY(Player player) {
         AABB box = player.getBoundingBox();
         double minY = box.minY;
         double maxY = box.maxY;
@@ -468,67 +468,67 @@ public abstract class EntitySetBoundingBoxMixin {
     }
 
     @Inject(method = "getEyeY()D", at = @At("HEAD"), cancellable = true, require = 0)
-    private void wa$flyEyeY(CallbackInfoReturnable<Double> cir) {
+    private void strinova$flyEyeY(CallbackInfoReturnable<Double> cir) {
         Object selfObj = this;
-        if (!wa$shouldAdjustFlyEye(selfObj)) {
+        if (!strinova$shouldAdjustFlyEye(selfObj)) {
             return;
         }
         Player player = (Player) selfObj;
-        cir.setReturnValue(wa$getFlyEyeY(player));
+        cir.setReturnValue(strinova$getFlyEyeY(player));
     }
 
     @Inject(method = "getEyePosition()Lnet/minecraft/world/phys/Vec3;", at = @At("HEAD"), cancellable = true, require = 0)
-    private void wa$flyEyePosition(CallbackInfoReturnable<Vec3> cir) {
+    private void strinova$flyEyePosition(CallbackInfoReturnable<Vec3> cir) {
         Object selfObj = this;
-        if (!wa$shouldAdjustFlyEye(selfObj)) {
+        if (!strinova$shouldAdjustFlyEye(selfObj)) {
             return;
         }
         Player player = (Player) selfObj;
-        double y = wa$getFlyEyeY(player);
+        double y = strinova$getFlyEyeY(player);
         cir.setReturnValue(new Vec3(player.getX(), y, player.getZ()));
     }
 
     @Inject(method = "getEyePosition(F)Lnet/minecraft/world/phys/Vec3;", at = @At("HEAD"), cancellable = true, require = 0)
-    private void wa$flyEyePosition(float partialTick, CallbackInfoReturnable<Vec3> cir) {
+    private void strinova$flyEyePosition(float partialTick, CallbackInfoReturnable<Vec3> cir) {
         Object selfObj = this;
-        if (!wa$shouldAdjustFlyEye(selfObj)) {
+        if (!strinova$shouldAdjustFlyEye(selfObj)) {
             return;
         }
         Player player = (Player) selfObj;
-        double y = wa$getFlyEyeY(player);
+        double y = strinova$getFlyEyeY(player);
         cir.setReturnValue(new Vec3(player.getX(), y, player.getZ()));
     }
 
     @Inject(method = "getEyeHeight()F", at = @At("HEAD"), cancellable = true, require = 0)
-    private void wa$flyEyeHeight(CallbackInfoReturnable<Float> cir) {
+    private void strinova$flyEyeHeight(CallbackInfoReturnable<Float> cir) {
         Object selfObj = this;
-        if (!wa$shouldAdjustFlyEye(selfObj)) {
+        if (!strinova$shouldAdjustFlyEye(selfObj)) {
             return;
         }
         Player player = (Player) selfObj;
-        float eyeHeight = (float) (wa$getFlyEyeY(player) - player.getY());
+        float eyeHeight = (float) (strinova$getFlyEyeY(player) - player.getY());
         cir.setReturnValue(Math.max(0.0F, eyeHeight));
     }
 
     @Inject(method = "getEyeHeight(Lnet/minecraft/world/entity/Pose;)F", at = @At("HEAD"), cancellable = true, require = 0)
-    private void wa$flyEyeHeight(Pose pose, CallbackInfoReturnable<Float> cir) {
+    private void strinova$flyEyeHeight(Pose pose, CallbackInfoReturnable<Float> cir) {
         Object selfObj = this;
-        if (!wa$shouldAdjustFlyEye(selfObj)) {
+        if (!strinova$shouldAdjustFlyEye(selfObj)) {
             return;
         }
         Player player = (Player) selfObj;
-        float eyeHeight = (float) (wa$getFlyEyeY(player) - player.getY());
+        float eyeHeight = (float) (strinova$getFlyEyeY(player) - player.getY());
         cir.setReturnValue(Math.max(0.0F, eyeHeight));
     }
 
     @Inject(method = "getEyeHeight(Lnet/minecraft/world/entity/Pose;Lnet/minecraft/world/entity/EntityDimensions;)F", at = @At("HEAD"), cancellable = true, require = 0)
-    private void wa$flyEyeHeight(Pose pose, EntityDimensions dims, CallbackInfoReturnable<Float> cir) {
+    private void strinova$flyEyeHeight(Pose pose, EntityDimensions dims, CallbackInfoReturnable<Float> cir) {
         Object selfObj = this;
-        if (!wa$shouldAdjustFlyEye(selfObj)) {
+        if (!strinova$shouldAdjustFlyEye(selfObj)) {
             return;
         }
         Player player = (Player) selfObj;
-        float eyeHeight = (float) (wa$getFlyEyeY(player) - player.getY());
+        float eyeHeight = (float) (strinova$getFlyEyeY(player) - player.getY());
         cir.setReturnValue(Math.max(0.0F, eyeHeight));
     }
 }

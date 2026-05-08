@@ -18,7 +18,7 @@ public abstract class PlayerRendererMixin {
     private static final ConcurrentHashMap<UUID, Float> STRINOVA_PAPER_IDLE_YAW = new ConcurrentHashMap<>();
 
     @Unique
-    private static boolean wa$isPaperIdle(AbstractClientPlayer player) {
+    private static boolean strinova$isPaperIdle(AbstractClientPlayer player) {
         if (player == null) {
             return false;
         }
@@ -30,7 +30,7 @@ public abstract class PlayerRendererMixin {
     }
 
     @Unique
-    private static float wa$getOrUpdateIdleYaw(UUID playerId, float yaw, boolean idle) {
+    private static float strinova$getOrUpdateIdleYaw(UUID playerId, float yaw, boolean idle) {
         if (playerId == null) {
             return yaw;
         }
@@ -52,7 +52,7 @@ public abstract class PlayerRendererMixin {
             argsOnly = true,
             index = 2
     )
-    private float wa$lockPaperYawWhenIdle(float yaw, AbstractClientPlayer player) {
+    private float strinova$lockPaperYawWhenIdle(float yaw, AbstractClientPlayer player) {
         if (player == null) {
             return yaw;
         }
@@ -61,7 +61,7 @@ public abstract class PlayerRendererMixin {
             STRINOVA_PAPER_IDLE_YAW.remove(playerId);
             return yaw;
         }
-        boolean idle = wa$isPaperIdle(player);
-        return wa$getOrUpdateIdleYaw(playerId, yaw, idle);
+        boolean idle = strinova$isPaperIdle(player);
+        return strinova$getOrUpdateIdleYaw(playerId, yaw, idle);
     }
 }

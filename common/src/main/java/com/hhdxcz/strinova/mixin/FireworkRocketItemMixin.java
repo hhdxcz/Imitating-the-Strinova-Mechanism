@@ -17,7 +17,7 @@ public abstract class FireworkRocketItemMixin {
                     target = "Lnet/minecraft/world/entity/player/Player;isFallFlying()Z"
             )
     )
-    private boolean wa$disableBoostWhenPaperFlying(Player player) {
+    private boolean strinova$disableBoostWhenPaperFlying(Player player) {
         if (WaPaperState.isFly(player.getUUID())) {
             return false;
         }

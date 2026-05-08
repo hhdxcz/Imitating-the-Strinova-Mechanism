@@ -13,7 +13,7 @@ public abstract class AbstractContainerScreenMixin {
             at = @At("HEAD"),
             require = 0
     )
-    private void wa$resetGuiStateBeforeContainerRender(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+    private void strinova$resetGuiStateBeforeContainerRender(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         if (guiGraphics == null) {
             return;
         }
@@ -28,7 +28,7 @@ public abstract class AbstractContainerScreenMixin {
             at = @At("RETURN"),
             require = 0
     )
-    private void wa$resetGuiStateAfterContainerRender(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+    private void strinova$resetGuiStateAfterContainerRender(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         if (guiGraphics == null) {
             return;
         }

@@ -30,7 +30,7 @@ public abstract class EntityRenderDispatcherMixin {
     private static final float STRINOVA_WALL_RENDER_NUDGE = -0.002F;
     private static Boolean STRINOVA_SHOULDER_API_AVAILABLE;
 
-    private static boolean wa$isOutlinedPlayer(Entity entity) {
+    private static boolean strinova$isOutlinedPlayer(Entity entity) {
         if (!(entity instanceof AbstractClientPlayer player)) {
             return false;
         }
@@ -42,7 +42,7 @@ public abstract class EntityRenderDispatcherMixin {
         return name != null && name.startsWith(STRINOVA_OUTLINE_TEAM_PREFIX);
     }
 
-    private static void wa$applyCornerDeformation(AbstractClientPlayer player, PoseStack poseStack, WaPaperState.WallPlane plane, float tickDelta) {
+    private static void strinova$applyCornerDeformation(AbstractClientPlayer player, PoseStack poseStack, WaPaperState.WallPlane plane, float tickDelta) {
         double limit = 0.25D;
         double maxAngle = 90.0D;
 
@@ -199,7 +199,7 @@ public abstract class EntityRenderDispatcherMixin {
             at = @At("HEAD"),
             require = 0
     )
-    private static void wa$enterHitboxDebugRender(PoseStack poseStack, VertexConsumer consumer, Entity entity, float tickDelta, CallbackInfo ci) {
+    private static void strinova$enterHitboxDebugRender(PoseStack poseStack, VertexConsumer consumer, Entity entity, float tickDelta, CallbackInfo ci) {
         StrinovaDebugRenderContext.enterHitbox();
     }
 
@@ -208,7 +208,7 @@ public abstract class EntityRenderDispatcherMixin {
             at = @At("RETURN"),
             require = 0
     )
-    private static void wa$exitHitboxDebugRender(PoseStack poseStack, VertexConsumer consumer, Entity entity, float tickDelta, CallbackInfo ci) {
+    private static void strinova$exitHitboxDebugRender(PoseStack poseStack, VertexConsumer consumer, Entity entity, float tickDelta, CallbackInfo ci) {
         StrinovaDebugRenderContext.exitHitbox();
     }
 
@@ -221,7 +221,7 @@ public abstract class EntityRenderDispatcherMixin {
             ),
             require = 0
     )
-    private void wa$applyPaperTransformBeforeEntityRender(Entity entity, double x, double y, double z, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffers, int packedLight, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
+    private void strinova$applyPaperTransformBeforeEntityRender(Entity entity, double x, double y, double z, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffers, int packedLight, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
         if (!(entity instanceof AbstractClientPlayer player)) {
             return;
         }
@@ -238,7 +238,7 @@ public abstract class EntityRenderDispatcherMixin {
         if (!paper && !fly) {
             return;
         }
-        if (fly && !paper && wa$isShoulderSurfingActive()) {
+        if (fly && !paper && strinova$isShoulderSurfingActive()) {
             return;
         }
         if (StrinovaRenderPoseLeakGuard.enterPaperTransform() > 0) {
@@ -266,7 +266,7 @@ public abstract class EntityRenderDispatcherMixin {
                         double sign = plane.value > player.getZ() ? 1.0D : -1.0D;
                         poseStack.translate(0.0D, 0.0D, STRINOVA_WALL_RENDER_NUDGE * sign);
                     }
-                    wa$applyCornerDeformation(player, poseStack, plane, partialTick);
+                    strinova$applyCornerDeformation(player, poseStack, plane, partialTick);
                 }
                 if (plane != null && plane.axisX) {
                     poseStack.scale(thickness, 1.0F, 1.0F);
@@ -305,7 +305,7 @@ public abstract class EntityRenderDispatcherMixin {
             ),
             require = 0
     )
-    private void wa$applyPaperTransformAfterEntityRender(Entity entity, double x, double y, double z, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffers, int packedLight, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
+    private void strinova$applyPaperTransformAfterEntityRender(Entity entity, double x, double y, double z, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffers, int packedLight, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
         if (!(entity instanceof AbstractClientPlayer player)) {
             return;
         }
@@ -320,7 +320,7 @@ public abstract class EntityRenderDispatcherMixin {
         if (!paper && !fly) {
             return;
         }
-        if (fly && !paper && wa$isShoulderSurfingActive()) {
+        if (fly && !paper && strinova$isShoulderSurfingActive()) {
             return;
         }
         if (StrinovaRenderPoseLeakGuard.exitPaperTransform() != 0) {
@@ -330,14 +330,14 @@ public abstract class EntityRenderDispatcherMixin {
         StrinovaRenderPoseLeakGuard.afterPop(poseStack);
     }
 
-    private static boolean wa$isInView(Entity entity, Frustum frustum) {
+    private static boolean strinova$isInView(Entity entity, Frustum frustum) {
         if (frustum == null) {
             return true;
         }
         return frustum.isVisible(entity.getBoundingBox());
     }
 
-    private static boolean wa$isWithinReasonableRange(Entity entity, double camX, double camY, double camZ) {
+    private static boolean strinova$isWithinReasonableRange(Entity entity, double camX, double camY, double camZ) {
         double dx = entity.getX() - camX;
         double dy = entity.getY() - camY;
         double dz = entity.getZ() - camZ;
@@ -345,7 +345,7 @@ public abstract class EntityRenderDispatcherMixin {
         return dx * dx + dy * dy + dz * dz <= max * max;
     }
 
-    private static boolean wa$isShoulderSurfingActive() {
+    private static boolean strinova$isShoulderSurfingActive() {
         Boolean available = STRINOVA_SHOULDER_API_AVAILABLE;
         if (available != null && !available.booleanValue()) {
             return false;
@@ -363,14 +363,14 @@ public abstract class EntityRenderDispatcherMixin {
     }
 
     @Inject(method = "shouldRender", at = @At("HEAD"), cancellable = true)
-    private void wa$forceRenderOutlinedPlayersHead(Entity entity, Frustum frustum, double camX, double camY, double camZ, CallbackInfoReturnable<Boolean> cir) {
-        if (!wa$isOutlinedPlayer(entity)) {
+    private void strinova$forceRenderOutlinedPlayersHead(Entity entity, Frustum frustum, double camX, double camY, double camZ, CallbackInfoReturnable<Boolean> cir) {
+        if (!strinova$isOutlinedPlayer(entity)) {
             return;
         }
-        if (!wa$isInView(entity, frustum)) {
+        if (!strinova$isInView(entity, frustum)) {
             return;
         }
-        if (!wa$isWithinReasonableRange(entity, camX, camY, camZ)) {
+        if (!strinova$isWithinReasonableRange(entity, camX, camY, camZ)) {
             return;
         }
         cir.setReturnValue(true);
@@ -378,17 +378,17 @@ public abstract class EntityRenderDispatcherMixin {
     }
 
     @Inject(method = "shouldRender", at = @At("RETURN"), cancellable = true)
-    private void wa$forceRenderOutlinedPlayers(Entity entity, Frustum frustum, double camX, double camY, double camZ, CallbackInfoReturnable<Boolean> cir) {
+    private void strinova$forceRenderOutlinedPlayers(Entity entity, Frustum frustum, double camX, double camY, double camZ, CallbackInfoReturnable<Boolean> cir) {
         if (cir.getReturnValueZ()) {
             return;
         }
-        if (!wa$isOutlinedPlayer(entity)) {
+        if (!strinova$isOutlinedPlayer(entity)) {
             return;
         }
-        if (!wa$isInView(entity, frustum)) {
+        if (!strinova$isInView(entity, frustum)) {
             return;
         }
-        if (!wa$isWithinReasonableRange(entity, camX, camY, camZ)) {
+        if (!strinova$isWithinReasonableRange(entity, camX, camY, camZ)) {
             return;
         }
 

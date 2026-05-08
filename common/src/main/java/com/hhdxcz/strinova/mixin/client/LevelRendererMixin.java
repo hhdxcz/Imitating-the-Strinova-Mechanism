@@ -20,7 +20,7 @@ public abstract class LevelRendererMixin {
             at = @At("HEAD"),
             require = 0
     )
-    private void wa$drainLeakedPoseStackInVanillaCheck(PoseStack poseStack, CallbackInfo ci) {
+    private void strinova$drainLeakedPoseStackInVanillaCheck(PoseStack poseStack, CallbackInfo ci) {
         StrinovaRenderPoseLeakGuard.resetPaperTransform();
         StrinovaRenderPoseLeakGuard.drain(poseStack);
     }
@@ -34,12 +34,12 @@ public abstract class LevelRendererMixin {
             ),
             require = 0
     )
-    private void wa$drainLeakedPoseStackBeforeVanillaCheck(PoseStack poseStack, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, CallbackInfo ci) {
+    private void strinova$drainLeakedPoseStackBeforeVanillaCheck(PoseStack poseStack, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, CallbackInfo ci) {
         StrinovaRenderPoseLeakGuard.drain(poseStack);
     }
 
     @Inject(method = "renderLevel", at = @At("RETURN"))
-    private void wa$drainLeakedPoseStack(PoseStack poseStack, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, CallbackInfo ci) {
+    private void strinova$drainLeakedPoseStack(PoseStack poseStack, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, CallbackInfo ci) {
         StrinovaRenderPoseLeakGuard.drain(poseStack);
     }
 }

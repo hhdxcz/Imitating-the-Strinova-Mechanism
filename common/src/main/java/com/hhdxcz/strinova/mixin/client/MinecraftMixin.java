@@ -26,7 +26,7 @@ public abstract class MinecraftMixin {
     private static final ConcurrentHashMap<UUID, Long> STRINOVA_OUTLINE_VIS_CACHE = new ConcurrentHashMap<>();
 
     @Unique
-    private static long wa$lastCleanupTick;
+    private static long strinova$lastCleanupTick;
 
     @Shadow
     public LocalPlayer player;
@@ -40,7 +40,7 @@ public abstract class MinecraftMixin {
             cancellable = true,
             require = 0
     )
-    private void wa$outlineOnlyWhenVisible(Entity entity, CallbackInfoReturnable<Boolean> cir) {
+    private void strinova$outlineOnlyWhenVisible(Entity entity, CallbackInfoReturnable<Boolean> cir) {
         if (!cir.getReturnValueZ()) {
             return;
         }
@@ -62,13 +62,13 @@ public abstract class MinecraftMixin {
             return;
         }
         long tick = level.getGameTime();
-        if (!wa$hasLineOfSightCached(self, target, tick)) {
+        if (!strinova$hasLineOfSightCached(self, target, tick)) {
             cir.setReturnValue(false);
         }
     }
 
     @Unique
-    private static boolean wa$hasLineOfSightCached(LocalPlayer self, Entity target, long tick) {
+    private static boolean strinova$hasLineOfSightCached(LocalPlayer self, Entity target, long tick) {
         UUID id = target.getUUID();
         Long cached = STRINOVA_OUTLINE_VIS_CACHE.get(id);
         if (cached != null) {
@@ -81,16 +81,16 @@ public abstract class MinecraftMixin {
         boolean visible = self.hasLineOfSight(target);
         long packed = (tick << 1) | (visible ? 1L : 0L);
         STRINOVA_OUTLINE_VIS_CACHE.put(id, Long.valueOf(packed));
-        wa$cleanupCache(tick);
+        strinova$cleanupCache(tick);
         return visible;
     }
 
     @Unique
-    private static void wa$cleanupCache(long tick) {
-        if ((tick - wa$lastCleanupTick) < 200L) {
+    private static void strinova$cleanupCache(long tick) {
+        if ((tick - strinova$lastCleanupTick) < 200L) {
             return;
         }
-        wa$lastCleanupTick = tick;
+        strinova$lastCleanupTick = tick;
         STRINOVA_OUTLINE_VIS_CACHE.entrySet().removeIf(e -> {
             Long packed = e.getValue();
             if (packed == null) {

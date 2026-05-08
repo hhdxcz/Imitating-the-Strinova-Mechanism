@@ -17,7 +17,7 @@ public abstract class ScreenMixin {
             at = @At("HEAD"),
             require = 0
     )
-    private void wa$drainLeakedPoseStackBeforeScreenRender(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+    private void strinova$drainLeakedPoseStackBeforeScreenRender(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         if (guiGraphics == null) {
             return;
         }

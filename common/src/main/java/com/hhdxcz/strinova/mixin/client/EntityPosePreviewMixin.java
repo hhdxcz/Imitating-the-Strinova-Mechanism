@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Entity.class)
 public abstract class EntityPosePreviewMixin {
     @Inject(method = "getPose()Lnet/minecraft/world/entity/Pose;", at = @At("RETURN"), cancellable = true)
-    private void wa$forceFallFlyingPoseInPreview(CallbackInfoReturnable<Pose> cir) {
+    private void strinova$forceFallFlyingPoseInPreview(CallbackInfoReturnable<Pose> cir) {
         Object selfObj = this;
         if (!(selfObj instanceof Player self)) {
             return;
