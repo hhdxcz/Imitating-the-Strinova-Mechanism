@@ -3,7 +3,6 @@
   "minVersion": "0.8",
   "package": "com.hhdxcz.strinova.mixin",
   "compatibilityLevel": "JAVA_17",
-  "refmap": "strinova-common-common-refmap.json",
   "mixins": [
     "EntityCollisionAccessor",
     "EntitySetBoundingBoxMixin",

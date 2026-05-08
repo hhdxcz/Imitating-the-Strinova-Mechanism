@@ -9,6 +9,7 @@ version = "${mod_version}"
 displayName = "${mod_name}"
 authors = "hhdxcz"
 description = '''${mod_description}'''
+logoFile = "assets/strinova/icon.png"
 
 [[dependencies.${mod_id}]]
 modId = "forge"
