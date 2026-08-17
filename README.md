@@ -97,22 +97,22 @@
 | `/strinova outline clear` | 玩家 | 清除自己的描边 |
 | `/strinova outline set <玩家> <颜色>` | OP | 设置他人描边颜色 |
 
-> 颜色支持：dark_red（深红）<span style="display:inline-block; width:16px; height:16px; background-color:#AA0000; border:1px solid #ccc; vertical-align:middle;"></span>、
-red（红色）<span style="display:inline-block; width:16px; height:16px; background-color:#FF5555; border:1px solid #ccc; vertical-align:middle;"></span>、
-gold（金色）<span style="display:inline-block; width:16px; height:16px; background-color:#FFAA00; border:1px solid #ccc; vertical-align:middle;"></span>、
-yellow（黄色）<span style="display:inline-block; width:16px; height:16px; background-color:#FFFF55; border:1px solid #ccc; vertical-align:middle;"></span>、
-dark_green（深绿）<span style="display:inline-block; width:16px; height:16px; background-color:#00AA00; border:1px solid #ccc; vertical-align:middle;"></span>、
-green（绿色）<span style="display:inline-block; width:16px; height:16px; background-color:#55FF55; border:1px solid #ccc; vertical-align:middle;"></span>、
-dark_aqua（深青）<span style="display:inline-block; width:16px; height:16px; background-color:#00AAAA; border:1px solid #ccc; vertical-align:middle;"></span>、
-aqua（青色）<span style="display:inline-block; width:16px; height:16px; background-color:#55FFFF; border:1px solid #ccc; vertical-align:middle;"></span>、
-dark_blue（深蓝）<span style="display:inline-block; width:16px; height:16px; background-color:#0000AA; border:1px solid #ccc; vertical-align:middle;"></span>、
-blue（蓝色）<span style="display:inline-block; width:16px; height:16px; background-color:#5555FF; border:1px solid #ccc; vertical-align:middle;"></span>、
-dark_purple（深紫）<span style="display:inline-block; width:16px; height:16px; background-color:#AA00AA; border:1px solid #ccc; vertical-align:middle;"></span>、
-light_purple（浅紫）<span style="display:inline-block; width:16px; height:16px; background-color:#FF55FF; border:1px solid #ccc; vertical-align:middle;"></span>、
-black（黑色）<span style="display:inline-block; width:16px; height:16px; background-color:#000000; border:1px solid #ccc; vertical-align:middle;"></span>、
-dark_gray（深灰）<span style="display:inline-block; width:16px; height:16px; background-color:#555555; border:1px solid #ccc; vertical-align:middle;"></span>、
-gray（灰色）<span style="display:inline-block; width:16px; height:16px; background-color:#AAAAAA; border:1px solid #ccc; vertical-align:middle;"></span>、
-white（白色）<span style="display:inline-block; width:16px; height:16px; background-color:#FFFFFF; border:1px solid #ccc; vertical-align:middle;"></span>
+> 颜色支持：dark_red（深红）<img src="docs/colors/dark_red.png" width="18" height="18" align="middle">、
+red（红色）<img src="docs/colors/red.png" width="18" height="18" align="middle">、
+gold（金色）<img src="docs/colors/gold.png" width="18" height="18" align="middle">、
+yellow（黄色）<img src="docs/colors/yellow.png" width="18" height="18" align="middle">、
+dark_green（深绿）<img src="docs/colors/dark_green.png" width="18" height="18" align="middle">、
+green（绿色）<img src="docs/colors/green.png" width="18" height="18" align="middle">、
+dark_aqua（深青）<img src="docs/colors/dark_aqua.png" width="18" height="18" align="middle">、
+aqua（青色）<img src="docs/colors/aqua.png" width="18" height="18" align="middle">、
+dark_blue（深蓝）<img src="docs/colors/dark_blue.png" width="18" height="18" align="middle">、
+blue（蓝色）<img src="docs/colors/blue.png" width="18" height="18" align="middle">、
+dark_purple（深紫）<img src="docs/colors/dark_purple.png" width="18" height="18" align="middle">、
+light_purple（浅紫）<img src="docs/colors/light_purple.png" width="18" height="18" align="middle">、
+black（黑色）<img src="docs/colors/black.png" width="18" height="18" align="middle">、
+dark_gray（深灰）<img src="docs/colors/dark_gray.png" width="18" height="18" align="middle">、
+gray（灰色）<img src="docs/colors/gray.png" width="18" height="18" align="middle">、
+white（白色）<img src="docs/colors/white.png" width="18" height="18" align="middle">
 ### 贴墙黑名单
 
 | 命令 | 权限 | 说明 |
