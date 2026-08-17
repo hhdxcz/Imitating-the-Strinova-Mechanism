@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "${mod_id}",
+	"version": "${version}",
+	"name": "${mod_name}",
+	"description": "${mod_description}",
+    "icon": "assets/strinova/icon.png",
+	"authors": [
+		"hhdxcz"
+	],
+	"contact": {
+		"homepage": "",
+		"sources": "https://github.com/hhdxcz/Imitating-the-Strinova-Mechanism"
+	},
+	"license": "MIT",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+          "com.hhdxcz.strinova.fabric.StrinovaModFabric"
+		],
+		"client": [
+          "com.hhdxcz.strinova.fabric.client.StrinovaClientInitFabric"
+		]
+	},
+	"mixins": [
+		"strinova.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.15.0",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*",
+		"cloth-config2": "*"
+	},
+	"suggests": {
+		"modmenu": "*"
+	}
+}
