@@ -4,8 +4,7 @@
 [![Loader](https://img.shields.io/badge/Loader-Fabric%20%7C%20Forge-orange)](https://architectury.dev)
 [![Version](https://img.shields.io/badge/Version-1.2.1-blue)](https://github.com/hhdxcz/Imitating-the-Strinova-Mechanism)
 [![Java](https://img.shields.io/badge/Java-17-red)](https://adoptium.net/)
-[![License](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
-
+[![License](https://img.shields.io/github/license/hhdxcz/Imitating-the-Strinova-Mechanism)](LICENSE)
 > 在 Minecraft 里还原《卡拉彼丘》的弦化机制喵~
 
 ---
