@@ -1,6 +1,7 @@
 package com.hhdxcz.strinova.fabric.client;
 
 import com.hhdxcz.strinova.StrinovaMod;
+import com.hhdxcz.strinova.client.StrinovaGrowthScreen;
 import com.hhdxcz.strinova.net.StrinovaNetwork;
 import com.hhdxcz.strinova.paper.StrinovaWallBlacklist;
 import com.hhdxcz.strinova.paper.WaPaperState;
@@ -26,6 +27,7 @@ public final class StrinovaKeyBindings {
 
     private static KeyMapping stringifyKey;
     private static KeyMapping wallKey;
+    private static KeyMapping growthKey;
     private static String wallKeyName = "key.keyboard.r";
     private static boolean lastCtrlDown;
     private static boolean lastFly;
@@ -53,6 +55,13 @@ public final class StrinovaKeyBindings {
                 "key.categories.strinova"
         ));
         wallKeyName = "key.keyboard.r";
+
+        // B 键：打开弦能增幅网络（成长/加点）界面
+        growthKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key.strinova.growth",
+                GLFW.GLFW_KEY_B,
+                "key.categories.strinova"
+        ));
 
         ClientTickEvents.END_CLIENT_TICK.register(StrinovaKeyBindings::onClientTick);
     }
@@ -83,6 +92,14 @@ public final class StrinovaKeyBindings {
         // 模组未启用时跳过所有按键逻辑（服务端可能下发禁用状态）
         if (!StrinovaMod.isEnabled()) {
             return;
+        }
+        // B 键：打开弦能增幅网络（成长/加点）界面
+        if (growthKey != null) {
+            while (growthKey.consumeClick()) {
+                if (client.screen == null) {
+                    client.setScreen(new StrinovaGrowthScreen(client.screen));
+                }
+            }
         }
         var player = client.player;
         var playerId = player.getUUID();

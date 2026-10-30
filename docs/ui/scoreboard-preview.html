@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TAB 对局计分板预览（P1：对齐真实布局） — Imitating the Strinova Mechanism</title>
+<style>
+  /* ============================================================
+     TAB 全屏对局计分板（P1：对齐卡拉彼丘真实布局）静态预览
+     纯 HTML + CSS 单文件：无外链 / 图片 / JS，全部程序化绘制。
+     配色：青蓝 #35D6E8 / 品红 #FF4FA3；我方红 / 敌方蓝；
+     16:9 舞台固定，1em = 舞台宽度的 1%（1600×900 截图约 14px）。
+     真实布局映射：居中大面板 + 左右两块队伍区块；
+     列头：击败/阵亡/助攻 | 绝招 | 成长等级 | 主武器 | 输出分 | 技能分 | 协作分 | PING。
+     ============================================================ */
+  :root{
+    --cyan:#35d6e8;
+    --magenta:#ff4fa3;
+    --red:#ff4757;
+    --blue:#5fd8ff;
+    --green:#5fe08c;
+    --gold:#ffd166;
+    --purple:#b06bff;
+    --text:#e9f7ff;
+    --muted:#8fb4c6;
+    --font:"Microsoft YaHei","PingFang SC","Noto Sans SC","Hiragino Sans GB","Segoe UI",system-ui,sans-serif;
+    --mono:"Consolas","Cascadia Mono","SFMono-Regular","Roboto Mono",monospace;
+    --stage-w:min(1600px, 96vw, max(420px, calc((100vh - 106px) * 16 / 9)));
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    padding:clamp(6px,1vh,12px) 16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:clamp(6px,.9vh,10px);
+    background:radial-gradient(120% 90% at 50% -10%, #0b1524 0%, #05090f 45%, #02040a 100%);
+    color:var(--text);
+    font-family:var(--font);
+    overflow:hidden;
+  }
+
+  /* ---------- 页面顶部标注 ---------- */
+  .page-head{
+    width:var(--stage-w);
+    display:flex;
+    align-items:stretch;
+    gap:.85rem;
+  }
+  .brand-bar{
+    flex:0 0 4px;
+    width:4px;
+    border-radius:1px;
+    background:linear-gradient(180deg, var(--cyan), rgba(53,214,232,.12) 55%, var(--magenta));
+    box-shadow:0 0 14px rgba(53,214,232,.5);
+  }
+  .page-head h1{
+    margin:0;
+    font-size:clamp(.78rem,1.35vw,1rem);
+    font-weight:600;
+    letter-spacing:.03em;
+    line-height:1.55;
+    color:#e3f4fc;
+  }
+  .page-head h1 .dash{color:var(--cyan); margin:0 .15em;}
+  .page-head h1 .note{color:var(--muted); font-weight:400; font-size:.9em; letter-spacing:.04em;}
+
+  /* ---------- 16:9 深色画面 ---------- */
+  .stage{
+    position:relative;
+    width:var(--stage-w);
+    aspect-ratio:16 / 9;
+    container-type:size;
+    overflow:hidden;
+    isolation:isolate;
+    border:1px solid rgba(53,214,232,.22);
+    background:
+      radial-gradient(120% 85% at 50% 38%, rgba(53,214,232,.10), transparent 58%),
+      radial-gradient(80% 70% at 50% 112%, rgba(255,79,163,.10), transparent 62%),
+      linear-gradient(180deg, #070d17 0%, #04080f 52%, #02040a 100%);
+    box-shadow:
+      0 0 0 1px rgba(53,214,232,.05),
+      0 24px 70px rgba(0,0,0,.65),
+      0 0 42px rgba(53,214,232,.08);
+  }
+  .scene{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  .scene-glow{
+    position:absolute;
+    inset:0;
+    background:
+      radial-gradient(48% 34% at 50% 58%, rgba(53,214,232,.14), transparent 70%),
+      radial-gradient(40% 30% at 88% 12%, rgba(255,79,163,.07), transparent 74%),
+      radial-gradient(46% 38% at 8% 88%, rgba(53,214,232,.07), transparent 74%);
+  }
+  .scene-grid{
+    position:absolute;
+    left:-60%; right:-60%; bottom:-2%;
+    height:150%;
+    background-image:
+      linear-gradient(rgba(53,214,232,.28) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(53,214,232,.24) 1px, transparent 1px);
+    background-size:7.5% 12%, 7.5% 12%;
+    transform:perspective(1800px) rotateX(58deg);
+    transform-origin:50% 100%;
+    opacity:.6;
+    -webkit-mask-image:linear-gradient(to top, #000 8%, rgba(0,0,0,.85) 34%, rgba(0,0,0,.45) 60%, transparent 88%);
+    mask-image:linear-gradient(to top, #000 8%, rgba(0,0,0,.85) 34%, rgba(0,0,0,.45) 60%, transparent 88%);
+  }
+  .scene-vignette{
+    position:absolute;
+    inset:0;
+    background:radial-gradient(118% 96% at 50% 48%, transparent 36%, rgba(0,0,0,.62) 100%);
+  }
+  /* 全屏计分板背景压暗 */
+  .sb-backdrop{
+    position:absolute;
+    inset:0;
+    z-index:2;
+    background:
+      radial-gradient(70% 60% at 50% 42%, rgba(8,20,32,.35), rgba(2,5,10,.86) 78%),
+      linear-gradient(180deg, rgba(2,4,10,.55), rgba(2,4,10,.78));
+  }
+
+  /* ---------- UI 根 ---------- */
+  .ui{
+    position:absolute;
+    inset:0;
+    z-index:3;
+    font-size:1cqw;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:1.4em 1.5em 1.1em;
+    color:var(--text);
+    line-height:1.2;
+  }
+  .corner{position:absolute;width:2.2em;height:2.2em;pointer-events:none;opacity:.6;z-index:4}
+  .corner-tl{left:.9em;top:.9em;border-top:1px solid var(--cyan);border-left:1px solid var(--cyan)}
+  .corner-br{right:.9em;bottom:.9em;border-bottom:1px solid var(--magenta);border-right:1px solid var(--magenta)}
+
+  /* ---------- 居中大面板 ---------- */
+  .sb-panel{
+    position:relative;
+    width:93%;
+    padding:1.1em 1.25em 1.15em;
+    background:linear-gradient(180deg, rgba(9,18,30,.94), rgba(4,9,16,.97) 55%, rgba(3,7,12,.98));
+    clip-path:polygon(0 0, calc(100% - 1.6em) 0, 100% 1.6em, 100% 100%, 1.1em 100%, 0 calc(100% - 1.1em));
+    box-shadow:
+      inset 0 0 0 1px rgba(53,214,232,.35),
+      inset 0 2.4em 4em rgba(53,214,232,.05),
+      0 1.4em 4em rgba(0,0,0,.6);
+  }
+  .sb-panel::before{
+    content:"";
+    position:absolute;
+    left:0; top:0;
+    width:40%; height:1px;
+    background:linear-gradient(90deg, var(--cyan), rgba(53,214,232,0));
+  }
+  .sb-panel::after{
+    content:"";
+    position:absolute;
+    right:0; bottom:0;
+    width:34%; height:1px;
+    background:linear-gradient(270deg, var(--magenta), rgba(255,79,163,0));
+  }
+
+  /* ---------- 标题 ---------- */
+  .sb-title{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:.18em;
+    margin-bottom:.7em;
+  }
+  .sb-title h2{
+    margin:0;
+    font-size:1.7em;
+    font-weight:800;
+    letter-spacing:.32em;
+    text-indent:.32em;
+    line-height:1.05;
+    color:#f4fdff;
+    text-shadow:0 0 .6em rgba(53,214,232,.55), 0 0 1.5em rgba(53,214,232,.22);
+  }
+  .sb-title .sub{
+    font-family:var(--mono);
+    font-size:.5em;
+    letter-spacing:.62em;
+    text-indent:.62em;
+    color:rgba(143,180,198,.85);
+  }
+
+  /* ---------- 两段队伍区块 ---------- */
+  .teams{
+    display:flex;
+    gap:1em;
+    align-items:flex-start;
+  }
+  .team{
+    flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:.5em;
+  }
+
+  /* 队伍头：大徽章 + 队伍名 + 比分 */
+  .team-head{
+    position:relative;
+    height:4.9em;
+    display:flex;
+    align-items:center;
+    gap:.85em;
+    padding:0 1.1em;
+    background:linear-gradient(96deg, rgba(255,71,87,.34) 0%, rgba(190,42,63,.42) 55%, rgba(90,22,34,.30) 100%);
+    clip-path:polygon(0 0, 100% 0, calc(100% - 1.3em) 100%, 0 100%);
+    box-shadow:inset 0 1px 0 rgba(255,170,180,.35), inset 0 -1px 0 rgba(255,71,87,.5);
+  }
+  .team.enemy .team-head{
+    background:linear-gradient(264deg, rgba(95,216,255,.30) 0%, rgba(55,104,192,.42) 55%, rgba(20,40,86,.30) 100%);
+    clip-path:polygon(0 0, 100% 0, 100% 100%, 1.3em 100%);
+    box-shadow:inset 0 1px 0 rgba(170,220,255,.35), inset 0 -1px 0 rgba(95,216,255,.5);
+  }
+  .team-head::after{
+    content:"";
+    position:absolute;
+    left:1.2em; right:2em; bottom:.3em;
+    height:1px;
+    background:linear-gradient(90deg, rgba(255,180,190,0), rgba(255,180,190,.55), rgba(255,180,190,0));
+  }
+  .team.enemy .team-head::after{
+    background:linear-gradient(90deg, rgba(180,225,255,0), rgba(180,225,255,.55), rgba(180,225,255,0));
+  }
+  /* 几何大徽章 */
+  .badge{
+    position:relative;
+    width:3.9em;
+    height:3.9em;
+    flex:none;
+    display:grid;
+    place-items:center;
+    clip-path:polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+    background:linear-gradient(150deg, rgba(255,120,135,.95), rgba(150,28,46,.9));
+    box-shadow:inset 0 0 0 1px rgba(255,220,225,.55);
+  }
+  .badge-inner{
+    width:78%;
+    height:78%;
+    display:grid;
+    place-items:center;
+    clip-path:inherit;
+    background:linear-gradient(160deg, rgba(40,12,18,.95), rgba(12,6,10,.96));
+  }
+  .team.enemy .badge{
+    background:linear-gradient(150deg, rgba(120,210,255,.95), rgba(30,64,140,.92));
+    box-shadow:inset 0 0 0 1px rgba(220,240,255,.55);
+  }
+  .team.enemy .badge-inner{background:linear-gradient(160deg, rgba(10,22,40,.95), rgba(5,10,20,.96));}
+  /* 徽章图形：剪刀手 = 交叉双刃；欧泊 = 宝石菱形 */
+  .scissor{position:relative;width:1.7em;height:1.7em}
+  .scissor i{
+    position:absolute;
+    left:50%; top:50%;
+    width:1.55em; height:.22em;
+    background:linear-gradient(90deg, #ffd9de, #ff6b7d);
+    box-shadow:0 0 .4em rgba(255,71,87,.9);
+  }
+  .scissor i:nth-child(1){transform:translate(-50%,-50%) rotate(42deg)}
+  .scissor i:nth-child(2){transform:translate(-50%,-50%) rotate(-42deg)}
+  .scissor i::before,
+  .scissor i::after{
+    content:"";
+    position:absolute;
+    top:50%;
+    width:.34em; height:.34em;
+    transform:translateY(-50%) rotate(45deg);
+    background:#0e0508;
+    box-shadow:inset 0 0 0 1px rgba(255,180,190,.5);
+  }
+  .scissor i::before{left:.12em}
+  .scissor i::after{right:.12em}
+  .gem{
+    width:1.5em; height:1.5em;
+    transform:rotate(45deg);
+    background:linear-gradient(135deg, #eafcff, #5fd8ff 55%, #2f6fae);
+    box-shadow:0 0 .6em rgba(95,216,255,.85), inset 0 0 .4em rgba(255,255,255,.7);
+  }
+  .team-meta{display:flex;flex-direction:column;gap:.18em;min-width:0}
+  .t-side{
+    display:inline-flex;
+    align-items:center;
+    gap:.35em;
+    font-size:.5em;
+    letter-spacing:.24em;
+    color:rgba(255,215,220,.9);
+  }
+  .team.enemy .t-side{color:rgba(205,235,255,.9)}
+  .t-side::before{
+    content:"";
+    width:.5em; height:.5em;
+    transform:rotate(45deg);
+    background:var(--red);
+    box-shadow:0 0 .4em var(--red);
+  }
+  .team.enemy .t-side::before{background:var(--blue); box-shadow:0 0 .4em var(--blue)}
+  .t-name{
+    font-size:1.4em;
+    font-weight:800;
+    letter-spacing:.2em;
+    line-height:1;
+    color:#fff;
+    text-shadow:0 0 .55em rgba(255,71,87,.6), 0 .06em .16em rgba(0,0,0,.8);
+  }
+  .team.enemy .t-name{text-shadow:0 0 .55em rgba(95,216,255,.6), 0 .06em .16em rgba(0,0,0,.8)}
+  .t-score{
+    margin-left:auto;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:.02em;
+  }
+  .t-score span{font-size:.48em; letter-spacing:.28em; color:rgba(255,255,255,.65)}
+  .t-score b{
+    font-family:var(--mono);
+    font-size:2.5em;
+    font-weight:800;
+    line-height:.92;
+    color:#fff;
+    text-shadow:0 0 .5em rgba(255,255,255,.45), 0 .05em .12em rgba(0,0,0,.85);
+  }
+
+  /* 列头 / 行网格 */
+  .col-head,
+  .p-row{
+    display:grid;
+    grid-template-columns:1.62fr .92fr .56fr .72fr .62fr .52fr .52fr .52fr .52fr;
+    align-items:center;
+    gap:.45em;
+    padding:0 .75em;
+  }
+  .col-head{
+    height:2.05em;
+    font-size:.56em;
+    letter-spacing:.08em;
+    color:rgba(143,180,198,.85);
+    background:rgba(8,16,26,.65);
+    box-shadow:inset 0 -1px 0 rgba(53,214,232,.16);
+  }
+  .col-head span:nth-child(2),
+  .col-head span:nth-child(3),
+  .col-head span:nth-child(4),
+  .col-head span:nth-child(5),
+  .col-head span:nth-child(6),
+  .col-head span:nth-child(7),
+  .col-head span:nth-child(8),
+  .col-head span:nth-child(9){text-align:center}
+  .col-head span:nth-child(2){letter-spacing:.04em}
+
+  .rows{display:flex;flex-direction:column;gap:.3em}
+  .p-row{
+    height:3.55em;
+    background:linear-gradient(90deg, rgba(255,71,87,.13), rgba(10,20,30,.55) 42%);
+    box-shadow:inset 0 0 0 1px rgba(255,71,87,.10);
+    border-left:2px solid rgba(255,71,87,.7);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .55em), calc(100% - .55em) 100%, 0 100%);
+  }
+  .team.enemy .p-row{
+    background:linear-gradient(90deg, rgba(95,216,255,.11), rgba(10,20,30,.55) 42%);
+    box-shadow:inset 0 0 0 1px rgba(95,216,255,.10);
+    border-left-color:rgba(95,216,255,.65);
+  }
+  .p-row.self{
+    background:linear-gradient(90deg, rgba(255,209,102,.20), rgba(24,24,20,.65) 46%);
+    border-left-color:var(--gold);
+    box-shadow:inset 0 0 0 1px rgba(255,209,102,.22);
+  }
+  .p-row.dead{opacity:.5; filter:grayscale(.55); border-left-color:rgba(143,180,198,.4)}
+
+  /* 玩家列 */
+  .p-cell{display:flex; align-items:center; gap:.5em; min-width:0}
+  .avatar{
+    position:relative;
+    width:2em;
+    height:2em;
+    flex:none;
+    display:grid;
+    place-items:center;
+    background:linear-gradient(150deg,
+      color-mix(in srgb, var(--rc) 85%, #fff 6%),
+      color-mix(in srgb, var(--rc) 38%, #05090f 62%));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.35), 0 .08em .25em rgba(0,0,0,.5);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .28em), calc(100% - .28em) 100%, 0 100%);
+  }
+  .avatar b{font-size:.84em; font-weight:800; color:#fff; line-height:1; text-shadow:0 .05em .12em rgba(0,0,0,.9)}
+  .avatar .chk{
+    position:absolute;
+    right:-.06em; bottom:-.06em;
+    width:.62em; height:.62em;
+    display:grid;
+    place-items:center;
+    font-size:.5em;
+    font-weight:900;
+    line-height:1;
+    color:var(--green);
+    background:rgba(2,12,7,.88);
+    box-shadow:inset 0 0 0 1px rgba(95,224,140,.6), 0 0 .28em rgba(95,224,140,.6);
+  }
+  .p-info{display:flex; flex-direction:column; gap:.1em; min-width:0}
+  .p-name{
+    display:flex;
+    align-items:center;
+    gap:.35em;
+    font-size:.84em;
+    font-weight:700;
+    letter-spacing:.04em;
+    color:#eaf7ff;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .p-row.self .p-name{color:var(--gold); text-shadow:0 0 .5em rgba(255,209,102,.5)}
+  .you{
+    padding:.06em .35em .08em;
+    font-size:.7em;
+    font-weight:800;
+    letter-spacing:.08em;
+    color:#2a1a02;
+    background:linear-gradient(115deg, #ffe9ab, var(--gold));
+    clip-path:polygon(.28em 0, 100% 0, calc(100% - .28em) 100%, 0 100%);
+  }
+  .p-agent{font-size:.62em; letter-spacing:.08em; color:rgba(143,180,198,.8)}
+
+  /* 数据列 */
+  .kda{
+    font-family:var(--mono);
+    font-size:.78em;
+    font-weight:700;
+    letter-spacing:.02em;
+    text-align:center;
+    color:#eafcff;
+    white-space:nowrap;
+  }
+  .kda span{color:rgba(143,180,198,.5); margin:0 .14em}
+  .ult{
+    font-family:var(--mono);
+    font-size:.76em;
+    font-weight:700;
+    text-align:center;
+    color:#cfe9f3;
+    white-space:nowrap;
+  }
+  .grow{display:flex; align-items:center; justify-content:center; gap:.22em}
+  .grow b{font-family:var(--mono); font-size:.64em; font-weight:700; color:#cfe9f3; margin-right:.25em}
+  .grow i{width:.44em; height:.44em; transform:rotate(45deg); display:block; background:rgba(255,255,255,.12)}
+  .grow i.b{background:#4b9cff; box-shadow:0 0 .28em rgba(75,156,255,.85)}
+  .grow i.g{background:var(--gold); box-shadow:0 0 .28em rgba(255,209,102,.85)}
+  .w-cell{display:flex; align-items:center; justify-content:center}
+  .num{
+    font-family:var(--mono);
+    font-size:.76em;
+    font-weight:700;
+    text-align:center;
+    color:#dceff7;
+  }
+  .num.dim{color:rgba(143,180,198,.85)}
+  .ping{font-family:var(--mono); font-size:.76em; font-weight:700; text-align:center}
+  .ping.good{color:var(--green)}
+  .ping.mid{color:var(--gold)}
+  .ping.bad{color:var(--red)}
+
+  /* 程序化主武器图标 */
+  .wp{display:block; opacity:.9}
+  .wp-rifle{
+    width:1.9em; height:.62em;
+    background:linear-gradient(90deg, #eafcff, #9fb9c8);
+    clip-path:polygon(0 35%, 58% 35%, 66% 0, 76% 0, 78% 35%, 100% 35%, 100% 58%, 70% 58%, 64% 100%, 52% 100%, 46% 58%, 0 58%);
+  }
+  .wp-smg{
+    width:1.45em; height:.7em;
+    background:linear-gradient(90deg, #eafcff, #9fb9c8);
+    clip-path:polygon(0 30%, 74% 30%, 74% 0, 92% 0, 92% 30%, 100% 30%, 100% 56%, 62% 56%, 58% 100%, 40% 100%, 44% 56%, 0 56%);
+  }
+  .wp-sniper{
+    width:2.1em; height:.55em;
+    background:linear-gradient(90deg, #eafcff, #9fb9c8);
+    clip-path:polygon(0 40%, 100% 40%, 100% 62%, 78% 62%, 72% 100%, 56% 100%, 50% 62%, 16% 62%, 0 62%);
+  }
+  .team.enemy .wp{opacity:.85}
+
+  /* 底部提示 */
+  .stage-hint{
+    position:absolute;
+    left:0; right:0;
+    bottom:1.1em;
+    z-index:4;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:.6em;
+    font-size:.58em;
+    letter-spacing:.12em;
+    color:rgba(143,180,198,.85);
+  }
+  .stage-hint .kbd{
+    display:inline-grid;
+    place-items:center;
+    min-width:2.6em;
+    padding:.14em .5em;
+    font-family:var(--mono);
+    font-size:.92em;
+    color:#dff6ff;
+    background:rgba(12,28,42,.85);
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.32);
+    clip-path:polygon(.3em 0, 100% 0, calc(100% - .3em) 100%, 0 100%);
+  }
+  .stage-hint .watermark{margin-left:1.2em; color:rgba(143,180,198,.5); letter-spacing:.14em}
+
+  /* ---------- 页面底部说明 ---------- */
+  .page-foot{
+    width:var(--stage-w);
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:.4em .7em;
+    font-size:clamp(.6rem,.82vw,.72rem);
+    letter-spacing:.05em;
+    color:var(--muted);
+  }
+  .page-foot .foot-tag{
+    padding:.16em .6em;
+    font-weight:700;
+    letter-spacing:.14em;
+    color:#04121a;
+    background:linear-gradient(120deg, var(--cyan), rgba(53,214,232,.72));
+    clip-path:polygon(.4em 0, 100% 0, calc(100% - .4em) 100%, 0 100%);
+  }
+  .page-foot .sep{opacity:.45}
+  .page-foot .accent-c{color:var(--cyan)}
+  .page-foot .accent-m{color:var(--magenta)}
+</style>
+</head>
+<body>
+
+  <!-- 页面顶部标注 -->
+  <header class="page-head">
+    <span class="brand-bar" aria-hidden="true"></span>
+    <h1>Imitating the Strinova Mechanism <span class="dash">—</span> TAB 对局计分板预览（P1：对齐真实布局，程序化绘制风格）</h1>
+  </header>
+
+  <!-- 16:9 深色计分板画面 -->
+  <section class="stage" aria-label="TAB 对局计分板静态预览（P1 对齐真实布局）">
+    <div class="scene" aria-hidden="true">
+      <div class="scene-glow"></div>
+      <div class="scene-grid"></div>
+      <div class="scene-vignette"></div>
+    </div>
+    <div class="sb-backdrop" aria-hidden="true"></div>
+
+    <div class="ui">
+      <span class="corner corner-tl" aria-hidden="true"></span>
+      <span class="corner corner-br" aria-hidden="true"></span>
+
+      <!-- 居中大面板 -->
+      <div class="sb-panel">
+
+        <!-- 标题 -->
+        <div class="sb-title">
+          <h2>对局计分板</h2>
+          <span class="sub">MATCH SCOREBOARD</span>
+        </div>
+
+        <!-- 两段队伍区块 -->
+        <div class="teams">
+
+          <!-- ============ 我方：剪刀手（红色调） ============ -->
+          <section class="team ally" aria-label="我方 剪刀手">
+            <div class="team-head">
+              <div class="badge"><span class="badge-inner"><span class="scissor"><i></i><i></i></span></span></div>
+              <div class="team-meta">
+                <span class="t-side">我方</span>
+                <span class="t-name">剪刀手</span>
+              </div>
+              <div class="t-score"><span>比分</span><b>0</b></div>
+            </div>
+
+            <div class="col-head" aria-hidden="true">
+              <span>玩家</span>
+              <span>击败/阵亡/助攻</span>
+              <span>绝招</span>
+              <span>成长等级</span>
+              <span>主武器</span>
+              <span>输出分</span>
+              <span>技能分</span>
+              <span>协作分</span>
+              <span>PING</span>
+            </div>
+
+            <div class="rows">
+              <!-- 1. 千代（本人） -->
+              <div class="p-row self">
+                <div class="p-cell">
+                  <span class="avatar" style="--rc:#deb639"><b>千</b><span class="chk" aria-hidden="true">✓</span></span>
+                  <span class="p-info">
+                    <span class="p-name">玩家A<span class="you">你</span></span>
+                    <span class="p-agent">千代 · 决斗</span>
+                  </span>
+                </div>
+                <span class="kda">8<span>/</span>3<span>/</span>5</span>
+                <span class="ult">3/6</span>
+                <span class="grow"><b>3</b><i class="b"></i><i class="b"></i><i class="g"></i></span>
+                <span class="w-cell"><i class="wp wp-rifle" title="主武器：枫鸣"></i></span>
+                <span class="num">245</span>
+                <span class="num dim">86</span>
+                <span class="num dim">42</span>
+                <span class="ping good">23</span>
+              </div>
+
+              <!-- 2. 玛德蕾娜 -->
+              <div class="p-row">
+                <div class="p-cell">
+                  <span class="avatar" style="--rc:#9b6bff"><b>玛</b><span class="chk" aria-hidden="true">✓</span></span>
+                  <span class="p-info">
+                    <span class="p-name">玩家B</span>
+                    <span class="p-agent">玛德蕾娜 · 控场</span>
+                  </span>
+                </div>
+                <span class="kda">6<span>/</span>2<span>/</span>4</span>
+                <span class="ult">2/6</span>
+                <span class="grow"><b>2</b><i class="b"></i><i class="g"></i><i></i></span>
+                <span class="w-cell"><i class="wp wp-smg" title="主武器：警探"></i></span>
+                <span class="num">198</span>
+                <span class="num dim">74</span>
+                <span class="num dim">55</span>
+                <span class="ping good">31</span>
+              </div>
+
+              <!-- 3. 蕾欧娜 -->
+              <div class="p-row">
+                <div class="p-cell">
+                  <span class="avatar" style="--rc:#4b77dc"><b>蕾</b><span class="chk" aria-hidden="true">✓</span></span>
+                  <span class="p-info">
+                    <span class="p-name">玩家C</span>
+                    <span class="p-agent">蕾欧娜 · 守护</span>
+                  </span>
+                </div>
+                <span class="kda">4<span>/</span>5<span>/</span>9</span>
+                <span class="ult">1/6</span>
+                <span class="grow"><b>2</b><i class="b"></i><i class="g"></i><i></i></span>
+                <span class="w-cell"><i class="wp wp-sniper" title="主武器：空境"></i></span>
+                <span class="num">142</span>
+                <span class="num dim">96</span>
+                <span class="num dim">68</span>
+                <span class="ping good">18</span>
+              </div>
+
+              <!-- 4. 诺诺 -->
+              <div class="p-row">
+                <div class="p-cell">
+                  <span class="avatar" style="--rc:#ff4fa3"><b>诺</b><span class="chk" aria-hidden="true">✓</span></span>
+                  <span class="p-info">
+                    <span class="p-name">玩家D</span>
+                    <span class="p-agent">诺诺 · 先锋</span>
+                  </span>
+                </div>
+                <span class="kda">3<span>/</span>6<span>/</span>2</span>
+                <span class="ult">0/6</span>
+                <span class="grow"><b>1</b><i class="b"></i><i></i><i></i></span>
+                <span class="w-cell"><i class="wp wp-rifle" title="主武器：枫鸣"></i></span>
+                <span class="num">88</span>
+                <span class="num dim">41</span>
+                <span class="num dim">36</span>
+                <span class="ping mid">45</span>
+              </div>
+
+              <!-- 5. 伊薇特（阵亡灰显） -->
+              <div class="p-row dead">
+                <div class="p-cell">
+                  <span class="avatar" style="--rc:#9b6bff"><b>伊</b></span>
+                  <span class="p-info">
+                    <span class="p-name">玩家E</span>
+                    <span class="p-agent">伊薇特 · 控场</span>
+                  </span>
+                </div>
+                <span class="kda">1<span>/</span>7<span>/</span>3</span>
+                <span class="ult">0/6</span>
+                <span class="grow"><b>1</b><i class="b"></i><i></i><i></i></span>
+                <span class="w-cell"><i class="wp wp-smg" title="主武器：警探"></i></span>
+                <span class="num">54</span>
+                <span class="num dim">33</span>
+                <span class="num dim">27</span>
+                <span class="ping bad">62</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============ 敌方：欧泊（蓝色调） ============ -->
+          <section class="team enemy" aria-label="敌方 欧泊">
+            <div class="team-head">
+              <div class="badge"><span class="badge-inner"><span class="gem"></span></span></div>
+              <div class="team-meta">
+                <span class="t-side">敌方</span>
+                <span class="t-name">欧泊</span>
+              </div>
+              <div class="t-score"><span>比分</span><b>0</b></div>
+            </div>
+
+            <div class="col-head" aria-hidden="true">
+              <span>玩家</span>
+              <span>击败/阵亡/助攻</span>
+              <span>绝招</span>
+              <span>成长等级</span>
+              <span>主武器</span>
+              <span>输出分</span>
+              <span>技能分</span>
+              <span>协作分</span>
+              <span>PING</span>
+            </div>
+
+            <div class="rows">
+              <!-- 1. 明 -->
+              <div class="p-row">
+                <div class="p-cell">
+                  <span class="avatar" style="--rc:#bc3b47"><b>明</b><span class="chk" aria-hidden="true">✓</span></span>
+                  <span class="p-info">
+                    <span class="p-name">玩家F</span>
+                    <span class="p-agent">明 · 突击</span>
+                  </span>
+                </div>
+                <span class="kda">7<span>/</span>4<span>/</span>2</span>
+                <span class="ult">2/6</span>
+                <span class="grow"><b>2</b><i class="b"></i><i class="g"></i><i></i></span>
+                <span class="w-cell"><i class="wp wp-sniper" title="主武器：空境"></i></span>
+                <span class="num">221</span>
+                <span class="num dim">58</span>
+                <span class="num dim">39</span>
+                <span class="ping good">27</span>
+              </div>
+
+              <!-- 2. 诺诺 -->
+              <div class="p-row">
+                <div class="p-cell">
+                  <span class="avatar" style="--rc:#ff4fa3"><b>诺</b><span class="chk" aria-hidden="true">✓</span></span>
+                  <span class="p-info">
+                    <span class="p-name">玩家G</span>
+                    <span class="p-agent">诺诺 · 先锋</span>
+                  </span>
+                </div>
+                <span class="kda">5<span>/</span>5<span>/</span>3</span>
+                <span class="ult">1/6</span>
+                <span class="grow"><b>2</b><i class="b"></i><i class="g"></i><i></i></span>
+                <span class="w-cell"><i class="wp wp-rifle" title="主武器：枫鸣"></i></span>
+                <span class="num">176</span>
+                <span class="num dim">84</span>
+                <span class="num dim">61</span>
+                <span class="ping good">35</span>
+              </div>
+
+              <!-- 3. 玛拉 -->
+              <div class="p-row">
+                <div class="p-cell">
+                  <span class="avatar" style="--rc:#bc3b47"><b>玛</b><span class="chk" aria-hidden="true">✓</span></span>
+                  <span class="p-info">
+                    <span class="p-name">玩家H</span>
+                    <span class="p-agent">玛拉 · 突击</span>
+                  </span>
+                </div>
+                <span class="kda">4<span>/</span>6<span>/</span>1</span>
+                <span class="ult">0/6</span>
+                <span class="grow"><b>1</b><i class="b"></i><i></i><i></i></span>
+                <span class="w-cell"><i class="wp wp-smg" title="主武器：警探"></i></span>
+                <span class="num">120</span>
+                <span class="num dim">45</span>
+                <span class="num dim">33</span>
+                <span class="ping good">22</span>
+              </div>
+
+              <!-- 4. 忧雾（阵亡灰显） -->
+              <div class="p-row dead">
+                <div class="p-cell">
+                  <span class="avatar" style="--rc:#9b6bff"><b>忧</b></span>
+                  <span class="p-info">
+                    <span class="p-name">玩家I</span>
+                    <span class="p-agent">忧雾 · 控场</span>
+                  </span>
+                </div>
+                <span class="kda">2<span>/</span>6<span>/</span>4</span>
+                <span class="ult">0/6</span>
+                <span class="grow"><b>1</b><i class="b"></i><i></i><i></i></span>
+                <span class="w-cell"><i class="wp wp-sniper" title="主武器：空境"></i></span>
+                <span class="num">96</span>
+                <span class="num dim">62</span>
+                <span class="num dim">48</span>
+                <span class="ping mid">51</span>
+              </div>
+
+              <!-- 5. 艾卡（阵亡灰显） -->
+              <div class="p-row dead">
+                <div class="p-cell">
+                  <span class="avatar" style="--rc:#deb639"><b>艾</b></span>
+                  <span class="p-info">
+                    <span class="p-name">玩家J</span>
+                    <span class="p-agent">艾卡 · 决斗</span>
+                  </span>
+                </div>
+                <span class="kda">1<span>/</span>8<span>/</span>2</span>
+                <span class="ult">0/6</span>
+                <span class="grow"><b>1</b><i class="b"></i><i></i><i></i></span>
+                <span class="w-cell"><i class="wp wp-rifle" title="主武器：枫鸣"></i></span>
+                <span class="num">61</span>
+                <span class="num dim">37</span>
+                <span class="num dim">29</span>
+                <span class="ping bad">78</span>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+      <!-- 底部提示 -->
+      <div class="stage-hint">
+        <span class="kbd">TAB</span><span>按住显示计分板 · 松开隐藏</span>
+        <span style="opacity:.4">·</span>
+        <span>存活显示绿勾 · 阵亡行灰显</span>
+        <span class="watermark">程序化绘制预览 · 非最终贴图</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 页面底部说明 -->
+  <footer class="page-foot">
+    <span class="foot-tag">P1 画面要素</span>
+    <span>左：我方 剪刀手（红） / 右：敌方 欧泊（蓝），大徽章 + 比分</span><span class="sep">·</span>
+    <span>列头：击败/阵亡/助攻 · 绝招 · 成长等级 · 主武器 · 输出分 · 技能分 · 协作分 · PING</span><span class="sep">·</span>
+    <span>存活绿勾 / 阵亡灰显</span><span class="sep">·</span>
+    <span>配色 <b class="accent-c">#35D6E8</b> / <b class="accent-m">#FF4FA3</b></span>
+  </footer>
+
+</body>
+</html>

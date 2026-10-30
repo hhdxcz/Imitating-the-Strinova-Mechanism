@@ -4,6 +4,7 @@ import com.hhdxcz.strinova.net.StrinovaNetwork;
 import com.hhdxcz.strinova.paper.StrinovaWallBlacklist;
 import com.hhdxcz.strinova.paper.WaPaperState;
 import com.hhdxcz.strinova.StrinovaMod;
+import com.hhdxcz.strinova.client.StrinovaGrowthScreen;
 import com.hhdxcz.strinova.gameplay.StrinovaAirJumpClientState;
 import com.hhdxcz.strinova.gameplay.StrinovaAirJumpSettings;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -31,6 +32,7 @@ public final class StrinovaKeyBindingsForge {
 
     private static KeyMapping stringifyKey;
     private static KeyMapping wallKey;
+    private static KeyMapping growthKey;
     private static String wallKeyName = "key.keyboard.r";
     private static boolean lastCtrlDown;
     private static boolean lastJumpDown;
@@ -56,8 +58,15 @@ public final class StrinovaKeyBindingsForge {
                 "key.categories.strinova"
         );
         wallKeyName = "key.keyboard.r";
+        // B 键：打开弦能增幅网络（成长/加点）界面
+        growthKey = new KeyMapping(
+                "key.strinova.growth",
+                GLFW.GLFW_KEY_B,
+                "key.categories.strinova"
+        );
         event.register(stringifyKey);
         event.register(wallKey);
+        event.register(growthKey);
     }
 
     public static boolean rebindWallKey(String rawKey) {
@@ -92,6 +101,14 @@ public final class StrinovaKeyBindingsForge {
         // 模组未启用时跳过所有按键逻辑（服务端可能下发禁用状态）
         if (!StrinovaMod.isEnabled()) {
             return;
+        }
+        // B 键：打开弦能增幅网络（成长/加点）界面
+        if (growthKey != null) {
+            while (growthKey.consumeClick()) {
+                if (client.screen == null) {
+                    client.setScreen(new StrinovaGrowthScreen(client.screen));
+                }
+            }
         }
 
         var playerId = player.getUUID();

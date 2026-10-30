@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>弦能增幅网络预览（P3：对齐真实布局） — Imitating the Strinova Mechanism</title>
+<style>
+  /* ============================================================
+     弦能增幅网络（P3：对齐卡拉彼丘真实成长/加点界面）静态预览
+     纯 HTML + CSS 单文件：无外链 / 图片 / JS，全部程序化绘制。
+     配色：青蓝 #35D6E8 / 品红 #FF4FA3；16:9 舞台固定，
+     1em = 舞台宽度的 1%（1600×900 截图约 14px）。
+     布局映射：
+       顶部：弦能增幅网络·诺诺 | 拥有能量点 330 | 准备阶段 00:25 | ✕
+       左侧：角色立绘占位 + 名字 + 定位
+       中间：7 类成长（输出/暴击/续航/精准/咒法/护甲/弦化，每类 2 项 + 价格）
+       右侧：5 个武器槽（枫鸣/小蜜蜂/忍锋/减速雷/治疗雷）
+       底部：觉醒 1/2/3（暗弦残响 / 弦能余烬 / 全视之眼）
+     ============================================================ */
+  :root{
+    --cyan:#35d6e8;
+    --magenta:#ff4fa3;
+    --red:#ff4757;
+    --blue:#5fd8ff;
+    --green:#5fe08c;
+    --gold:#ffd166;
+    --purple:#b06bff;
+    --text:#e9f7ff;
+    --muted:#8fb4c6;
+    --font:"Microsoft YaHei","PingFang SC","Noto Sans SC","Hiragino Sans GB","Segoe UI",system-ui,sans-serif;
+    --mono:"Consolas","Cascadia Mono","SFMono-Regular","Roboto Mono",monospace;
+    --stage-w:min(1600px, 96vw, max(420px, calc((100vh - 106px) * 16 / 9)));
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    padding:clamp(6px,1vh,12px) 16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:clamp(6px,.9vh,10px);
+    background:radial-gradient(120% 90% at 50% -10%, #0b1524 0%, #05090f 45%, #02040a 100%);
+    color:var(--text);
+    font-family:var(--font);
+    overflow:hidden;
+  }
+
+  /* ---------- 页面顶部标注 ---------- */
+  .page-head{
+    width:var(--stage-w);
+    display:flex;
+    align-items:stretch;
+    gap:.85rem;
+  }
+  .brand-bar{
+    flex:0 0 4px;
+    width:4px;
+    border-radius:1px;
+    background:linear-gradient(180deg, var(--cyan), rgba(53,214,232,.12) 55%, var(--magenta));
+    box-shadow:0 0 14px rgba(53,214,232,.5);
+  }
+  .page-head h1{
+    margin:0;
+    font-size:clamp(.78rem,1.35vw,1rem);
+    font-weight:600;
+    letter-spacing:.03em;
+    line-height:1.55;
+    color:#e3f4fc;
+  }
+  .page-head h1 .dash{color:var(--cyan); margin:0 .15em;}
+  .page-head h1 .note{color:var(--muted); font-weight:400; font-size:.9em; letter-spacing:.04em;}
+
+  /* ---------- 16:9 深色画面 ---------- */
+  .stage{
+    position:relative;
+    width:var(--stage-w);
+    aspect-ratio:16 / 9;
+    container-type:size;
+    overflow:hidden;
+    isolation:isolate;
+    border:1px solid rgba(53,214,232,.22);
+    background:
+      radial-gradient(120% 85% at 50% 38%, rgba(53,214,232,.10), transparent 58%),
+      radial-gradient(80% 70% at 50% 112%, rgba(255,79,163,.10), transparent 62%),
+      linear-gradient(180deg, #070d17 0%, #04080f 52%, #02040a 100%);
+    box-shadow:
+      0 0 0 1px rgba(53,214,232,.05),
+      0 24px 70px rgba(0,0,0,.65),
+      0 0 42px rgba(53,214,232,.08);
+  }
+  .scene{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  .scene-glow{
+    position:absolute;
+    inset:0;
+    background:
+      radial-gradient(48% 34% at 50% 58%, rgba(53,214,232,.14), transparent 70%),
+      radial-gradient(40% 30% at 88% 12%, rgba(255,79,163,.07), transparent 74%),
+      radial-gradient(46% 38% at 8% 88%, rgba(53,214,232,.07), transparent 74%);
+  }
+  .scene-shards{
+    position:absolute;
+    inset:0;
+    opacity:.6;
+    background:
+      linear-gradient(112deg, transparent 20%, rgba(53,214,232,.05) 33%, transparent 47%),
+      linear-gradient(292deg, transparent 32%, rgba(255,79,163,.045) 44%, transparent 58%);
+  }
+  .scene-shards::before{
+    content:"";
+    position:absolute;
+    left:-8%; top:-20%;
+    width:56%; height:74%;
+    background:linear-gradient(150deg, rgba(53,214,232,.10), transparent 62%);
+    clip-path:polygon(0 0, 100% 0, 62% 100%, 0 82%);
+  }
+  .scene-shards::after{
+    content:"";
+    position:absolute;
+    right:-10%; bottom:-14%;
+    width:52%; height:64%;
+    background:linear-gradient(320deg, rgba(255,79,163,.10), transparent 64%);
+    clip-path:polygon(42% 0, 100% 22%, 100% 100%, 0 100%);
+  }
+  .scene-vignette{
+    position:absolute;
+    inset:0;
+    background:radial-gradient(118% 96% at 50% 48%, transparent 38%, rgba(0,0,0,.6) 100%);
+  }
+
+  /* ---------- UI 根 ---------- */
+  .ui{
+    position:absolute;
+    inset:0;
+    z-index:2;
+    font-size:1cqw;
+    padding:.8em 1.5em .7em;
+    display:flex;
+    flex-direction:column;
+    color:var(--text);
+    line-height:1.2;
+  }
+  .corner{position:absolute;width:2.1em;height:2.1em;pointer-events:none;opacity:.6;z-index:3}
+  .corner-tl{left:.9em;top:.9em;border-top:1px solid var(--cyan);border-left:1px solid var(--cyan)}
+  .corner-br{right:.9em;bottom:.9em;border-bottom:1px solid var(--magenta);border-right:1px solid var(--magenta)}
+
+  /* 定位色：诺诺 = 先锋 */
+  .rc-vanguard{--rc:#ff4fa3}
+
+  /* ============================================================
+     顶部：标题 / 能量点 / 准备阶段 / 关闭
+     ============================================================ */
+  .growth-top{
+    flex:none;
+    height:4.4em;
+    display:flex;
+    align-items:center;
+    gap:1.2em;
+    padding:0 1.2em 0 1.4em;
+    background:linear-gradient(180deg, rgba(9,18,30,.94), rgba(4,9,16,.97));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.28), inset 0 1px 0 rgba(53,214,232,.4);
+    clip-path:polygon(0 0, calc(100% - 1.2em) 0, 100% 1.2em, 100% 100%, .8em 100%, 0 calc(100% - .8em));
+  }
+  .gt-left{display:flex;flex-direction:column;gap:.18em;min-width:0}
+  .gt-left h2{
+    margin:0;
+    font-size:1.25em;
+    font-weight:800;
+    letter-spacing:.14em;
+    line-height:1;
+    color:#f4fdff;
+    text-shadow:0 0 .55em rgba(53,214,232,.5);
+  }
+  .gt-left h2 .dot{color:var(--magenta); margin:0 .12em}
+  .gt-left .sub{
+    font-family:var(--mono);
+    font-size:.42em;
+    letter-spacing:.5em;
+    color:rgba(143,180,198,.8);
+  }
+  .gt-energy{
+    margin-left:auto;
+    display:flex;
+    align-items:baseline;
+    gap:.5em;
+    padding:.35em 1.1em .38em;
+    background:linear-gradient(115deg, rgba(53,214,232,.16), rgba(53,214,232,.04));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.4), 0 0 .8em rgba(53,214,232,.12);
+    clip-path:polygon(.6em 0, 100% 0, calc(100% - .6em) 100%, 0 100%);
+  }
+  .e-label{font-size:.56em;letter-spacing:.18em;color:#bfe0ec}
+  .e-value{
+    font-family:var(--mono);
+    font-size:1.5em;
+    font-weight:800;
+    line-height:1;
+    color:#f4fdff;
+    text-shadow:0 0 .6em rgba(53,214,232,.8);
+  }
+  .gt-right{display:flex;align-items:center;gap:.8em;flex:none}
+  .prep{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:.1em;
+  }
+  .prep i{
+    font-style:normal;
+    font-size:.46em;
+    letter-spacing:.2em;
+    color:rgba(255,209,102,.9);
+  }
+  .prep b{
+    font-family:var(--mono);
+    font-size:.78em;
+    font-weight:800;
+    letter-spacing:.06em;
+    color:var(--gold);
+    text-shadow:0 0 .5em rgba(255,209,102,.6);
+  }
+  .close{
+    display:grid;
+    place-items:center;
+    width:2.2em;height:2.2em;
+    font-size:.8em;
+    font-weight:700;
+    color:#cfeaf3;
+    background:rgba(18,32,46,.9);
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.35);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .4em), calc(100% - .4em) 100%, 0 100%);
+  }
+
+  /* ============================================================
+     主体：左侧立绘 / 中间成长网络 / 右侧武器
+     ============================================================ */
+  .main{
+    flex:1;
+    min-height:0;
+    margin-top:.7em;
+    display:flex;
+    gap:.8em;
+  }
+
+  /* 左侧角色立绘占位 */
+  .portrait{
+    position:relative;
+    width:19em;
+    flex:none;
+    overflow:hidden;
+    isolation:isolate;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    padding:1em 1.2em 1.1em;
+    background:
+      radial-gradient(120% 90% at 50% 115%, color-mix(in srgb, var(--rc) 28%, transparent), transparent 62%),
+      radial-gradient(90% 70% at 50% 26%, rgba(53,214,232,.08), transparent 62%),
+      linear-gradient(180deg, rgba(6,13,22,.85), rgba(3,8,14,.95));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.18);
+    clip-path:polygon(0 0, calc(100% - 1.1em) 0, 100% 1.1em, 100% 100%, .7em 100%, 0 calc(100% - .7em));
+  }
+  .portrait::before{
+    content:"";
+    position:absolute;
+    left:-12%; top:-16%;
+    width:70%; height:78%;
+    background:linear-gradient(150deg, color-mix(in srgb, var(--rc) 20%, transparent), transparent 66%);
+    clip-path:polygon(0 0, 100% 0, 58% 100%, 0 78%);
+    z-index:-1;
+  }
+  .p-glyph{
+    position:absolute;
+    left:52%; top:42%;
+    transform:translate(-50%,-50%);
+    font-size:13em;
+    font-weight:900;
+    line-height:1;
+    color:color-mix(in srgb, var(--rc) 24%, transparent);
+    text-shadow:0 0 .4em color-mix(in srgb, var(--rc) 20%, transparent);
+    user-select:none;
+    pointer-events:none;
+  }
+  .p-tag{
+    position:absolute;
+    left:1.2em; top:1.1em;
+    display:inline-flex;
+    align-items:center;
+    gap:.4em;
+    padding:.26em .8em;
+    font-size:.5em;
+    font-weight:700;
+    letter-spacing:.2em;
+    color:#ffd7e9;
+    background:linear-gradient(115deg, rgba(255,79,163,.24), rgba(255,79,163,.06));
+    box-shadow:inset 0 0 0 1px rgba(255,79,163,.45);
+    clip-path:polygon(.4em 0, 100% 0, calc(100% - .4em) 100%, 0 100%);
+  }
+  .p-name{
+    position:relative;
+    z-index:1;
+    font-size:2.3em;
+    font-weight:900;
+    letter-spacing:.12em;
+    line-height:1.05;
+    color:#fff;
+    text-shadow:0 0 .6em color-mix(in srgb, var(--rc) 55%, transparent), 0 .06em .18em rgba(0,0,0,.85);
+  }
+  .p-sub{
+    position:relative;
+    z-index:1;
+    margin-top:.5em;
+    display:flex;
+    align-items:center;
+    gap:.55em;
+    flex-wrap:wrap;
+  }
+  .role-pill{
+    display:inline-flex;
+    align-items:center;
+    padding:.14em .7em .16em;
+    font-size:.62em;
+    font-weight:800;
+    letter-spacing:.2em;
+    color:#fff;
+    background:linear-gradient(115deg, color-mix(in srgb, var(--rc) 86%, #000 8%), color-mix(in srgb, var(--rc) 46%, transparent));
+    box-shadow:0 0 .7em color-mix(in srgb, var(--rc) 45%, transparent);
+    clip-path:polygon(.4em 0, 100% 0, calc(100% - .4em) 100%, 0 100%);
+  }
+  .p-faction{font-size:.56em;letter-spacing:.16em;color:rgba(143,180,198,.9)}
+  .p-energy{
+    position:relative;
+    z-index:1;
+    margin-top:.7em;
+    display:flex;
+    align-items:baseline;
+    gap:.4em;
+    font-size:.52em;
+    letter-spacing:.16em;
+    color:rgba(143,180,198,.85);
+  }
+  .p-energy b{font-family:var(--mono);font-size:1.5em;color:var(--cyan);text-shadow:0 0 .5em rgba(53,214,232,.6)}
+
+  /* 中间：7 类成长（两列网格） */
+  .network{
+    flex:1;
+    min-width:0;
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    grid-template-rows:repeat(4, 1fr);
+    gap:.55em;
+  }
+  .cat{
+    position:relative;
+    min-width:0;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    gap:.3em;
+    padding:.55em .7em .6em;
+    background:linear-gradient(180deg, rgba(9,18,30,.9), rgba(4,9,16,.95));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.16);
+    clip-path:polygon(0 0, calc(100% - .8em) 0, 100% .8em, 100% 100%, .5em 100%, 0 calc(100% - .5em));
+  }
+  .cat::before{
+    content:"";
+    position:absolute;
+    left:0; top:.55em; bottom:.55em;
+    width:2px;
+    background:linear-gradient(180deg, var(--cyan), rgba(53,214,232,.12));
+    opacity:.8;
+  }
+  .cat-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:.5em;
+    flex:none;
+  }
+  .cat-name{
+    font-size:.76em;
+    font-weight:800;
+    letter-spacing:.22em;
+    color:#eaf7ff;
+  }
+  .cat-tag{font-size:.44em;letter-spacing:.14em;color:rgba(143,180,198,.7)}
+  .upg{
+    flex:1;
+    min-height:0;
+    display:flex;
+    align-items:center;
+    gap:.45em;
+    padding:0 .55em;
+    background:rgba(255,255,255,.025);
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.1);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .35em), calc(100% - .35em) 100%, 0 100%);
+  }
+  .u-name{
+    font-size:.6em;
+    font-weight:700;
+    letter-spacing:.05em;
+    color:#dceff7;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .u-price{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:.25em;
+    font-family:var(--mono);
+    font-size:.6em;
+    font-weight:700;
+    color:var(--cyan);
+    white-space:nowrap;
+  }
+  .u-price::before{
+    content:"";
+    width:.4em;height:.4em;
+    transform:rotate(45deg);
+    background:var(--cyan);
+    box-shadow:0 0 .35em rgba(53,214,232,.8);
+  }
+  .upg.bought{
+    background:linear-gradient(90deg, rgba(53,214,232,.16), rgba(53,214,232,.04));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.5);
+  }
+  .upg.bought .u-name{color:#f2fdff}
+  .upg.bought .u-price{color:var(--green)}
+  .upg.bought .u-price::before{background:var(--green);box-shadow:0 0 .35em rgba(95,224,140,.8)}
+  .u-check{
+    flex:none;
+    display:grid;
+    place-items:center;
+    width:.95em;height:.95em;
+    font-size:.5em;
+    font-weight:900;
+    line-height:1;
+    color:var(--green);
+    background:rgba(2,12,7,.85);
+    box-shadow:inset 0 0 0 1px rgba(95,224,140,.6), 0 0 .28em rgba(95,224,140,.55);
+  }
+  .u-lock{
+    flex:none;
+    font-size:.46em;
+    letter-spacing:.1em;
+    color:rgba(143,180,198,.7);
+  }
+  .cat.hint{
+    justify-content:center;
+    background:rgba(255,255,255,.015);
+    box-shadow:inset 0 0 0 1px rgba(143,180,198,.14);
+    opacity:.85;
+  }
+  .cat.hint::before{background:rgba(143,180,198,.3)}
+  .cat.hint .cat-name{color:rgba(143,180,198,.9);letter-spacing:.16em}
+  .hint-text{
+    font-size:.54em;
+    line-height:1.7;
+    letter-spacing:.06em;
+    color:rgba(143,180,198,.8);
+  }
+
+  /* 右侧：武器槽 */
+  .weapons{
+    width:15.5em;
+    flex:none;
+    display:flex;
+    flex-direction:column;
+    padding:.7em;
+    background:linear-gradient(180deg, rgba(9,18,30,.9), rgba(4,9,16,.95));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.18);
+    clip-path:polygon(0 0, calc(100% - .9em) 0, 100% .9em, 100% 100%, .6em 100%, 0 calc(100% - .6em));
+  }
+  .w-title{
+    flex:none;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:.5em;
+    padding-bottom:.45em;
+    border-bottom:1px solid rgba(53,214,232,.16);
+  }
+  .w-title b{
+    font-size:.66em;
+    font-weight:800;
+    letter-spacing:.22em;
+    color:#eaf7ff;
+  }
+  .w-title span{font-size:.46em;letter-spacing:.1em;color:rgba(143,180,198,.7)}
+  .w-list{
+    flex:1;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    gap:.4em;
+    padding-top:.5em;
+  }
+  .w-slot{
+    flex:1;
+    min-height:0;
+    display:flex;
+    align-items:center;
+    gap:.5em;
+    padding:0 .55em;
+    background:rgba(255,255,255,.025);
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.1);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .4em), calc(100% - .4em) 100%, 0 100%);
+  }
+  .w-slot.equipped{
+    background:rgba(53,214,232,.1);
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.5);
+  }
+  .w-icon{
+    width:1.8em;height:1.8em;
+    flex:none;
+    display:grid;
+    place-items:center;
+  }
+  .w-info{display:flex;flex-direction:column;gap:.14em;min-width:0}
+  .w-type{font-size:.48em;letter-spacing:.1em;color:rgba(143,180,198,.8)}
+  .w-name{
+    font-size:.72em;
+    font-weight:700;
+    letter-spacing:.06em;
+    color:#eaf7ff;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .w-num{
+    margin-left:auto;
+    flex:none;
+    display:grid;
+    place-items:center;
+    width:1.3em;height:1.3em;
+    font-family:var(--mono);
+    font-size:.52em;
+    font-weight:800;
+    color:#cfeaf3;
+    background:rgba(12,26,38,.9);
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.25);
+    clip-path:polygon(.2em 0, 100% 0, calc(100% - .2em) 100%, 0 100%);
+  }
+  .w-slot.equipped .w-num{
+    color:#04121a;
+    background:linear-gradient(115deg,#eafcff,var(--cyan));
+    font-weight:900;
+  }
+  .w-foot{
+    flex:none;
+    padding-top:.45em;
+    font-size:.42em;
+    letter-spacing:.08em;
+    line-height:1.5;
+    color:rgba(143,180,198,.65);
+  }
+
+  /* 程序化武器图标（几何占位） */
+  .wi{display:block}
+  .wi-rifle{
+    width:1.35em;height:.5em;
+    background:linear-gradient(90deg,#f0fbff,#9fb9c8);
+    clip-path:polygon(0 35%,58% 35%,66% 0,76% 0,78% 35%,100% 35%,100% 58%,70% 58%,64% 100%,52% 100%,46% 58%,0 58%);
+  }
+  .w-slot.equipped .wi-rifle{background:linear-gradient(90deg,#eafcff,var(--cyan));filter:drop-shadow(0 0 .3em rgba(53,214,232,.8))}
+  .wi-pistol{
+    width:.8em;height:.55em;
+    background:linear-gradient(160deg,#eafcff,#9fb9c8);
+    clip-path:polygon(0 0,100% 0,100% 34%,58% 34%,54% 100%,28% 100%,32% 34%,0 34%);
+  }
+  .wi-knife{
+    width:1.1em;height:.48em;
+    background:linear-gradient(90deg,#f2fbff,#8fa3b0);
+    clip-path:polygon(0 100%,62% 0,100% 20%,40% 100%);
+  }
+  .wi-grenade{
+    width:.7em;height:.76em;
+    border-radius:46%;
+    background:radial-gradient(120% 120% at 34% 28%, #d3e6f1, #5d7484 78%);
+  }
+  .wi-heal{
+    width:.7em;height:.76em;
+    border-radius:46%;
+    background-image:
+      linear-gradient(#1d5a38,#1d5a38),
+      linear-gradient(#1d5a38,#1d5a38),
+      radial-gradient(120% 120% at 34% 28%, #d9f7e6, #3f7a5c 76%);
+    background-size:.14em .44em, .44em .14em, 100% 100%;
+    background-position:center,center,center;
+    background-repeat:no-repeat;
+  }
+
+  /* ============================================================
+     底部：觉醒 1/2/3
+     ============================================================ */
+  .awaken{
+    flex:none;
+    height:13.2em;
+    margin-top:.7em;
+    display:flex;
+    gap:.8em;
+  }
+  .awk{
+    flex:1;
+    min-width:0;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:.35em;
+    padding:.75em .9em .8em;
+    background:linear-gradient(180deg, rgba(9,18,30,.9), rgba(4,9,16,.95));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.16);
+    clip-path:polygon(0 0, calc(100% - .9em) 0, 100% .9em, 100% 100%, .6em 100%, 0 calc(100% - .6em));
+  }
+  .awk.active{
+    background:
+      radial-gradient(120% 120% at 20% 0%, rgba(53,214,232,.16), transparent 62%),
+      linear-gradient(180deg, rgba(10,24,36,.92), rgba(4,10,17,.96));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.55), 0 0 .9em rgba(53,214,232,.12);
+  }
+  .awk.locked{opacity:.72}
+  .awk-head{
+    display:flex;
+    align-items:center;
+    gap:.55em;
+    flex:none;
+  }
+  .awk-no{
+    display:grid;
+    place-items:center;
+    min-width:2.6em;
+    padding:.18em .5em .2em;
+    font-family:var(--mono);
+    font-size:.5em;
+    font-weight:800;
+    letter-spacing:.08em;
+    color:#04121a;
+    background:linear-gradient(115deg, rgba(234,252,255,.95), rgba(53,214,232,.75));
+    clip-path:polygon(.3em 0, 100% 0, calc(100% - .3em) 100%, 0 100%);
+  }
+  .awk.locked .awk-no{
+    color:#cfeaf3;
+    background:rgba(20,32,44,.9);
+    box-shadow:inset 0 0 0 1px rgba(143,180,198,.35);
+  }
+  .awk-name{
+    font-size:.76em;
+    font-weight:800;
+    letter-spacing:.14em;
+    color:#eaf7ff;
+  }
+  .awk.active .awk-name{color:#fff;text-shadow:0 0 .5em rgba(53,214,232,.6)}
+  .awk-state{
+    margin-left:auto;
+    flex:none;
+    font-size:.46em;
+    font-weight:700;
+    letter-spacing:.14em;
+    padding:.14em .5em .16em;
+    clip-path:polygon(.3em 0, 100% 0, calc(100% - .3em) 100%, 0 100%);
+  }
+  .awk.active .awk-state{color:#04121a;background:linear-gradient(115deg,#eafcff,var(--cyan))}
+  .awk.locked .awk-state{color:rgba(143,180,198,.9);background:rgba(20,32,44,.9);box-shadow:inset 0 0 0 1px rgba(143,180,198,.3)}
+  .awk-icon{
+    flex:none;
+    height:3.4em;
+    display:flex;
+    align-items:center;
+    gap:1em;
+  }
+  .icept{
+    position:relative;
+    width:2.5em;height:2.5em;
+    display:grid;
+    place-items:center;
+    transform:rotate(45deg);
+    background:linear-gradient(135deg, rgba(53,214,232,.3), rgba(5,12,21,.9));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.6), 0 0 .7em rgba(53,214,232,.3);
+  }
+  .icept-inner{transform:rotate(-45deg);display:grid;place-items:center}
+  .awk.locked .icept{
+    background:linear-gradient(135deg, rgba(120,140,155,.18), rgba(5,12,21,.9));
+    box-shadow:inset 0 0 0 1px rgba(143,180,198,.35);
+  }
+  /* 觉醒图标图形 */
+  .g-wave{width:.9em;height:.9em;border:.14em solid var(--cyan);border-radius:50%;box-shadow:0 0 .5em rgba(53,214,232,.7), inset 0 0 .3em rgba(53,214,232,.5)}
+  .g-flame{width:.85em;height:.95em;background:linear-gradient(180deg,#ffd166,#ff4757);clip-path:polygon(50% 0,88% 44%,76% 100%,24% 100%,12% 44%);filter:drop-shadow(0 0 .35em rgba(255,71,87,.7))}
+  .g-eye{width:1em;height:.62em;border:.12em solid #9fb6c4;border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;position:relative}
+  .g-eye::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:.26em;height:.26em;border-radius:50%;background:#9fb6c4}
+  .awk-desc{
+    flex:1;
+    margin:0;
+    font-size:.58em;
+    line-height:1.65;
+    letter-spacing:.03em;
+    color:#b9d4e0;
+  }
+  .awk-foot{
+    flex:none;
+    display:flex;
+    align-items:center;
+    gap:.5em;
+    font-size:.46em;
+    letter-spacing:.1em;
+    color:rgba(143,180,198,.75);
+  }
+  .awk-foot .req{
+    padding:.1em .45em .12em;
+    color:var(--gold);
+    background:rgba(255,209,102,.1);
+    box-shadow:inset 0 0 0 1px rgba(255,209,102,.3);
+    clip-path:polygon(.3em 0, 100% 0, calc(100% - .3em) 100%, 0 100%);
+  }
+  .awk.active .awk-foot{color:rgba(190,255,220,.85)}
+
+  /* ---------- 画面底部提示 ---------- */
+  .foot-hint{
+    flex:none;
+    height:1.5em;
+    margin-top:.4em;
+    display:flex;
+    align-items:center;
+    gap:.55em;
+    font-size:.56em;
+    letter-spacing:.1em;
+    color:rgba(143,180,198,.8);
+  }
+  .foot-hint .kbd{
+    display:inline-grid;
+    place-items:center;
+    min-width:2.2em;
+    padding:.12em .45em;
+    font-family:var(--mono);
+    font-size:.92em;
+    color:#dff6ff;
+    background:rgba(12,28,42,.85);
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.3);
+    clip-path:polygon(.3em 0, 100% 0, calc(100% - .3em) 100%, 0 100%);
+  }
+  .foot-hint .sep{opacity:.4}
+  .foot-hint .watermark{margin-left:auto;color:rgba(143,180,198,.5);letter-spacing:.14em}
+
+  /* ---------- 页面底部说明 ---------- */
+  .page-foot{
+    width:var(--stage-w);
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:.4em .7em;
+    font-size:clamp(.6rem,.82vw,.72rem);
+    letter-spacing:.05em;
+    color:var(--muted);
+  }
+  .page-foot .foot-tag{
+    padding:.16em .6em;
+    font-weight:700;
+    letter-spacing:.14em;
+    color:#04121a;
+    background:linear-gradient(120deg, var(--cyan), rgba(53,214,232,.72));
+    clip-path:polygon(.4em 0, 100% 0, calc(100% - .4em) 100%, 0 100%);
+  }
+  .page-foot .sep{opacity:.45}
+  .page-foot .accent-c{color:var(--cyan)}
+  .page-foot .accent-m{color:var(--magenta)}
+</style>
+</head>
+<body>
+
+  <!-- 页面顶部标注 -->
+  <header class="page-head">
+    <span class="brand-bar" aria-hidden="true"></span>
+    <h1>Imitating the Strinova Mechanism <span class="dash">—</span> 弦能增幅网络预览（P3：对齐真实布局，程序化绘制风格）</h1>
+  </header>
+
+  <!-- 16:9 深色成长界面画面 -->
+  <section class="stage" aria-label="弦能增幅网络静态预览（P3 对齐真实布局）">
+    <div class="scene" aria-hidden="true">
+      <div class="scene-glow"></div>
+      <div class="scene-shards"></div>
+      <div class="scene-vignette"></div>
+    </div>
+
+    <div class="ui">
+      <span class="corner corner-tl" aria-hidden="true"></span>
+      <span class="corner corner-br" aria-hidden="true"></span>
+
+      <!-- 顶部：标题 / 能量点 / 准备阶段 / 关闭 -->
+      <div class="growth-top">
+        <div class="gt-left">
+          <h2>弦能增幅网络<span class="dot">·</span>诺诺</h2>
+          <span class="sub">CHORD AMPLIFICATION NETWORK</span>
+        </div>
+        <div class="gt-energy">
+          <span class="e-label">拥有能量点：</span>
+          <b class="e-value">330</b>
+        </div>
+        <div class="gt-right">
+          <div class="prep"><i>准备阶段</i><b>00:25</b></div>
+          <span class="close" aria-label="关闭">✕</span>
+        </div>
+      </div>
+
+      <!-- 主体 -->
+      <div class="main">
+
+        <!-- 左侧：角色立绘占位 -->
+        <aside class="portrait rc-vanguard" aria-label="角色">
+          <span class="p-glyph" aria-hidden="true">诺</span>
+          <span class="p-tag">成长网络</span>
+          <div class="p-name">诺诺</div>
+          <div class="p-sub">
+            <span class="role-pill">先锋</span>
+            <span class="p-faction">阵营：剪刀手</span>
+          </div>
+          <div class="p-energy">本次可用能量点 <b>330</b></div>
+        </aside>
+
+        <!-- 中间：7 类成长 -->
+        <div class="network" aria-label="弦能增幅网络">
+
+          <div class="cat">
+            <div class="cat-head"><span class="cat-name">输出</span><span class="cat-tag">2 项</span></div>
+            <div class="upg bought">
+              <span class="u-name">基础伤害提升</span>
+              <span class="u-price">150</span>
+              <span class="u-check" aria-label="已购买">✓</span>
+            </div>
+            <div class="upg">
+              <span class="u-name">五连发射击模式</span>
+              <span class="u-price">250</span>
+            </div>
+          </div>
+
+          <div class="cat">
+            <div class="cat-head"><span class="cat-name">暴击</span><span class="cat-tag">2 项</span></div>
+            <div class="upg bought">
+              <span class="u-name">爆头伤害提升</span>
+              <span class="u-price">150</span>
+              <span class="u-check" aria-label="已购买">✓</span>
+            </div>
+            <div class="upg">
+              <span class="u-name">弦化伤害提升</span>
+              <span class="u-price">250</span>
+            </div>
+          </div>
+
+          <div class="cat">
+            <div class="cat-head"><span class="cat-name">续航</span><span class="cat-tag">2 项</span></div>
+            <div class="upg bought">
+              <span class="u-name">载弹数量提升</span>
+              <span class="u-price">150</span>
+              <span class="u-check" aria-label="已购买">✓</span>
+            </div>
+            <div class="upg">
+              <span class="u-name">换弹速度提升</span>
+              <span class="u-price">250</span>
+            </div>
+          </div>
+
+          <div class="cat">
+            <div class="cat-head"><span class="cat-name">精准</span><span class="cat-tag">2 项</span></div>
+            <div class="upg">
+              <span class="u-name">散射控制提升</span>
+              <span class="u-price">150</span>
+            </div>
+            <div class="upg">
+              <span class="u-name">后坐控制提升</span>
+              <span class="u-price">250</span>
+            </div>
+          </div>
+
+          <div class="cat">
+            <div class="cat-head"><span class="cat-name">咒法</span><span class="cat-tag">2 项</span></div>
+            <div class="upg">
+              <span class="u-name">冷却减少</span>
+              <span class="u-price">150</span>
+            </div>
+            <div class="upg">
+              <span class="u-name">伤害提升</span>
+              <span class="u-price">250</span>
+            </div>
+          </div>
+
+          <div class="cat">
+            <div class="cat-head"><span class="cat-name">护甲</span><span class="cat-tag">2 项</span></div>
+            <div class="upg">
+              <span class="u-name">轻型护甲</span>
+              <span class="u-price">150</span>
+            </div>
+            <div class="upg">
+              <span class="u-name">重型护甲</span>
+              <span class="u-price">250</span>
+            </div>
+          </div>
+
+          <div class="cat">
+            <div class="cat-head"><span class="cat-name">弦化</span><span class="cat-tag">2 项</span></div>
+            <div class="upg">
+              <span class="u-name">移速 +15%</span>
+              <span class="u-price">150</span>
+            </div>
+            <div class="upg">
+              <span class="u-name">减伤系数 46%</span>
+              <span class="u-price">250</span>
+            </div>
+          </div>
+
+          <div class="cat hint">
+            <div class="cat-head"><span class="cat-name">网络提示</span><span class="cat-tag">TIP</span></div>
+            <p class="hint-text">升级成长项可提升觉醒强度；能量点可通过击败与助攻获取。购买后无法撤回，请谨慎分配。</p>
+          </div>
+
+        </div>
+
+        <!-- 右侧：5 个武器槽 -->
+        <aside class="weapons" aria-label="武器配置">
+          <div class="w-title"><b>武器配置</b><span>1 ~ 5</span></div>
+          <div class="w-list">
+            <div class="w-slot equipped">
+              <span class="w-icon"><i class="wi wi-rifle" aria-hidden="true"></i></span>
+              <span class="w-info"><span class="w-type">主武器</span><span class="w-name">枫鸣</span></span>
+              <span class="w-num">1</span>
+            </div>
+            <div class="w-slot">
+              <span class="w-icon"><i class="wi wi-pistol" aria-hidden="true"></i></span>
+              <span class="w-info"><span class="w-type">副武器</span><span class="w-name">小蜜蜂</span></span>
+              <span class="w-num">2</span>
+            </div>
+            <div class="w-slot">
+              <span class="w-icon"><i class="wi wi-knife" aria-hidden="true"></i></span>
+              <span class="w-info"><span class="w-type">近战</span><span class="w-name">忍锋</span></span>
+              <span class="w-num">3</span>
+            </div>
+            <div class="w-slot">
+              <span class="w-icon"><i class="wi wi-grenade" aria-hidden="true"></i></span>
+              <span class="w-info"><span class="w-type">战术道具</span><span class="w-name">减速雷</span></span>
+              <span class="w-num">4</span>
+            </div>
+            <div class="w-slot">
+              <span class="w-icon"><i class="wi wi-heal" aria-hidden="true"></i></span>
+              <span class="w-info"><span class="w-type">战术道具</span><span class="w-name">治疗雷</span></span>
+              <span class="w-num">5</span>
+            </div>
+          </div>
+          <div class="w-foot">主武器 / 副武器 / 近战 / 战术道具 ×2<br>武器可在选角界面切换</div>
+        </aside>
+
+      </div>
+
+      <!-- 底部：觉醒 1 / 2 / 3 -->
+      <div class="awaken" aria-label="觉醒能力">
+
+        <div class="awk active">
+          <div class="awk-head">
+            <span class="awk-no">觉醒 1</span>
+            <span class="awk-name">暗弦残响</span>
+            <span class="awk-state">已激活</span>
+          </div>
+          <div class="awk-icon">
+            <span class="icept"><span class="icept-inner"><i class="g-wave" aria-hidden="true"></i></span></span>
+          </div>
+          <p class="awk-desc">弦化状态下首次命中敌人时，短暂提升移动速度，持续 2 秒。该效果在每次弦化重新进入后刷新。</p>
+          <div class="awk-foot"><span class="req">网络 2 级解锁</span>已消耗 150 能量点</div>
+        </div>
+
+        <div class="awk locked">
+          <div class="awk-head">
+            <span class="awk-no">觉醒 2</span>
+            <span class="awk-name">弦能余烬</span>
+            <span class="awk-state">未激活</span>
+          </div>
+          <div class="awk-icon">
+            <span class="icept"><span class="icept-inner"><i class="g-flame" aria-hidden="true"></i></span></span>
+          </div>
+          <p class="awk-desc">击败敌人后回复 20 点护甲，冷却 12 秒。回复效果在脱离战斗后仍会持续一次。</p>
+          <div class="awk-foot"><span class="req">网络 4 级解锁</span>需要 250 能量点</div>
+        </div>
+
+        <div class="awk locked">
+          <div class="awk-head">
+            <span class="awk-no">觉醒 3</span>
+            <span class="awk-name">全视之眼</span>
+            <span class="awk-state">未激活</span>
+          </div>
+          <div class="awk-icon">
+            <span class="icept"><span class="icept-inner"><i class="g-eye" aria-hidden="true"></i></span></span>
+          </div>
+          <p class="awk-desc">受到伤害时短暂显形周围 12 米内的敌人，持续 1.5 秒。每 20 秒最多触发一次。</p>
+          <div class="awk-foot"><span class="req">网络 6 级解锁</span>需要 350 能量点</div>
+        </div>
+
+      </div>
+
+      <!-- 底部提示 -->
+      <div class="foot-hint">
+        <span class="kbd">左键</span>购买成长项
+        <span class="sep">·</span>
+        <span class="kbd">ESC</span>关闭界面
+        <span class="sep">·</span>
+        <span class="kbd">B</span>打开弦能增幅网络
+        <span class="watermark">程序化绘制预览 · 非最终贴图</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 页面底部说明 -->
+  <footer class="page-foot">
+    <span class="foot-tag">P3 画面要素</span>
+    <span>标题「弦能增幅网络·诺诺」+ 拥有能量点 330 + 准备阶段 00:25 + ✕</span><span class="sep">·</span>
+    <span>7 类成长 × 2 项（150 / 250，已购高亮）</span><span class="sep">·</span>
+    <span>右侧 5 武器槽</span><span class="sep">·</span>
+    <span>底部觉醒 1/2/3（暗弦残响 / 弦能余烬 / 全视之眼）</span><span class="sep">·</span>
+    <span>配色 <b class="accent-c">#35D6E8</b> / <b class="accent-m">#FF4FA3</b></span>
+  </footer>
+
+</body>
+</html>

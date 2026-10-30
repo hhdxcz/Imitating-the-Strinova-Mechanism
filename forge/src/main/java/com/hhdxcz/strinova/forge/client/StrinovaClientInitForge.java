@@ -13,7 +13,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
+import com.hhdxcz.strinova.client.StrinovaAgentSelectScreen;
+import com.hhdxcz.strinova.client.StrinovaGrowthScreen;
 import com.hhdxcz.strinova.client.StrinovaCollisionMenuScreen;
+import com.hhdxcz.strinova.client.StrinovaCombatSettingsScreen;
+import com.hhdxcz.strinova.client.StrinovaHudEditorScreen;
+import com.hhdxcz.strinova.client.hud.StrinovaHudConfig;
+import com.hhdxcz.strinova.client.hud.StrinovaHudRenderer;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -44,6 +50,9 @@ public final class StrinovaClientInitForge {
 
     public static void init() {
         StrinovaNetwork.initClient();
+        // 战斗 HUD：加载本地配置并注册渲染层
+        StrinovaHudConfig.load();
+        StrinovaHudRenderer.register();
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         modBus.addListener(StrinovaClientInitForge::onRegisterKeys);
         MinecraftForge.EVENT_BUS.addListener(StrinovaClientInitForge::onRegisterClientCommands);
@@ -77,7 +86,46 @@ public final class StrinovaClientInitForge {
                                             boolean ok = StrinovaKeyBindingsForge.rebindWallKey(key);
                                             ctx.getSource().sendSuccess(() -> Component.literal(ok ? "已修改贴墙键位" : "修改失败：无效键位或未初始化"), false);
                                             return ok ? 1 : 0;
-                                        }))));
+                                        }))))
+                .then(Commands.literal("hud")
+                        .executes(ctx -> {
+                            Minecraft client = Minecraft.getInstance();
+                            client.tell(() -> client.setScreen(new StrinovaCombatSettingsScreen(client.screen)));
+                            return 1;
+                        })
+                        .then(Commands.literal("editor")
+                                .executes(ctx -> {
+                                    Minecraft client = Minecraft.getInstance();
+                                    client.tell(() -> client.setScreen(new StrinovaHudEditorScreen(client.screen)));
+                                    return 1;
+                                }))
+                        .then(Commands.literal("mock")
+                                .executes(ctx -> {
+                                    boolean on = StrinovaHudRenderer.toggleMock();
+                                    ctx.getSource().sendSuccess(() -> Component.translatable(on
+                                            ? "config.strinova.hud.mock.on"
+                                            : "config.strinova.hud.mock.off"), false);
+                                    return 1;
+                                }))
+                        .then(Commands.literal("test")
+                                .executes(ctx -> {
+                                    StrinovaHudRenderer.triggerTestHit();
+                                    StrinovaHudRenderer.triggerTestKill();
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("config.strinova.hud.mock.test"), false);
+                                    return 1;
+                                })))
+                .then(Commands.literal("agent")
+                        .executes(ctx -> {
+                            Minecraft client = Minecraft.getInstance();
+                            client.tell(() -> client.setScreen(new StrinovaAgentSelectScreen(client.screen)));
+                            return 1;
+                        }))
+                .then(Commands.literal("growth")
+                        .executes(ctx -> {
+                            Minecraft client = Minecraft.getInstance();
+                            client.tell(() -> client.setScreen(new StrinovaGrowthScreen(client.screen)));
+                            return 1;
+                        }));
         event.getDispatcher().register(root);
     }
 

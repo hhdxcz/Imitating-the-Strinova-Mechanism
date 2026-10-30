@@ -13,6 +13,8 @@
   "client": [
     "client.AbstractContainerScreenMixin",
     "client.CameraMixin",
+    "client.GuiMixin",
+    "client.PlayerTabOverlayMixin",
     "client.OptionsMixin",
     "client.EntityPosePreviewMixin",
     "client.EntityRenderDispatcherMixin",

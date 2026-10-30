@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>超弦体选角预览（P2：对齐真实布局） — Imitating the Strinova Mechanism</title>
+<style>
+  /* ============================================================
+     超弦体选角界面（P2：对齐卡拉彼丘真实布局）静态预览
+     纯 HTML + CSS 单文件：无外链 / 图片 / JS，全部程序化绘制。
+     配色：青蓝 #35D6E8 / 品红 #FF4FA3；我方红 / 敌方蓝。
+     布局映射：
+       顶部：地图/模式 + 三段式阶段条（我方进攻 | 选择角色 00:24 | 敌方防守）
+       左侧：5 名队友卡片        中央：大立绘占位 + 名字
+       右侧：定位标签 / 3 技能图标 / Q 技能 / 武器选择 / 页签 / 锁定角色
+       底部：2×12 = 24 个超弦体头像格（P1 标记 / 已锁定绿勾）
+     数据：StrinovaAgentRoster 真实 24 名超弦体。
+     ============================================================ */
+  :root{
+    --cyan:#35d6e8;
+    --magenta:#ff4fa3;
+    --red:#ff4757;
+    --blue:#5fd8ff;
+    --green:#5fe08c;
+    --gold:#ffd166;
+    --purple:#b06bff;
+    --text:#e9f7ff;
+    --muted:#8fb4c6;
+    --font:"Microsoft YaHei","PingFang SC","Noto Sans SC","Hiragino Sans GB","Segoe UI",system-ui,sans-serif;
+    --mono:"Consolas","Cascadia Mono","SFMono-Regular","Roboto Mono",monospace;
+    --stage-w:min(1600px, 96vw, max(420px, calc((100vh - 106px) * 16 / 9)));
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    padding:clamp(6px,1vh,12px) 16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:clamp(6px,.9vh,10px);
+    background:radial-gradient(120% 90% at 50% -10%, #0b1524 0%, #05090f 45%, #02040a 100%);
+    color:var(--text);
+    font-family:var(--font);
+    overflow:hidden;
+  }
+
+  /* ---------- 页面顶部标注 ---------- */
+  .page-head{
+    width:var(--stage-w);
+    display:flex;
+    align-items:stretch;
+    gap:.85rem;
+  }
+  .brand-bar{
+    flex:0 0 4px;
+    width:4px;
+    border-radius:1px;
+    background:linear-gradient(180deg, var(--cyan), rgba(53,214,232,.12) 55%, var(--magenta));
+    box-shadow:0 0 14px rgba(53,214,232,.5);
+  }
+  .page-head h1{
+    margin:0;
+    font-size:clamp(.78rem,1.35vw,1rem);
+    font-weight:600;
+    letter-spacing:.03em;
+    line-height:1.55;
+    color:#e3f4fc;
+  }
+  .page-head h1 .dash{color:var(--cyan); margin:0 .15em;}
+  .page-head h1 .note{color:var(--muted); font-weight:400; font-size:.9em; letter-spacing:.04em;}
+
+  /* ---------- 16:9 深色画面 ---------- */
+  .stage{
+    position:relative;
+    width:var(--stage-w);
+    aspect-ratio:16 / 9;
+    container-type:size;
+    overflow:hidden;
+    isolation:isolate;
+    border:1px solid rgba(53,214,232,.22);
+    background:
+      radial-gradient(120% 85% at 50% 38%, rgba(53,214,232,.10), transparent 58%),
+      radial-gradient(80% 70% at 50% 112%, rgba(255,79,163,.10), transparent 62%),
+      linear-gradient(180deg, #070d17 0%, #04080f 52%, #02040a 100%);
+    box-shadow:
+      0 0 0 1px rgba(53,214,232,.05),
+      0 24px 70px rgba(0,0,0,.65),
+      0 0 42px rgba(53,214,232,.08);
+  }
+  .scene{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  .scene-glow{
+    position:absolute;
+    inset:0;
+    background:
+      radial-gradient(48% 34% at 50% 58%, rgba(53,214,232,.14), transparent 70%),
+      radial-gradient(40% 30% at 88% 12%, rgba(255,79,163,.07), transparent 74%),
+      radial-gradient(46% 38% at 8% 88%, rgba(53,214,232,.07), transparent 74%);
+  }
+  .scene-shards{
+    position:absolute;
+    inset:0;
+    opacity:.6;
+    background:
+      linear-gradient(112deg, transparent 20%, rgba(53,214,232,.05) 33%, transparent 47%),
+      linear-gradient(292deg, transparent 32%, rgba(255,79,163,.045) 44%, transparent 58%);
+  }
+  .scene-shards::before{
+    content:"";
+    position:absolute;
+    left:-8%; top:-20%;
+    width:56%; height:74%;
+    background:linear-gradient(150deg, rgba(53,214,232,.10), transparent 62%);
+    clip-path:polygon(0 0, 100% 0, 62% 100%, 0 82%);
+  }
+  .scene-shards::after{
+    content:"";
+    position:absolute;
+    right:-10%; bottom:-14%;
+    width:52%; height:64%;
+    background:linear-gradient(320deg, rgba(255,79,163,.10), transparent 64%);
+    clip-path:polygon(42% 0, 100% 22%, 100% 100%, 0 100%);
+  }
+  .scene-vignette{
+    position:absolute;
+    inset:0;
+    background:radial-gradient(118% 96% at 50% 48%, transparent 38%, rgba(0,0,0,.6) 100%);
+  }
+
+  /* ---------- UI 根 ---------- */
+  .ui{
+    position:absolute;
+    inset:0;
+    z-index:2;
+    font-size:1cqw;
+    padding:.75em 1.6em .7em;
+    display:flex;
+    flex-direction:column;
+    color:var(--text);
+    line-height:1.2;
+  }
+  .corner{position:absolute;width:2.1em;height:2.1em;pointer-events:none;opacity:.6;z-index:3}
+  .corner-tl{left:.9em;top:.9em;border-top:1px solid var(--cyan);border-left:1px solid var(--cyan)}
+  .corner-br{right:.9em;bottom:.9em;border-bottom:1px solid var(--magenta);border-right:1px solid var(--magenta)}
+
+  /* 角色定位色（StrinovaAgentRoster.Role.accentColor） */
+  .rc-assault{--rc:#bc3b47}
+  .rc-duelist{--rc:#deb639}
+  .rc-guardian{--rc:#4b77dc}
+  .rc-support{--rc:#35d6e8}
+  .rc-vanguard{--rc:#ff4fa3}
+  .rc-controller{--rc:#9b6bff}
+
+  /* ---------- 顶部：地图/模式 + 三段式阶段条 ---------- */
+  .top-info{
+    height:1.5em;
+    flex:none;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:.6em;
+    letter-spacing:.16em;
+    color:var(--muted);
+  }
+  .map-tag{display:flex;align-items:center;gap:.5em}
+  .map-tag .dot{
+    width:.5em;height:.5em;
+    transform:rotate(45deg);
+    background:var(--cyan);
+    box-shadow:0 0 .5em var(--cyan);
+  }
+  .map-tag b{color:#eaf7ff;font-weight:700;letter-spacing:.12em}
+  .map-tag i{font-style:normal;opacity:.45}
+  .esc-hint{display:flex;align-items:center;gap:.4em}
+  .kbd{
+    display:inline-grid;
+    place-items:center;
+    min-width:2.2em;
+    padding:.12em .45em;
+    font-family:var(--mono);
+    font-size:.92em;
+    letter-spacing:.05em;
+    color:#dff6ff;
+    background:rgba(12,28,42,.85);
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.3);
+    clip-path:polygon(.3em 0, 100% 0, calc(100% - .3em) 100%, 0 100%);
+  }
+
+  .phase-bar{
+    flex:none;
+    height:3.1em;
+    margin-top:.15em;
+    display:flex;
+    align-items:stretch;
+    filter:drop-shadow(0 .3em 1em rgba(0,0,0,.55)) drop-shadow(0 0 .5em rgba(53,214,232,.1));
+  }
+  .phase-seg{
+    position:relative;
+    height:100%;
+    display:flex;
+    align-items:center;
+    gap:.6em;
+  }
+  .phase-seg.ally{
+    width:30%;
+    padding:0 1.3em;
+    justify-content:flex-start;
+    background:linear-gradient(96deg, rgba(255,71,87,.88), rgba(190,42,63,.62) 70%, rgba(120,26,40,.5));
+    clip-path:polygon(0 0, 100% 0, calc(100% - .9em) 100%, 0 100%);
+    box-shadow:inset 0 1px 0 rgba(255,190,198,.4), inset 0 -1px 0 rgba(255,71,87,.6);
+  }
+  .phase-seg.center{
+    flex:1;
+    justify-content:center;
+    gap:.9em;
+    padding:0 1.4em;
+    background:linear-gradient(180deg, rgba(8,16,26,.95), rgba(4,9,16,.97));
+    clip-path:polygon(.9em 0, calc(100% - .9em) 0, 100% 100%, 0 100%);
+    box-shadow:inset 0 1px 0 rgba(53,214,232,.55), inset 0 -1px 0 rgba(53,214,232,.25);
+  }
+  .phase-seg.enemy{
+    width:30%;
+    padding:0 1.3em;
+    justify-content:flex-end;
+    background:linear-gradient(264deg, rgba(95,216,255,.82), rgba(55,104,192,.6) 70%, rgba(24,48,100,.5));
+    clip-path:polygon(0 0, 100% 0, 100% 100%, .9em 100%);
+    box-shadow:inset 0 1px 0 rgba(190,230,255,.4), inset 0 -1px 0 rgba(95,216,255,.6);
+  }
+  .phase-seg .seg-dot{
+    width:.55em;height:.55em;
+    transform:rotate(45deg);
+    background:var(--red);
+    box-shadow:0 0 .5em var(--red);
+    flex:none;
+  }
+  .phase-seg.enemy .seg-dot{background:var(--blue);box-shadow:0 0 .5em var(--blue)}
+  .seg-text{
+    font-size:.82em;
+    font-weight:800;
+    letter-spacing:.24em;
+    color:#fff;
+    text-shadow:0 .05em .14em rgba(0,0,0,.8), 0 0 .5em rgba(255,255,255,.25);
+  }
+  .phase-label{
+    font-size:.8em;
+    font-weight:700;
+    letter-spacing:.3em;
+    text-indent:.3em;
+    color:#cfeaf3;
+  }
+  .phase-timer{
+    font-family:var(--mono);
+    font-size:1.5em;
+    font-weight:800;
+    letter-spacing:.04em;
+    color:#f6fdff;
+    text-shadow:0 0 .6em rgba(53,214,232,.75), 0 .05em .12em rgba(0,0,0,.9);
+  }
+
+  /* ---------- 主体：左侧队友 / 中央立绘 / 右侧详情 ---------- */
+  .main{
+    flex:1;
+    min-height:0;
+    margin-top:.7em;
+    display:flex;
+    gap:.8em;
+  }
+
+  /* 左侧 5 名队友卡片 */
+  .mates{
+    width:13.6em;
+    flex:none;
+    display:flex;
+    flex-direction:column;
+    gap:.5em;
+  }
+  .mate{
+    flex:1;
+    min-height:0;
+    display:flex;
+    align-items:center;
+    gap:.55em;
+    padding:.4em .6em;
+    background:linear-gradient(96deg, rgba(255,71,87,.16), rgba(9,18,28,.78) 55%);
+    box-shadow:inset 0 0 0 1px rgba(255,71,87,.16);
+    border-left:2px solid rgba(255,71,87,.6);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .5em), calc(100% - .5em) 100%, 0 100%);
+  }
+  .mate.self{
+    background:linear-gradient(96deg, rgba(255,209,102,.2), rgba(20,22,24,.8) 55%);
+    box-shadow:inset 0 0 0 1px rgba(255,209,102,.3);
+    border-left-color:var(--gold);
+  }
+  .mate.empty{
+    background:linear-gradient(96deg, rgba(143,180,198,.08), rgba(9,18,28,.7) 55%);
+    box-shadow:inset 0 0 0 1px rgba(143,180,198,.14);
+    border-left-color:rgba(143,180,198,.35);
+  }
+  .m-avatar{
+    position:relative;
+    width:2.35em;
+    height:2.35em;
+    flex:none;
+    display:grid;
+    place-items:center;
+    background:linear-gradient(150deg,
+      color-mix(in srgb, var(--rc) 85%, #fff 6%),
+      color-mix(in srgb, var(--rc) 36%, #05090f 64%));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.35), 0 .1em .3em rgba(0,0,0,.5);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .35em), calc(100% - .35em) 100%, 0 100%);
+  }
+  .m-avatar b{font-size:.92em;font-weight:800;color:#fff;line-height:1;text-shadow:0 .05em .12em rgba(0,0,0,.9)}
+  .m-avatar.unknown{
+    --rc:#5a6b78;
+    background:linear-gradient(150deg, rgba(70,84,96,.55), rgba(14,20,26,.9));
+  }
+  .m-avatar.unknown b{color:#9fb6c4;font-size:1.2em}
+  .m-info{display:flex;flex-direction:column;gap:.1em;min-width:0}
+  .m-name{
+    display:flex;
+    align-items:center;
+    gap:.3em;
+    font-size:.72em;
+    font-weight:700;
+    letter-spacing:.04em;
+    color:#eaf7ff;
+    white-space:nowrap;
+    overflow:hidden;
+  }
+  .mate.self .m-name{color:var(--gold)}
+  .you{
+    padding:.05em .3em .07em;
+    font-size:.7em;
+    font-weight:800;
+    letter-spacing:.06em;
+    color:#2a1a02;
+    background:linear-gradient(115deg,#ffe9ab,var(--gold));
+    clip-path:polygon(.26em 0, 100% 0, calc(100% - .26em) 100%, 0 100%);
+  }
+  .m-role{font-size:.54em;letter-spacing:.1em;color:rgba(143,180,198,.85)}
+  .m-state{
+    margin-left:auto;
+    flex:none;
+    display:grid;
+    place-items:center;
+    width:1.05em;
+    height:1.05em;
+    font-size:.55em;
+    font-weight:900;
+    color:var(--green);
+    background:rgba(2,12,7,.8);
+    box-shadow:inset 0 0 0 1px rgba(95,224,140,.55), 0 0 .3em rgba(95,224,140,.45);
+  }
+  .m-state.waiting{color:rgba(143,180,198,.9);background:rgba(12,20,28,.8);box-shadow:inset 0 0 0 1px rgba(143,180,198,.3)}
+
+  /* 中央大立绘占位 */
+  .portrait{
+    position:relative;
+    flex:1;
+    min-width:0;
+    overflow:hidden;
+    isolation:isolate;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    padding:1.1em 1.4em 1.2em;
+    background:
+      radial-gradient(120% 90% at 50% 115%, color-mix(in srgb, var(--rc) 26%, transparent), transparent 62%),
+      radial-gradient(90% 70% at 50% 30%, rgba(53,214,232,.08), transparent 62%),
+      linear-gradient(180deg, rgba(6,13,22,.85), rgba(3,8,14,.95));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.18);
+    clip-path:polygon(0 0, calc(100% - 1.2em) 0, 100% 1.2em, 100% 100%, .8em 100%, 0 calc(100% - .8em));
+  }
+  .portrait::before{
+    content:"";
+    position:absolute;
+    left:-10%; top:-18%;
+    width:70%; height:80%;
+    background:linear-gradient(150deg, color-mix(in srgb, var(--rc) 18%, transparent), transparent 66%);
+    clip-path:polygon(0 0, 100% 0, 58% 100%, 0 78%);
+    z-index:-1;
+  }
+  .portrait::after{
+    content:"";
+    position:absolute;
+    right:-12%; bottom:-20%;
+    width:64%; height:70%;
+    background:linear-gradient(320deg, rgba(53,214,232,.12), transparent 64%);
+    clip-path:polygon(46% 0, 100% 24%, 100% 100%, 0 100%);
+    z-index:-1;
+  }
+  .p-glyph{
+    position:absolute;
+    left:52%; top:44%;
+    transform:translate(-50%,-50%);
+    font-size:16em;
+    font-weight:900;
+    line-height:1;
+    color:color-mix(in srgb, var(--rc) 30%, transparent);
+    text-shadow:0 0 .4em color-mix(in srgb, var(--rc) 26%, transparent);
+    user-select:none;
+    pointer-events:none;
+  }
+  .p-top{
+    position:absolute;
+    left:1.2em; right:1.2em; top:1.1em;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:.6em;
+  }
+  .p-status{
+    display:inline-flex;
+    align-items:center;
+    gap:.4em;
+    padding:.28em .8em;
+    font-size:.54em;
+    font-weight:700;
+    letter-spacing:.2em;
+    color:#dff6ff;
+    background:rgba(53,214,232,.14);
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.35);
+    clip-path:polygon(.4em 0, 100% 0, calc(100% - .4em) 100%, 0 100%);
+  }
+  .p-status::before{
+    content:"";
+    width:.45em;height:.45em;
+    transform:rotate(45deg);
+    background:var(--cyan);
+    box-shadow:0 0 .4em var(--cyan);
+  }
+  .p-index{font-family:var(--mono);font-size:.54em;letter-spacing:.14em;color:rgba(143,180,198,.75)}
+  .p-name{
+    position:relative;
+    z-index:1;
+    font-size:2.7em;
+    font-weight:900;
+    letter-spacing:.1em;
+    line-height:1.05;
+    color:#fff;
+    text-shadow:0 0 .6em color-mix(in srgb, var(--rc) 55%, transparent), 0 .06em .18em rgba(0,0,0,.85);
+  }
+  .p-sub{
+    position:relative;
+    z-index:1;
+    margin-top:.45em;
+    display:flex;
+    align-items:center;
+    gap:.6em;
+  }
+  .role-pill{
+    display:inline-flex;
+    align-items:center;
+    padding:.14em .75em .16em;
+    font-size:.66em;
+    font-weight:800;
+    letter-spacing:.22em;
+    color:#fff;
+    background:linear-gradient(115deg, color-mix(in srgb, var(--rc) 86%, #000 8%), color-mix(in srgb, var(--rc) 46%, transparent));
+    box-shadow:0 0 .7em color-mix(in srgb, var(--rc) 45%, transparent);
+    clip-path:polygon(.4em 0, 100% 0, calc(100% - .4em) 100%, 0 100%);
+  }
+  .p-faction{font-size:.6em;letter-spacing:.16em;color:rgba(143,180,198,.9)}
+  .p-hint{position:relative;z-index:1;margin-top:.5em;font-size:.52em;letter-spacing:.14em;color:rgba(143,180,198,.7)}
+
+  /* 右侧详情面板 */
+  .detail{
+    width:24.8em;
+    flex:none;
+    display:flex;
+    flex-direction:column;
+    gap:.5em;
+    padding:.9em;
+    background:linear-gradient(180deg, rgba(9,18,30,.93), rgba(4,9,16,.97));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.2), 0 .8em 2.4em rgba(0,0,0,.35);
+    clip-path:polygon(0 0, calc(100% - 1em) 0, 100% 1em, 100% 100%, .7em 100%, 0 calc(100% - .7em));
+  }
+  .d-role-row{display:flex;align-items:center;gap:.55em;flex:none}
+  .d-faction{font-size:.56em;letter-spacing:.16em;color:rgba(143,180,198,.85)}
+  .d-skills{display:flex;gap:.45em;flex:none}
+  .skill-ico{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:.25em;
+    padding:.4em 0 .35em;
+    background:rgba(255,255,255,.03);
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.14);
+    clip-path:polygon(.4em 0, 100% 0, calc(100% - .4em) 100%, 0 100%);
+  }
+  .si-box{
+    width:1.7em;
+    height:1.7em;
+    display:grid;
+    place-items:center;
+    transform:rotate(45deg);
+    background:linear-gradient(135deg, rgba(20,44,62,.95), rgba(5,12,21,.97));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.5), 0 0 .5em rgba(53,214,232,.18);
+  }
+  .si-inner{transform:rotate(-45deg);display:grid;place-items:center}
+  .g-diamond{width:.62em;height:.62em;background:linear-gradient(135deg,#eafcff,var(--cyan));box-shadow:0 0 .35em var(--cyan)}
+  .g-arrow{width:.66em;height:.66em;background:linear-gradient(135deg,#f2fdff,var(--cyan));clip-path:polygon(50% 0,100% 100%,50% 74%,0 100%);filter:drop-shadow(0 0 .3em rgba(53,214,232,.8))}
+  .g-ring{width:.66em;height:.66em;border:.12em solid #9fb6c4;border-radius:50%;opacity:.75}
+  .si-label{font-size:.46em;letter-spacing:.14em;color:rgba(143,180,198,.85)}
+  .skill-ico.passive .si-box{box-shadow:inset 0 0 0 1px rgba(143,180,198,.35)}
+  .skill-ico.locked{opacity:.5}
+
+  .qcard{
+    flex:none;
+    padding:.55em .7em .6em;
+    background:linear-gradient(120deg, rgba(53,214,232,.08), rgba(255,255,255,.02));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.16);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .5em), calc(100% - .5em) 100%, 0 100%);
+  }
+  .q-title{
+    display:flex;
+    align-items:center;
+    gap:.45em;
+    font-size:.66em;
+    font-weight:700;
+    letter-spacing:.06em;
+    color:#eaf7ff;
+  }
+  .q-badge{
+    display:grid;
+    place-items:center;
+    min-width:1.25em;
+    padding:.06em .28em .08em;
+    font-family:var(--mono);
+    font-size:.86em;
+    font-weight:800;
+    color:#04121a;
+    background:linear-gradient(115deg,#eafcff,var(--cyan));
+    clip-path:polygon(.28em 0, 100% 0, calc(100% - .28em) 100%, 0 100%);
+  }
+  .q-desc{
+    margin:.32em 0 0;
+    font-size:.55em;
+    line-height:1.62;
+    letter-spacing:.02em;
+    color:#b9d4e0;
+  }
+
+  .d-tabs{display:flex;gap:.4em;flex:none}
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:.34em 0 .36em;
+    font-size:.56em;
+    letter-spacing:.18em;
+    color:rgba(143,180,198,.85);
+    background:rgba(255,255,255,.025);
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.12);
+    clip-path:polygon(.4em 0, 100% 0, calc(100% - .4em) 100%, 0 100%);
+  }
+  .tab.active{
+    font-weight:800;
+    color:#04121a;
+    background:linear-gradient(115deg, #eafcff, var(--cyan));
+    box-shadow:0 0 .6em rgba(53,214,232,.35);
+  }
+
+  .d-weapons{
+    flex:1;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    gap:.28em;
+  }
+  .weapon-row{
+    flex:1;
+    min-height:0;
+    display:flex;
+    align-items:center;
+    gap:.45em;
+    padding:0 .5em;
+    background:rgba(255,255,255,.025);
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.1);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .35em), calc(100% - .35em) 100%, 0 100%);
+  }
+  .weapon-row.equipped{
+    background:rgba(53,214,232,.1);
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.5);
+  }
+  .w-type{
+    width:3.9em;
+    flex:none;
+    font-size:.46em;
+    letter-spacing:.08em;
+    color:rgba(143,180,198,.85);
+  }
+  .w-icon{
+    width:1.5em;
+    height:1.5em;
+    flex:none;
+    display:grid;
+    place-items:center;
+  }
+  .w-name{font-size:.6em;font-weight:700;letter-spacing:.06em;color:#eaf7ff;white-space:nowrap}
+  .w-state{margin-left:auto;font-size:.44em;letter-spacing:.1em;color:var(--cyan);white-space:nowrap}
+  .w-state.dim{color:rgba(143,180,198,.75)}
+
+  .d-lock{
+    flex:none;
+    display:grid;
+    place-items:center;
+    height:3.1em;
+    font-size:.92em;
+    font-weight:800;
+    letter-spacing:.42em;
+    text-indent:.42em;
+    color:#04121a;
+    background:linear-gradient(115deg, #eafcff, var(--cyan) 75%);
+    box-shadow:0 0 .9em rgba(53,214,232,.4), inset 0 0 0 1px rgba(255,255,255,.5);
+    clip-path:polygon(.65em 0, 100% 0, calc(100% - .65em) 100%, 0 100%);
+  }
+
+  /* ---------- 底部 2×12 超弦体头像格 ---------- */
+  .roster-panel{
+    flex:none;
+    width:73em;
+    height:11.8em;
+    margin:.65em auto 0;
+    padding:.5em;
+    background:linear-gradient(180deg, rgba(8,16,26,.9), rgba(4,9,16,.95));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.2);
+    clip-path:polygon(0 0, calc(100% - 1em) 0, 100% 1em, 100% 100%, .8em 100%, 0 calc(100% - .8em));
+  }
+  .roster-grid{
+    height:100%;
+    display:grid;
+    grid-template-columns:repeat(12, 1fr);
+    grid-auto-rows:1fr;
+    gap:.32em;
+  }
+  .tile{
+    position:relative;
+    min-width:0;
+    min-height:0;
+    display:grid;
+    place-items:center;
+    background:
+      radial-gradient(120% 120% at 50% 20%, color-mix(in srgb, var(--rc) 26%, transparent), transparent 68%),
+      linear-gradient(160deg, rgba(18,30,44,.9), rgba(6,12,20,.95));
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--rc) 40%, transparent);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .45em), calc(100% - .45em) 100%, 0 100%);
+  }
+  .tile b{
+    font-size:1.45em;
+    font-weight:800;
+    line-height:1;
+    color:#eefaff;
+    text-shadow:0 .05em .14em rgba(0,0,0,.9);
+  }
+  .tile .t-role{
+    position:absolute;
+    left:0; right:0;
+    bottom:.22em;
+    text-align:center;
+    font-size:.46em;
+    letter-spacing:.1em;
+    color:color-mix(in srgb, var(--rc) 78%, #d7e9f2 22%);
+  }
+  .tile.dim{opacity:.78}
+  .tile.locked{opacity:1}
+  .tile.selected{
+    background:
+      radial-gradient(120% 120% at 50% 20%, color-mix(in srgb, var(--rc) 38%, transparent), transparent 72%),
+      linear-gradient(160deg, rgba(24,60,78,.95), rgba(7,18,28,.97));
+    box-shadow:inset 0 0 0 2px var(--cyan), 0 0 .9em rgba(53,214,232,.5);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .45em), calc(100% - .45em) 100%, 0 100%);
+  }
+  .tile.selected b{color:#fff;text-shadow:0 0 .5em rgba(53,214,232,.8)}
+  .p1-tag{
+    position:absolute;
+    left:0; top:0;
+    padding:.12em .36em .14em;
+    font-family:var(--mono);
+    font-size:.4em;
+    font-weight:900;
+    letter-spacing:.04em;
+    color:#02141a;
+    background:linear-gradient(115deg, #eafcff, var(--cyan));
+  }
+  .lock-chk{
+    position:absolute;
+    right:.06em; top:.06em;
+    width:.64em; height:.64em;
+    display:grid;
+    place-items:center;
+    font-size:.46em;
+    font-weight:900;
+    line-height:1;
+    color:var(--green);
+    background:rgba(2,12,7,.85);
+    box-shadow:inset 0 0 0 1px rgba(95,224,140,.6), 0 0 .28em rgba(95,224,140,.55);
+  }
+  .tile.empty-slot{
+    opacity:.35;
+    background:rgba(255,255,255,.02);
+    box-shadow:inset 0 0 0 1px rgba(143,180,198,.15);
+  }
+
+  /* ---------- 画面底部提示 ---------- */
+  .foot-hint{
+    flex:none;
+    height:1.5em;
+    margin-top:.5em;
+    display:flex;
+    align-items:center;
+    gap:.55em;
+    font-size:.56em;
+    letter-spacing:.1em;
+    color:rgba(143,180,198,.8);
+  }
+  .foot-hint .kbd{font-size:.92em}
+  .foot-hint .sep{opacity:.4}
+  .foot-hint .watermark{margin-left:auto;color:rgba(143,180,198,.5);letter-spacing:.14em}
+
+  /* 小武器图标（几何占位） */
+  .wi{display:block}
+  .wi-rifle{
+    width:1.15em;height:.42em;
+    background:linear-gradient(90deg,#f0fbff,#9fb9c8);
+    clip-path:polygon(0 35%,58% 35%,66% 0,76% 0,78% 35%,100% 35%,100% 58%,70% 58%,64% 100%,52% 100%,46% 58%,0 58%);
+  }
+  .wi-pistol{
+    width:.7em;height:.48em;
+    background:linear-gradient(160deg,#eafcff,#9fb9c8);
+    clip-path:polygon(0 0,100% 0,100% 34%,58% 34%,54% 100%,28% 100%,32% 34%,0 34%);
+  }
+  .wi-knife{
+    width:1em;height:.44em;
+    background:linear-gradient(90deg,#f2fbff,#8fa3b0);
+    clip-path:polygon(0 100%,62% 0,100% 20%,40% 100%);
+  }
+  .wi-grenade{
+    width:.62em;height:.68em;
+    border-radius:46%;
+    background:radial-gradient(120% 120% at 34% 28%, #d3e6f1, #5d7484 78%);
+  }
+  .wi-heal{
+    width:.62em;height:.68em;
+    border-radius:46%;
+    background-image:
+      linear-gradient(#1d5a38,#1d5a38),
+      linear-gradient(#1d5a38,#1d5a38),
+      radial-gradient(120% 120% at 34% 28%, #d9f7e6, #3f7a5c 76%);
+    background-size:.13em .4em, .4em .13em, 100% 100%;
+    background-position:center,center,center;
+    background-repeat:no-repeat;
+  }
+
+  /* ---------- 页面底部说明 ---------- */
+  .page-foot{
+    width:var(--stage-w);
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:.4em .7em;
+    font-size:clamp(.6rem,.82vw,.72rem);
+    letter-spacing:.05em;
+    color:var(--muted);
+  }
+  .page-foot .foot-tag{
+    padding:.16em .6em;
+    font-weight:700;
+    letter-spacing:.14em;
+    color:#04121a;
+    background:linear-gradient(120deg, var(--cyan), rgba(53,214,232,.72));
+    clip-path:polygon(.4em 0, 100% 0, calc(100% - .4em) 100%, 0 100%);
+  }
+  .page-foot .sep{opacity:.45}
+  .page-foot .accent-c{color:var(--cyan)}
+  .page-foot .accent-m{color:var(--magenta)}
+</style>
+</head>
+<body>
+
+  <!-- 页面顶部标注 -->
+  <header class="page-head">
+    <span class="brand-bar" aria-hidden="true"></span>
+    <h1>Imitating the Strinova Mechanism <span class="dash">—</span> 超弦体选角预览（P2：对齐真实布局，程序化绘制风格）</h1>
+  </header>
+
+  <!-- 16:9 深色选角画面 -->
+  <section class="stage" aria-label="超弦体选角静态预览（P2 对齐真实布局）">
+    <div class="scene" aria-hidden="true">
+      <div class="scene-glow"></div>
+      <div class="scene-shards"></div>
+      <div class="scene-vignette"></div>
+    </div>
+
+    <div class="ui">
+      <span class="corner corner-tl" aria-hidden="true"></span>
+      <span class="corner corner-br" aria-hidden="true"></span>
+
+      <!-- 顶部：左上角地图/模式 + 右上 ESC -->
+      <div class="top-info">
+        <span class="map-tag">
+          <span class="dot" aria-hidden="true"></span>
+          <b>88区</b><i>·</i><span>爆破入侵</span>
+        </span>
+        <span class="esc-hint"><span class="kbd">ESC</span>返回</span>
+      </div>
+
+      <!-- 三段式阶段条 -->
+      <div class="phase-bar" aria-label="对局阶段">
+        <div class="phase-seg ally">
+          <span class="seg-dot" aria-hidden="true"></span>
+          <span class="seg-text">我方进攻</span>
+        </div>
+        <div class="phase-seg center">
+          <span class="phase-label">选择角色</span>
+          <span class="phase-timer">00:24</span>
+        </div>
+        <div class="phase-seg enemy">
+          <span class="seg-text">敌方防守</span>
+          <span class="seg-dot" aria-hidden="true"></span>
+        </div>
+      </div>
+
+      <!-- 主体 -->
+      <div class="main">
+
+        <!-- 左侧 5 名队友 -->
+        <aside class="mates" aria-label="队友列表">
+          <div class="mate self">
+            <span class="m-avatar rc-duelist"><b>千</b></span>
+            <span class="m-info">
+              <span class="m-name">玩家A<span class="you">你</span></span>
+              <span class="m-role">千代 · 决斗</span>
+            </span>
+            <span class="m-state" aria-label="当前选择">P1</span>
+          </div>
+          <div class="mate">
+            <span class="m-avatar rc-controller"><b>玛</b></span>
+            <span class="m-info">
+              <span class="m-name">玩家B</span>
+              <span class="m-role">玛德蕾娜 · 控场</span>
+            </span>
+            <span class="m-state" aria-label="已锁定">✓</span>
+          </div>
+          <div class="mate">
+            <span class="m-avatar rc-guardian"><b>蕾</b></span>
+            <span class="m-info">
+              <span class="m-name">玩家C</span>
+              <span class="m-role">蕾欧娜 · 守护</span>
+            </span>
+            <span class="m-state" aria-label="已锁定">✓</span>
+          </div>
+          <div class="mate">
+            <span class="m-avatar rc-vanguard"><b>诺</b></span>
+            <span class="m-info">
+              <span class="m-name">玩家D</span>
+              <span class="m-role">诺诺 · 先锋</span>
+            </span>
+            <span class="m-state" aria-label="已锁定">✓</span>
+          </div>
+          <div class="mate empty">
+            <span class="m-avatar unknown"><b>?</b></span>
+            <span class="m-info">
+              <span class="m-name">玩家E</span>
+              <span class="m-role">等待选择</span>
+            </span>
+            <span class="m-state waiting" aria-label="未选择">—</span>
+          </div>
+        </aside>
+
+        <!-- 中央大立绘占位（千代） -->
+        <section class="portrait rc-duelist" aria-label="已选超弦体立绘">
+          <span class="p-glyph" aria-hidden="true">千</span>
+          <div class="p-top">
+            <span class="p-status">已选择</span>
+            <span class="p-index">08 / 24</span>
+          </div>
+          <div class="p-name">千代</div>
+          <div class="p-sub">
+            <span class="role-pill">决斗</span>
+            <span class="p-faction">阵营：欧泊</span>
+          </div>
+          <div class="p-hint">点击底部头像网格切换超弦体</div>
+        </section>
+
+        <!-- 右侧详情 -->
+        <aside class="detail rc-duelist" aria-label="超弦体详情">
+          <div class="d-role-row">
+            <span class="role-pill">决斗</span>
+            <span class="d-faction">欧泊 · DUELIST</span>
+          </div>
+
+          <!-- 3 个技能小图标 -->
+          <div class="d-skills">
+            <div class="skill-ico passive">
+              <span class="si-box"><span class="si-inner"><i class="g-diamond" aria-hidden="true"></i></span></span>
+              <span class="si-label">被动</span>
+            </div>
+            <div class="skill-ico">
+              <span class="si-box"><span class="si-inner"><i class="g-arrow" aria-hidden="true"></i></span></span>
+              <span class="si-label">Q 主动</span>
+            </div>
+            <div class="skill-ico locked">
+              <span class="si-box"><span class="si-inner"><i class="g-ring" aria-hidden="true"></i></span></span>
+              <span class="si-label">C 未解锁</span>
+            </div>
+          </div>
+
+          <!-- Q 主动技能 -->
+          <div class="qcard">
+            <div class="q-title"><span class="q-badge">Q</span>千代流·居合</div>
+            <p class="q-desc">拔刀向前突进，对路径上的敌人造成伤害；命中后短时间内提升自身移动速度，是抢夺交战先手的关键技能。</p>
+          </div>
+
+          <!-- 页签 -->
+          <div class="d-tabs" aria-label="详情页签">
+            <span class="tab active">武器选择</span>
+            <span class="tab">外观选择</span>
+          </div>
+
+          <!-- 武器选择 5 项 -->
+          <div class="d-weapons" aria-label="武器选择">
+            <div class="weapon-row equipped">
+              <span class="w-icon"><i class="wi wi-rifle" aria-hidden="true"></i></span>
+              <span class="w-type">主武器</span>
+              <span class="w-name">枫鸣</span>
+              <span class="w-state">已装备</span>
+            </div>
+            <div class="weapon-row">
+              <span class="w-icon"><i class="wi wi-pistol" aria-hidden="true"></i></span>
+              <span class="w-type">副武器</span>
+              <span class="w-name">小蜜蜂</span>
+              <span class="w-state dim">切换</span>
+            </div>
+            <div class="weapon-row">
+              <span class="w-icon"><i class="wi wi-knife" aria-hidden="true"></i></span>
+              <span class="w-type">近战</span>
+              <span class="w-name">忍锋</span>
+              <span class="w-state dim">切换</span>
+            </div>
+            <div class="weapon-row">
+              <span class="w-icon"><i class="wi wi-grenade" aria-hidden="true"></i></span>
+              <span class="w-type">战术道具</span>
+              <span class="w-name">减速雷</span>
+              <span class="w-state dim">切换</span>
+            </div>
+            <div class="weapon-row">
+              <span class="w-icon"><i class="wi wi-heal" aria-hidden="true"></i></span>
+              <span class="w-type">战术道具</span>
+              <span class="w-name">治疗雷</span>
+              <span class="w-state dim">切换</span>
+            </div>
+          </div>
+
+          <!-- 锁定角色 -->
+          <div class="d-lock">锁定角色</div>
+        </aside>
+      </div>
+
+      <!-- 底部 2×12 = 24 头像格 -->
+      <div class="roster-panel" aria-label="超弦体头像网格">
+        <div class="roster-grid">
+
+          <div class="tile rc-guardian dim" title="米雪儿·李 · 守护"><b>米</b><span class="t-role">守护</span></div>
+          <div class="tile rc-guardian dim" title="信 · 守护"><b>信</b><span class="t-role">守护</span></div>
+          <div class="tile rc-support dim" title="心夏 · 支援"><b>心</b><span class="t-role">支援</span></div>
+          <div class="tile rc-controller dim" title="伊薇特 · 控场"><b>伊</b><span class="t-role">控场</span></div>
+          <div class="tile rc-assault dim" title="芙拉薇娅 · 突击"><b>芙</b><span class="t-role">突击</span></div>
+          <div class="tile rc-controller dim" title="忧雾 · 控场"><b>忧</b><span class="t-role">控场</span></div>
+          <div class="tile rc-guardian locked" title="蕾欧娜 · 守护（已锁定）">
+            <b>蕾</b><span class="t-role">守护</span>
+            <span class="lock-chk" aria-label="已锁定">✓</span>
+          </div>
+          <div class="tile rc-duelist selected" title="千代 · 决斗（当前选择 P1）">
+            <span class="p1-tag">P1</span>
+            <b>千</b><span class="t-role">决斗</span>
+          </div>
+          <div class="tile rc-assault dim" title="明 · 突击"><b>明</b><span class="t-role">突击</span></div>
+          <div class="tile rc-vanguard dim" title="拉薇 · 先锋"><b>拉</b><span class="t-role">先锋</span></div>
+          <div class="tile rc-controller dim" title="梅瑞狄斯 · 控场"><b>梅</b><span class="t-role">控场</span></div>
+          <div class="tile rc-controller dim" title="令 · 控场"><b>令</b><span class="t-role">控场</span></div>
+
+          <div class="tile rc-vanguard dim" title="香奈美 · 先锋"><b>香</b><span class="t-role">先锋</span></div>
+          <div class="tile rc-duelist dim" title="艾卡 · 决斗"><b>艾</b><span class="t-role">决斗</span></div>
+          <div class="tile rc-support dim" title="珐格兰丝 · 支援"><b>珐</b><span class="t-role">支援</span></div>
+          <div class="tile rc-assault dim" title="玛拉 · 突击"><b>玛</b><span class="t-role">突击</span></div>
+          <div class="tile rc-vanguard locked" title="诺诺 · 先锋（已锁定）">
+            <b>诺</b><span class="t-role">先锋</span>
+            <span class="lock-chk" aria-label="已锁定">✓</span>
+          </div>
+          <div class="tile rc-guardian dim" title="奥黛丽·格罗夫 · 守护"><b>奥</b><span class="t-role">守护</span></div>
+          <div class="tile rc-controller locked" title="玛德蕾娜·利里 · 控场（已锁定）">
+            <b>玛</b><span class="t-role">控场</span>
+            <span class="lock-chk" aria-label="已锁定">✓</span>
+          </div>
+          <div class="tile rc-duelist dim" title="绯莎 · 决斗"><b>绯</b><span class="t-role">决斗</span></div>
+          <div class="tile rc-support dim" title="星绘 · 支援"><b>星</b><span class="t-role">支援</span></div>
+          <div class="tile rc-duelist dim" title="白墨 · 决斗"><b>白</b><span class="t-role">决斗</span></div>
+          <div class="tile rc-vanguard dim" title="加拉蒂亚·利里 · 先锋"><b>加</b><span class="t-role">先锋</span></div>
+          <div class="tile rc-assault dim" title="汐 · 突击"><b>汐</b><span class="t-role">突击</span></div>
+
+        </div>
+      </div>
+
+      <!-- 底部提示 -->
+      <div class="foot-hint">
+        <span class="kbd">左键</span>选择超弦体
+        <span class="sep">·</span>
+        <span class="kbd">回车</span>锁定角色
+        <span class="sep">·</span>
+        <span class="kbd">ESC</span>返回
+        <span class="watermark">程序化绘制预览 · 非最终贴图</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 页面底部说明 -->
+  <footer class="page-foot">
+    <span class="foot-tag">P2 画面要素</span>
+    <span>顶部阶段条（我方进攻 / 选择角色 00:24 / 敌方防守）</span><span class="sep">·</span>
+    <span>左侧 5 队友 + 中央立绘占位 + 右侧定位/技能/武器/锁定</span><span class="sep">·</span>
+    <span>底部 2×12 超弦体头像格（P1 标记 / 锁定绿勾）</span><span class="sep">·</span>
+    <span>配色 <b class="accent-c">#35D6E8</b> / <b class="accent-m">#FF4FA3</b></span>
+  </footer>
+
+</body>
+</html>

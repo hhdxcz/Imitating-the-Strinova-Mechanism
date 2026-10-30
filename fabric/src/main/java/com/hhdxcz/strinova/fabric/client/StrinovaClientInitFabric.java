@@ -14,7 +14,13 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import com.hhdxcz.strinova.client.StrinovaAgentSelectScreen;
+import com.hhdxcz.strinova.client.StrinovaGrowthScreen;
 import com.hhdxcz.strinova.client.StrinovaCollisionMenuScreen;
+import com.hhdxcz.strinova.client.StrinovaCombatSettingsScreen;
+import com.hhdxcz.strinova.client.StrinovaHudEditorScreen;
+import com.hhdxcz.strinova.client.hud.StrinovaHudConfig;
+import com.hhdxcz.strinova.client.hud.StrinovaHudRenderer;
 
 import java.util.List;
 
@@ -39,6 +45,9 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         StrinovaNetwork.initClient();
+        // 战斗 HUD：加载本地配置并注册渲染层
+        StrinovaHudConfig.load();
+        StrinovaHudRenderer.register();
         StrinovaKeyBindings.register();
         // H4：客户端加入服务器时把本地完整碰撞配置上报给服务端
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
@@ -52,27 +61,68 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
             StrinovaCollisionBoxTuning.clearAll();
             StrinovaCompoundCollision.clearAll();
         });
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
-                ClientCommandManager.literal("strinova_client")
-                        .then(ClientCommandManager.literal("edit_collision")
-                                .executes(ctx -> {
-                                    Minecraft client = Minecraft.getInstance();
-                                    if (client.player != null) {
-                                        client.tell(() -> client.setScreen(new StrinovaCollisionMenuScreen(client.screen, client.player)));
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+            var root = ClientCommandManager.literal("strinova_client")
+                    .then(ClientCommandManager.literal("edit_collision")
+                            .executes(ctx -> {
+                                Minecraft client = Minecraft.getInstance();
+                                if (client.player != null) {
+                                    client.tell(() -> client.setScreen(new StrinovaCollisionMenuScreen(client.screen, client.player)));
+                                    return 1;
+                                }
+                                ctx.getSource().sendFeedback(Component.translatable("command.strinova.client.no_player"));
+                                return 0;
+                            }))
+                    .then(ClientCommandManager.literal("key")
+                            .then(ClientCommandManager.literal("wall")
+                                    .then(ClientCommandManager.argument("key", StringArgumentType.word())
+                                            .suggests(SUGGEST_WALL_KEYS)
+                                            .executes(ctx -> {
+                                                String key = StringArgumentType.getString(ctx, "key");
+                                                boolean ok = StrinovaKeyBindings.rebindWallKey(key);
+                                                ctx.getSource().sendFeedback(Component.literal(ok ? "已修改贴墙键位" : "修改失败：无效键位或未初始化"));
+                                                return ok ? 1 : 0;
+                                            }))))
+                    .then(ClientCommandManager.literal("hud")
+                            .executes(ctx -> {
+                                Minecraft client = Minecraft.getInstance();
+                                client.tell(() -> client.setScreen(new StrinovaCombatSettingsScreen(client.screen)));
+                                return 1;
+                            })
+                            .then(ClientCommandManager.literal("editor")
+                                    .executes(ctx -> {
+                                        Minecraft client = Minecraft.getInstance();
+                                        client.tell(() -> client.setScreen(new StrinovaHudEditorScreen(client.screen)));
                                         return 1;
-                                    }
-                                    ctx.getSource().sendFeedback(Component.translatable("command.strinova.client.no_player"));
-                                    return 0;
-                                }))
-                        .then(ClientCommandManager.literal("key")
-                                .then(ClientCommandManager.literal("wall")
-                                        .then(ClientCommandManager.argument("key", StringArgumentType.word())
-                                        .suggests(SUGGEST_WALL_KEYS)
-                                                .executes(ctx -> {
-                                                    String key = StringArgumentType.getString(ctx, "key");
-                                                    boolean ok = StrinovaKeyBindings.rebindWallKey(key);
-                                                    ctx.getSource().sendFeedback(Component.literal(ok ? "已修改贴墙键位" : "修改失败：无效键位或未初始化"));
-                                                    return ok ? 1 : 0;
-                                                }))))));
+                                    }))
+                            .then(ClientCommandManager.literal("mock")
+                                    .executes(ctx -> {
+                                        boolean on = StrinovaHudRenderer.toggleMock();
+                                        ctx.getSource().sendFeedback(Component.translatable(on
+                                                ? "config.strinova.hud.mock.on"
+                                                : "config.strinova.hud.mock.off"));
+                                        return 1;
+                                    }))
+                            .then(ClientCommandManager.literal("test")
+                                    .executes(ctx -> {
+                                        StrinovaHudRenderer.triggerTestHit();
+                                        StrinovaHudRenderer.triggerTestKill();
+                                        ctx.getSource().sendFeedback(Component.translatable("config.strinova.hud.mock.test"));
+                                        return 1;
+                                    })))
+                    .then(ClientCommandManager.literal("agent")
+                            .executes(ctx -> {
+                                Minecraft client = Minecraft.getInstance();
+                                client.tell(() -> client.setScreen(new StrinovaAgentSelectScreen(client.screen)));
+                                return 1;
+                            }))
+                    .then(ClientCommandManager.literal("growth")
+                            .executes(ctx -> {
+                                Minecraft client = Minecraft.getInstance();
+                                client.tell(() -> client.setScreen(new StrinovaGrowthScreen(client.screen)));
+                                return 1;
+                            }));
+            dispatcher.register(root);
+        });
     }
 }

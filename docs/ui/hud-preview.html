@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>战斗 HUD 布局预览（P0：对齐真实布局） — Imitating the Strinova Mechanism</title>
+<style>
+  /* ============================================================
+     战斗 HUD 静态布局预览（P0：对齐卡拉彼丘真实对局 HUD）
+     纯 HTML + CSS 单文件：无外链 / 图片 / JS，全部程序化绘制。
+     配色：青蓝 #35D6E8 / 品红 #FF4FA3，斜切角 + 细发光描边。
+     舞台固定 16:9；1em = 舞台宽度的 1%（截图 1600×900 时约 14px）。
+     布局分区：
+       顶部中央：双方 5 头像 + 目标回合 + 倒计时 + 红/蓝比分
+       左上：地图/模式        右上：击杀播报
+       左下：状态 chips + 头像 + 生命 130 / 护甲 80 + 增益
+       底部中央：Q / X / C 菱形技能栏    右下：竖排 1~5 武器栏
+       中央：准星 + 伤害数字
+     ============================================================ */
+  :root{
+    --cyan:#35d6e8;
+    --magenta:#ff4fa3;
+    --red:#ff4757;
+    --blue:#5fd8ff;
+    --green:#5fe08c;
+    --gold:#ffd166;
+    --purple:#b06bff;
+    --text:#e9f7ff;
+    --muted:#8fb4c6;
+    --font:"Microsoft YaHei","PingFang SC","Noto Sans SC","Hiragino Sans GB","Segoe UI",system-ui,sans-serif;
+    --mono:"Consolas","Cascadia Mono","SFMono-Regular","Roboto Mono",monospace;
+    --stage-w:min(1600px, 96vw, max(420px, calc((100vh - 106px) * 16 / 9)));
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    padding:clamp(6px,1vh,12px) 16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:clamp(6px,.9vh,10px);
+    background:radial-gradient(120% 90% at 50% -10%, #0b1524 0%, #05090f 45%, #02040a 100%);
+    color:var(--text);
+    font-family:var(--font);
+    overflow:hidden;
+  }
+
+  /* ---------- 页面顶部标注 ---------- */
+  .page-head{
+    width:var(--stage-w);
+    display:flex;
+    align-items:stretch;
+    gap:.85rem;
+  }
+  .brand-bar{
+    flex:0 0 4px;
+    width:4px;
+    border-radius:1px;
+    background:linear-gradient(180deg, var(--cyan), rgba(53,214,232,.12) 55%, var(--magenta));
+    box-shadow:0 0 14px rgba(53,214,232,.5);
+  }
+  .page-head h1{
+    margin:0;
+    font-size:clamp(.78rem,1.35vw,1rem);
+    font-weight:600;
+    letter-spacing:.03em;
+    line-height:1.55;
+    color:#e3f4fc;
+  }
+  .page-head h1 .dash{color:var(--cyan); margin:0 .15em;}
+  .page-head h1 .note{color:var(--muted); font-weight:400; font-size:.9em; letter-spacing:.04em;}
+
+  /* ---------- 16:9 深色画面 ---------- */
+  .stage{
+    position:relative;
+    width:var(--stage-w);
+    aspect-ratio:16 / 9;
+    container-type:size;
+    overflow:hidden;
+    isolation:isolate;
+    border:1px solid rgba(53,214,232,.22);
+    background:
+      radial-gradient(120% 85% at 50% 38%, rgba(53,214,232,.10), transparent 58%),
+      radial-gradient(80% 70% at 50% 112%, rgba(255,79,163,.10), transparent 62%),
+      linear-gradient(180deg, #070d17 0%, #04080f 52%, #02040a 100%);
+    box-shadow:
+      0 0 0 1px rgba(53,214,232,.05),
+      0 24px 70px rgba(0,0,0,.65),
+      0 0 42px rgba(53,214,232,.08);
+  }
+  /* 场景层：透视线框地面 + 地平线光辉 + 斜向光带 + 暗角（纯 CSS 程序化绘制） */
+  .scene{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  .scene-glow{
+    position:absolute;
+    inset:0;
+    background:
+      radial-gradient(48% 32% at 50% 58%, rgba(53,214,232,.16), transparent 70%),
+      radial-gradient(40% 30% at 86% 14%, rgba(255,79,163,.07), transparent 74%),
+      radial-gradient(46% 38% at 10% 84%, rgba(53,214,232,.08), transparent 74%);
+  }
+  .scene-grid{
+    position:absolute;
+    left:-60%; right:-60%; bottom:-2%;
+    height:150%;
+    background-image:
+      linear-gradient(rgba(53,214,232,.34) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(53,214,232,.30) 1px, transparent 1px);
+    background-size:7.5% 12%, 7.5% 12%;
+    transform:perspective(1800px) rotateX(58deg);
+    transform-origin:50% 100%;
+    opacity:.72;
+    -webkit-mask-image:linear-gradient(to top, #000 8%, rgba(0,0,0,.85) 34%, rgba(0,0,0,.45) 60%, transparent 88%);
+    mask-image:linear-gradient(to top, #000 8%, rgba(0,0,0,.85) 34%, rgba(0,0,0,.45) 60%, transparent 88%);
+  }
+  .scene-horizon{
+    position:absolute;
+    left:6%; right:6%;
+    top:52%;
+    height:1px;
+    background:linear-gradient(90deg, transparent, rgba(53,214,232,.55) 26%, rgba(53,214,232,.55) 74%, transparent);
+    box-shadow:0 0 14px rgba(53,214,232,.45), 0 0 42px rgba(53,214,232,.18);
+    opacity:.85;
+  }
+  .scene-shards{
+    position:absolute;
+    inset:0;
+    opacity:.65;
+    background:
+      linear-gradient(112deg, transparent 20%, rgba(53,214,232,.05) 33%, transparent 47%),
+      linear-gradient(292deg, transparent 32%, rgba(255,79,163,.045) 44%, transparent 58%);
+  }
+  .scene-shards::before{
+    content:"";
+    position:absolute;
+    left:-8%; top:-20%;
+    width:56%; height:74%;
+    background:linear-gradient(150deg, rgba(53,214,232,.10), transparent 62%);
+    clip-path:polygon(0 0, 100% 0, 62% 100%, 0 82%);
+  }
+  .scene-shards::after{
+    content:"";
+    position:absolute;
+    right:-10%; bottom:-14%;
+    width:52%; height:64%;
+    background:linear-gradient(320deg, rgba(255,79,163,.10), transparent 64%);
+    clip-path:polygon(42% 0, 100% 22%, 100% 100%, 0 100%);
+  }
+  .scene-vignette{
+    position:absolute;
+    inset:0;
+    background:radial-gradient(118% 96% at 50% 48%, transparent 44%, rgba(0,0,0,.58) 100%);
+  }
+
+  /* ---------- HUD 根容器：1em = 舞台宽度的 1% ---------- */
+  .hud{
+    position:absolute;
+    inset:0;
+    z-index:2;
+    font-size:1cqw;
+    font-family:var(--font);
+    line-height:1.2;
+    color:var(--text);
+  }
+
+  /* 角色定位色（与 StrinovaAgentRoster.Role.accentColor 一致） */
+  .rc-assault{--rc:#bc3b47}
+  .rc-duelist{--rc:#deb639}
+  .rc-guardian{--rc:#4b77dc}
+  .rc-support{--rc:#35d6e8}
+  .rc-vanguard{--rc:#ff4fa3}
+  .rc-controller{--rc:#9b6bff}
+  /* 敌方头像：品红 / 蓝色系 */
+  .tone-magenta{--rc:#ff4fa3}
+  .tone-blue{--rc:#4b77dc}
+
+  /* ============================================================
+     1. 顶部中央：对局比分面板（双方 5 头像 + 目标回合 + 倒计时 + 比分）
+     ============================================================ */
+  .match-panel{
+    position:absolute;
+    left:50%;
+    top:.9em;
+    transform:translateX(-50%);
+    z-index:3;
+    width:39.7em;
+    height:3.26em;
+    display:flex;
+    align-items:stretch;
+    filter:drop-shadow(0 .3em 1.1em rgba(0,0,0,.65)) drop-shadow(0 0 .5em rgba(53,214,232,.12));
+  }
+  /* 两端红 / 蓝斜切底条 */
+  .mp-side{
+    position:relative;
+    flex:none;
+    height:100%;
+    display:flex;
+    align-items:center;
+    gap:.2em;
+    padding:0 .5em;
+  }
+  .mp-side.ally{
+    background:linear-gradient(96deg, rgba(255,71,87,.10) 0%, rgba(255,71,87,.55) 18%, rgba(190,42,63,.95) 100%);
+    clip-path:polygon(0 0, 100% 0, calc(100% - .8em) 100%, 0 100%);
+  }
+  .mp-side.ally::after{
+    content:"";
+    position:absolute;
+    left:.3em; right:1em; bottom:.16em;
+    height:1px;
+    background:linear-gradient(90deg, transparent, rgba(255,214,220,.7), transparent);
+    opacity:.7;
+  }
+  .mp-side.enemy{
+    background:linear-gradient(264deg, rgba(95,216,255,.10) 0%, rgba(75,119,220,.55) 18%, rgba(37,74,158,.95) 100%);
+    clip-path:polygon(0 0, 100% 0, 100% 100%, .8em 100%);
+  }
+  .mp-side.enemy::after{
+    content:"";
+    position:absolute;
+    left:1em; right:.3em; bottom:.16em;
+    height:1px;
+    background:linear-gradient(90deg, transparent, rgba(190,225,255,.7), transparent);
+    opacity:.7;
+  }
+  /* 角色方块头像（首字 + 定位色 + 右下存活绿勾） */
+  .mp-avatar{
+    position:relative;
+    width:1.56em;
+    height:1.56em;
+    flex:none;
+    display:grid;
+    place-items:center;
+    background:
+      linear-gradient(150deg,
+        color-mix(in srgb, var(--rc) 82%, #fff 8%),
+        color-mix(in srgb, var(--rc) 42%, #05090f 58%));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.4), 0 .1em .3em rgba(0,0,0,.55);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .3em), calc(100% - .3em) 100%, 0 100%);
+  }
+  .mp-avatar > b{
+    font-size:.8em;
+    font-weight:800;
+    line-height:1;
+    color:#fff;
+    text-shadow:0 .06em .14em rgba(0,0,0,.9);
+  }
+  .mp-check{
+    position:absolute;
+    right:-.02em; bottom:-.02em;
+    width:.6em; height:.6em;
+    display:grid;
+    place-items:center;
+    font-size:.52em;
+    font-weight:900;
+    line-height:1;
+    color:var(--green);
+    background:rgba(2,12,7,.86);
+    box-shadow:inset 0 0 0 1px rgba(95,224,140,.55), 0 0 .3em rgba(95,224,140,.55);
+  }
+  /* 中央：目标 / 倒计时 / 红蓝比分 */
+  .mp-center{
+    position:relative;
+    flex:1;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:.1em;
+    padding:0 1.2em;
+    background:
+      radial-gradient(56% 120% at 16% 108%, rgba(255,71,87,.18), transparent 62%),
+      radial-gradient(56% 120% at 84% 108%, rgba(95,216,255,.18), transparent 62%),
+      linear-gradient(180deg, rgba(7,14,24,.95), rgba(3,7,13,.97));
+    clip-path:polygon(.8em 0, calc(100% - .8em) 0, 100% 100%, 0 100%);
+    box-shadow:inset 0 1px 0 rgba(53,214,232,.45);
+  }
+  .mp-objective{
+    font-size:.6em;
+    letter-spacing:.2em;
+    text-indent:.2em;
+    line-height:1.1;
+    color:#cfeaf3;
+    white-space:nowrap;
+  }
+  .mp-timer{
+    font-family:var(--mono);
+    font-size:1.36em;
+    font-weight:800;
+    letter-spacing:.04em;
+    line-height:1;
+    color:#f6fdff;
+    text-shadow:0 0 .6em rgba(53,214,232,.55), 0 .06em .12em rgba(0,0,0,.9);
+    white-space:nowrap;
+  }
+  .mp-score{
+    display:flex;
+    align-items:baseline;
+    gap:.24em;
+    font-family:var(--mono);
+    font-size:.82em;
+    font-weight:800;
+    line-height:1;
+  }
+  .mp-score .sc-red{color:var(--red); text-shadow:0 0 .5em rgba(255,71,87,.85)}
+  .mp-score .sc-blue{color:var(--blue); text-shadow:0 0 .5em rgba(95,216,255,.85)}
+  .mp-score .sc-sep{font-size:.8em; color:rgba(233,247,255,.55)}
+
+  /* ============================================================
+     2. 左上：地图名 + 模式
+     ============================================================ */
+  .hud-mapinfo{
+    position:absolute;
+    left:2.2%;
+    top:1.25em;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    gap:.5em;
+    font-size:.66em;
+    letter-spacing:.16em;
+    color:var(--muted);
+    text-shadow:0 .06em .16em rgba(0,0,0,.9);
+  }
+  .hud-mapinfo .map-dot{
+    width:.5em; height:.5em;
+    transform:rotate(45deg);
+    background:var(--cyan);
+    box-shadow:0 0 .5em var(--cyan);
+  }
+  .hud-mapinfo b{font-weight:700; color:#eaf7ff; letter-spacing:.12em}
+  .hud-mapinfo i{font-style:normal; opacity:.45}
+
+  /* ============================================================
+     3. 右上：击杀播报
+     ============================================================ */
+  .hud-killfeed{
+    position:absolute;
+    right:2.4%;
+    top:4.4%;
+    width:40%;
+    z-index:2;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:.55em;
+  }
+  .feed-row{
+    display:inline-flex;
+    align-items:center;
+    gap:.5em;
+    padding:.42em 1.1em .42em 1.7em;
+    font-size:.94em;
+    letter-spacing:.05em;
+    background:linear-gradient(90deg, rgba(6,13,22,0) 0%, rgba(6,13,22,.78) 14%, rgba(8,16,26,.9) 60%, rgba(8,16,26,.92) 100%);
+    clip-path:polygon(.9em 0, 100% 0, 100% 100%, 0 100%);
+    text-shadow:0 .08em .18em rgba(0,0,0,.9);
+  }
+  .feed-row .killer{font-weight:700; color:#eafcff;}
+  .feed-row .wtag{font-size:.82em; letter-spacing:.08em; color:#ff9ac6;}
+  .feed-row .kill-mark{font-size:.8em; color:rgba(53,214,232,.85);}
+  .feed-row .victim{color:#9fb6c4;}
+  .feed-row .headshot{
+    margin-left:.3em;
+    display:inline-flex;
+    align-items:center;
+    gap:.3em;
+    padding:.12em .5em;
+    font-size:.78em;
+    color:var(--magenta);
+    background:rgba(255,79,163,.14);
+    clip-path:polygon(.4em 0, 100% 0, calc(100% - .4em) 100%, 0 100%);
+  }
+  .feed-row .headshot i{
+    width:.45em; height:.45em;
+    transform:rotate(45deg);
+    background:var(--magenta);
+    box-shadow:0 0 .4em var(--magenta);
+  }
+
+  /* ============================================================
+     4. 左下：状态 chips + 角色头像 + 生命/护甲 + 增益
+     ============================================================ */
+  .hud-leftstack{
+    position:absolute;
+    left:2.2%;
+    bottom:3.4%;
+    z-index:2;
+    width:24.5em;
+    display:flex;
+    flex-direction:column;
+    gap:.6em;
+  }
+  /* 状态 chips（自右下移入，位于血甲上方） */
+  .hud-states{display:flex; flex-wrap:wrap; gap:.42em;}
+  .chip{
+    padding:1px;
+    clip-path:polygon(.55em 0, 100% 0, calc(100% - .55em) 100%, 0 100%);
+    background:linear-gradient(120deg, rgba(53,214,232,.9), rgba(53,214,232,.18));
+    filter:drop-shadow(0 0 .5em rgba(53,214,232,.25));
+  }
+  .chip>span{
+    display:flex;
+    align-items:center;
+    gap:.42em;
+    padding:.24em .78em .26em;
+    font-size:.62em;
+    letter-spacing:.16em;
+    color:#cfeaf3;
+    background:linear-gradient(160deg, rgba(8,18,29,.96), rgba(4,9,17,.93));
+    clip-path:inherit;
+  }
+  .chip .dot{
+    display:block;
+    width:.5em; height:.5em;
+    background:var(--cyan);
+    clip-path:polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    box-shadow:0 0 .5em var(--cyan);
+  }
+  .chip.magenta{
+    background:linear-gradient(120deg, rgba(255,79,163,.9), rgba(255,79,163,.18));
+    filter:drop-shadow(0 0 .5em rgba(255,79,163,.3));
+  }
+  .chip.magenta>span{color:#ffd7e9;}
+  .chip.magenta .dot{background:var(--magenta); box-shadow:0 0 .5em var(--magenta);}
+
+  .vitals{
+    display:flex;
+    align-items:center;
+    gap:.6em;
+    padding:.5em .8em .55em .5em;
+    background:linear-gradient(90deg, rgba(5,11,20,.78) 0%, rgba(5,11,20,.42) 66%, rgba(5,11,20,0) 100%);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .7em), calc(100% - .7em) 100%, 0 100%);
+  }
+  /* 34×34 角色头像方块（千代） */
+  .v-avatar{
+    position:relative;
+    width:2.41em;
+    height:2.41em;
+    flex:none;
+    display:grid;
+    place-items:center;
+    background:
+      radial-gradient(120% 120% at 30% 18%,
+        color-mix(in srgb, var(--rc) 88%, #fff 6%),
+        color-mix(in srgb, var(--rc) 34%, #05090f 66%));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.45), 0 .15em .5em rgba(0,0,0,.6);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .45em), calc(100% - .45em) 100%, 0 100%);
+  }
+  .v-avatar > b{
+    font-size:1.15em;
+    font-weight:900;
+    line-height:1;
+    color:#fff;
+    text-shadow:0 .06em .16em rgba(0,0,0,.95);
+  }
+  .v-bars{flex:1; min-width:0; display:flex; flex-direction:column; gap:.36em}
+  .v-row{display:flex; align-items:center; gap:.5em}
+  .v-num{
+    min-width:2em;
+    text-align:right;
+    font-family:var(--mono);
+    font-size:1.84em;
+    font-weight:800;
+    line-height:1;
+    color:#f8feff;
+    text-shadow:0 .05em .14em rgba(0,0,0,.9), 0 0 .5em rgba(255,255,255,.25);
+  }
+  .v-row.armor .v-num{
+    font-size:1.5em;
+    color:#efe2ff;
+    text-shadow:0 .05em .14em rgba(0,0,0,.9), 0 0 .5em rgba(176,107,255,.55);
+  }
+  .v-bar{
+    position:relative;
+    flex:1;
+    height:.6em;
+    overflow:hidden;
+    background:rgba(214,240,255,.1);
+    clip-path:polygon(0 0, 100% 0, calc(100% - .4em) 100%, 0 100%);
+  }
+  .v-bar i{
+    display:block;
+    height:100%;
+    background:linear-gradient(90deg, rgba(255,255,255,.55), #f4fdff 55%, #dbeaf5);
+    box-shadow:0 0 .6em rgba(255,255,255,.6);
+  }
+  .v-bar::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background:repeating-linear-gradient(90deg,
+      transparent 0 calc(10% - 1px),
+      rgba(2,6,12,.4) calc(10% - 1px) 10%);
+  }
+  .v-bar.armor i{
+    background:linear-gradient(90deg, rgba(176,107,255,.4), var(--purple) 60%, #c9a2ff);
+    box-shadow:0 0 .6em rgba(176,107,255,.8);
+  }
+  /* 两行绿色增益 */
+  .v-buffs{
+    margin-left:3.51em;
+    display:flex;
+    flex-direction:column;
+    gap:.16em;
+    padding:.05em 0 .15em;
+  }
+  .buff{
+    display:flex;
+    align-items:center;
+    gap:.35em;
+    font-size:.68em;
+    letter-spacing:.12em;
+    line-height:1.1;
+    color:var(--green);
+    text-shadow:0 0 .55em rgba(95,224,140,.55);
+  }
+  .buff i{
+    font-style:normal;
+    font-size:.78em;
+    color:#b7ffd2;
+    text-shadow:0 0 .5em rgba(95,224,140,.9);
+  }
+
+  /* ============================================================
+     5. 底部中央：Q / X / C 菱形技能栏
+     ============================================================ */
+  .hud-skills{
+    position:absolute;
+    left:50%;
+    bottom:3.4%;
+    transform:translateX(-50%);
+    z-index:2;
+    display:flex;
+    align-items:flex-start;
+    gap:2em;
+  }
+  .skill-slot{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .diamond-wrap{
+    position:relative;
+    width:3em;
+    height:3em;
+    display:grid;
+    place-items:center;
+  }
+  .diamond{
+    width:2.24em;
+    height:2.24em;
+    transform:rotate(45deg);
+    display:grid;
+    place-items:center;
+    background:linear-gradient(135deg, rgba(16,36,52,.96), rgba(5,12,21,.98));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.5), 0 0 .7em rgba(53,214,232,.15);
+  }
+  .diamond-inner{
+    display:grid;
+    place-items:center;
+    width:100%;
+    height:100%;
+    transform:rotate(-45deg);
+  }
+  /* Q：就绪（青色 + 底部小黄条） */
+  .skill-slot.q .diamond{
+    background:linear-gradient(135deg, rgba(28,72,90,.98), rgba(6,22,32,.98));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.95), 0 0 1em rgba(53,214,232,.55), inset 0 0 1.3em rgba(53,214,232,.3);
+  }
+  .skill-slot.q .glyph{
+    width:1em;
+    height:1em;
+    background:linear-gradient(135deg, #f2fdff, var(--cyan));
+    clip-path:polygon(50% 0, 100% 100%, 50% 74%, 0 100%);
+    filter:drop-shadow(0 0 .35em rgba(53,214,232,.9));
+  }
+  .charge{
+    position:absolute;
+    left:50%;
+    bottom:-.24em;
+    transform:translateX(-50%);
+    width:1.6em;
+    height:.14em;
+    background:var(--gold);
+    box-shadow:0 0 .55em rgba(255,209,102,.95);
+  }
+  /* X：绝招点数 0/7 */
+  .skill-slot.x .diamond{
+    box-shadow:inset 0 0 0 1px rgba(143,180,198,.45), 0 0 .5em rgba(0,0,0,.35);
+  }
+  .skill-slot.x .ult{
+    font-family:var(--mono);
+    font-size:.72em;
+    font-weight:800;
+    letter-spacing:.02em;
+    color:#dff3fc;
+    text-shadow:0 .05em .1em rgba(0,0,0,.9);
+  }
+  /* C：未解锁（灰色 + 锁） */
+  .skill-slot.c .diamond{
+    background:linear-gradient(135deg, rgba(24,30,36,.94), rgba(8,11,15,.97));
+    box-shadow:inset 0 0 0 1px rgba(143,180,198,.22);
+    opacity:.85;
+  }
+  .lock{
+    position:relative;
+    width:.62em;
+    height:.5em;
+    background:#8fa3b0;
+    opacity:.8;
+  }
+  .lock::before{
+    content:"";
+    position:absolute;
+    left:.09em;
+    top:-.3em;
+    width:.3em;
+    height:.3em;
+    border:.09em solid #8fa3b0;
+    border-bottom:0;
+    border-radius:.22em .22em 0 0;
+  }
+  /* 键帽 */
+  .keycap{
+    margin-top:.82em;
+    min-width:1.5em;
+    padding:.12em .42em .14em;
+    font-family:var(--mono);
+    font-size:.62em;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-align:center;
+    color:#dff6ff;
+    background:rgba(12,28,42,.9);
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.32);
+    clip-path:polygon(.3em 0, 100% 0, calc(100% - .3em) 100%, 0 100%);
+  }
+
+  /* ============================================================
+     6. 右下：竖排 1~5 武器栏（1 号展开：武器名 + 大号弹药）
+     ============================================================ */
+  .hud-weapons{
+    position:absolute;
+    right:2.2%;
+    bottom:3.2%;
+    z-index:2;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:.42em;
+  }
+  .w-row{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:.45em;
+  }
+  .w-label{
+    font-size:.54em;
+    letter-spacing:.1em;
+    color:rgba(143,180,198,.85);
+    white-space:nowrap;
+    text-shadow:0 .05em .1em rgba(0,0,0,.8);
+  }
+  .w-box{
+    position:relative;
+    width:1.7em;
+    height:1.7em;
+    flex:none;
+    display:grid;
+    place-items:center;
+    background:linear-gradient(160deg, rgba(18,35,52,.85), rgba(5,11,20,.92));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.22);
+    clip-path:polygon(.32em 0, 100% 0, calc(100% - .32em) 100%, 0 100%);
+  }
+  .w-key{
+    width:.8em;
+    text-align:center;
+    font-family:var(--mono);
+    font-size:.5em;
+    color:rgba(143,180,198,.8);
+  }
+  /* 1 号当前武器：高亮槽位 + 横向展开面板 */
+  .w-main{
+    display:flex;
+    align-items:center;
+    gap:.5em;
+    padding:.4em .2em .4em 1em;
+    background:linear-gradient(90deg, rgba(5,11,20,0) 0%, rgba(6,14,23,.7) 26%, rgba(6,14,23,.94) 100%);
+    clip-path:polygon(.9em 0, 100% 0, 100% 100%, 0 100%);
+  }
+  .w-main .w-box{
+    width:1.95em;
+    height:1.95em;
+    background:linear-gradient(160deg, rgba(28,64,84,.96), rgba(8,20,30,.97));
+    box-shadow:inset 0 0 0 1px rgba(53,214,232,.9), 0 0 .8em rgba(53,214,232,.5);
+  }
+  .w-info{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:.12em;
+    padding-bottom:.1em;
+  }
+  .w-name{
+    font-size:.82em;
+    font-weight:700;
+    letter-spacing:.18em;
+    line-height:1;
+    color:#eaf7ff;
+    text-shadow:0 0 .5em rgba(53,214,232,.45);
+  }
+  .w-ammo{
+    display:flex;
+    align-items:baseline;
+    gap:.18em;
+    font-family:var(--mono);
+    line-height:1;
+  }
+  .w-ammo .mag{
+    font-size:1.9em;
+    font-weight:800;
+    color:#f8feff;
+    text-shadow:0 0 .6em rgba(53,214,232,.55), 0 .05em .12em rgba(0,0,0,.9);
+  }
+  .w-ammo .slash{
+    font-size:1.3em;
+    color:rgba(143,180,198,.6);
+  }
+  .w-ammo .reserve{
+    font-size:1.08em;
+    font-weight:700;
+    color:#a9c9d8;
+  }
+  /* 程序化武器图标（几何占位，后续换贴图） */
+  .ico{display:block}
+  .ico-rifle{
+    width:1.3em; height:.5em;
+    background:linear-gradient(90deg, #f0fbff, #9fb9c8);
+    clip-path:polygon(0 35%, 58% 35%, 66% 0, 76% 0, 78% 35%, 100% 35%, 100% 58%, 70% 58%, 64% 100%, 52% 100%, 46% 58%, 0 58%);
+  }
+  .w-main .ico-rifle{
+    background:linear-gradient(90deg, #eafcff, var(--cyan));
+    filter:drop-shadow(0 0 .3em rgba(53,214,232,.8));
+  }
+  .ico-pistol{
+    width:.82em; height:.58em;
+    background:linear-gradient(160deg, #eafcff, #9fb9c8);
+    clip-path:polygon(0 0, 100% 0, 100% 32%, 58% 32%, 54% 100%, 28% 100%, 32% 32%, 0 32%);
+  }
+  .ico-knife{
+    width:1.15em; height:.52em;
+    background:linear-gradient(90deg, #f2fbff, #8fa3b0);
+    clip-path:polygon(0 100%, 62% 0, 100% 20%, 40% 100%);
+  }
+  .ico-grenade{
+    position:relative;
+    width:.74em; height:.8em;
+    border-radius:46%;
+    background:radial-gradient(120% 120% at 34% 28%, #d3e6f1, #5d7484 78%);
+  }
+  .ico-grenade::before{
+    content:"";
+    position:absolute;
+    left:50%; top:-.22em;
+    transform:translateX(-50%);
+    width:.24em; height:.28em;
+    background:#9fb6c4;
+    clip-path:polygon(30% 0, 70% 0, 100% 40%, 100% 100%, 0 100%, 0 40%);
+  }
+  .ico-heal{
+    position:relative;
+    width:.74em; height:.8em;
+    border-radius:46%;
+    background-image:
+      linear-gradient(#1d5a38, #1d5a38),
+      linear-gradient(#1d5a38, #1d5a38),
+      radial-gradient(120% 120% at 34% 28%, #d9f7e6, #3f7a5c 76%);
+    background-size:.15em .46em, .46em .15em, 100% 100%;
+    background-position:center, center, center;
+    background-repeat:no-repeat;
+  }
+  .ico-heal::before{
+    content:"";
+    position:absolute;
+    left:50%; top:-.22em;
+    transform:translateX(-50%);
+    width:.24em; height:.28em;
+    background:#7fae94;
+    clip-path:polygon(30% 0, 70% 0, 100% 40%, 100% 100%, 0 100%, 0 40%);
+  }
+
+  /* ============================================================
+     7. 屏幕中心：动态准星
+     ============================================================ */
+  .hud-crosshair{
+    position:absolute;
+    left:50%; top:50%;
+    width:0; height:0;
+    z-index:3;
+    pointer-events:none;
+  }
+  .hud-crosshair .ch{
+    position:absolute;
+    display:block;
+    background:#eafcff;
+    border-radius:.02em;
+    box-shadow:0 0 .22em rgba(53,214,232,.95), 0 0 .05em #fff;
+  }
+  .hud-crosshair .ch-top{
+    width:.13em; height:.62em;
+    left:-.065em; bottom:.4em;
+    animation:ch-top 2.6s ease-in-out infinite;
+  }
+  .hud-crosshair .ch-bottom{
+    width:.13em; height:.62em;
+    left:-.065em; top:.4em;
+    animation:ch-bottom 2.6s ease-in-out infinite;
+  }
+  .hud-crosshair .ch-left{
+    height:.13em; width:.62em;
+    top:-.065em; right:.4em;
+    animation:ch-left 2.6s ease-in-out infinite;
+  }
+  .hud-crosshair .ch-right{
+    height:.13em; width:.62em;
+    top:-.065em; left:.4em;
+    animation:ch-right 2.6s ease-in-out infinite;
+  }
+  .hud-crosshair .ch-dot{
+    position:absolute;
+    left:-.09em; top:-.09em;
+    width:.18em; height:.18em;
+    border-radius:50%;
+    background:#fff;
+    box-shadow:0 0 .35em var(--cyan);
+  }
+
+  /* ============================================================
+     8. 中央：浮动伤害数字
+     ============================================================ */
+  .hud-dmg{
+    position:absolute;
+    z-index:3;
+    font-family:var(--mono);
+    font-weight:800;
+    font-style:italic;
+    line-height:1;
+    letter-spacing:.02em;
+    pointer-events:none;
+  }
+  .dmg-24{
+    left:53.4%; top:44.6%;
+    font-size:2em;
+    color:#f2fdff;
+    text-shadow:0 0 .5em rgba(53,214,232,.9), 0 .06em .1em rgba(0,0,0,.8);
+    animation:dmg-float-a 3.8s ease-in-out infinite;
+  }
+  .dmg-36{
+    left:45.2%; top:39.8%;
+    font-size:1.8em;
+    color:#ffd7e9;
+    text-shadow:0 0 .55em rgba(255,79,163,.85), 0 .06em .1em rgba(0,0,0,.8);
+    animation:dmg-float-b 4.4s ease-in-out infinite;
+  }
+  .dmg-36 .dmg-label{
+    margin-left:.35em;
+    font-family:var(--font);
+    font-style:normal;
+    font-weight:700;
+    font-size:.58em;
+    letter-spacing:.12em;
+    color:#ff9ac6;
+    vertical-align:.18em;
+  }
+
+  /* ---------- 动画 ---------- */
+  @keyframes ch-top{0%,100%{transform:translateY(0)}50%{transform:translateY(-.16em)}}
+  @keyframes ch-bottom{0%,100%{transform:translateY(0)}50%{transform:translateY(.16em)}}
+  @keyframes ch-left{0%,100%{transform:translateX(0)}50%{transform:translateX(-.16em)}}
+  @keyframes ch-right{0%,100%{transform:translateX(0)}50%{transform:translateX(.16em)}}
+  @keyframes dmg-float-a{0%,100%{transform:translateY(0); opacity:.95}50%{transform:translateY(-.55em); opacity:1}}
+  @keyframes dmg-float-b{0%,100%{transform:translateY(0); opacity:.9}50%{transform:translateY(-.4em); opacity:1}}
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;}
+  }
+
+  /* ---------- 页面底部说明 ---------- */
+  .page-foot{
+    width:var(--stage-w);
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:.4em .7em;
+    font-size:clamp(.6rem,.82vw,.72rem);
+    letter-spacing:.05em;
+    color:var(--muted);
+  }
+  .page-foot .foot-tag{
+    padding:.16em .6em;
+    font-weight:700;
+    letter-spacing:.14em;
+    color:#04121a;
+    background:linear-gradient(120deg, var(--cyan), rgba(53,214,232,.72));
+    clip-path:polygon(.4em 0, 100% 0, calc(100% - .4em) 100%, 0 100%);
+  }
+  .page-foot .sep{opacity:.45}
+  .page-foot .accent-c{color:var(--cyan);}
+  .page-foot .accent-m{color:var(--magenta);}
+</style>
+</head>
+<body>
+
+  <!-- 页面顶部标注 -->
+  <header class="page-head">
+    <span class="brand-bar" aria-hidden="true"></span>
+    <h1>Imitating the Strinova Mechanism <span class="dash">—</span> 战斗 HUD 布局预览（P0：对齐真实布局，程序化绘制风格）</h1>
+  </header>
+
+  <!-- 16:9 深色对局 HUD 画面 -->
+  <section class="stage" aria-label="战斗 HUD 静态布局预览（P0 对齐真实布局）">
+    <!-- 程序化绘制的场景背景 -->
+    <div class="scene" aria-hidden="true">
+      <div class="scene-glow"></div>
+      <div class="scene-grid"></div>
+      <div class="scene-horizon"></div>
+      <div class="scene-shards"></div>
+      <div class="scene-vignette"></div>
+    </div>
+
+    <div class="hud">
+
+      <!-- 左上：地图名 + 模式 -->
+      <div class="hud-mapinfo" aria-label="地图与模式">
+        <span class="map-dot" aria-hidden="true"></span>
+        <b>88区</b><i>·</i><span>爆破入侵</span>
+      </div>
+
+      <!-- ============================================================
+           顶部中央：对局比分面板（双方各 5 头像 + 目标回合 + 倒计时 + 红蓝比分）
+           ============================================================ -->
+      <div class="match-panel" aria-label="对局比分面板">
+        <!-- 我方（进攻方，红色斜切底条） -->
+        <div class="mp-side ally">
+          <div class="mp-avatar rc-duelist" title="千代（决斗）"><b>千</b><span class="mp-check" aria-hidden="true">✓</span></div>
+          <div class="mp-avatar rc-controller" title="玛德蕾娜（控场）"><b>玛</b><span class="mp-check" aria-hidden="true">✓</span></div>
+          <div class="mp-avatar rc-guardian" title="蕾欧娜（守护）"><b>蕾</b><span class="mp-check" aria-hidden="true">✓</span></div>
+          <div class="mp-avatar rc-vanguard" title="诺诺（先锋）"><b>诺</b><span class="mp-check" aria-hidden="true">✓</span></div>
+          <div class="mp-avatar rc-controller" title="伊薇特（控场）"><b>伊</b><span class="mp-check" aria-hidden="true">✓</span></div>
+        </div>
+        <!-- 中央：目标回合 / 倒计时 / 比分 -->
+        <div class="mp-center">
+          <span class="mp-objective">目标9回合</span>
+          <span class="mp-timer">01:46</span>
+          <span class="mp-score">
+            <b class="sc-red">00</b><span class="sc-sep">:</span><b class="sc-blue">00</b>
+          </span>
+        </div>
+        <!-- 敌方（防守方，蓝色斜切底条；头像品红/蓝色系） -->
+        <div class="mp-side enemy">
+          <div class="mp-avatar tone-magenta" title="明（突击）"><b>明</b><span class="mp-check" aria-hidden="true">✓</span></div>
+          <div class="mp-avatar tone-blue" title="诺诺（先锋）"><b>诺</b><span class="mp-check" aria-hidden="true">✓</span></div>
+          <div class="mp-avatar tone-magenta" title="玛拉（突击）"><b>玛</b><span class="mp-check" aria-hidden="true">✓</span></div>
+          <div class="mp-avatar tone-blue" title="忧雾（控场）"><b>忧</b><span class="mp-check" aria-hidden="true">✓</span></div>
+          <div class="mp-avatar tone-magenta" title="艾卡（决斗）"><b>艾</b><span class="mp-check" aria-hidden="true">✓</span></div>
+        </div>
+      </div>
+
+      <!-- 右上：击杀播报（保留） -->
+      <div class="hud-killfeed" aria-label="击杀播报">
+        <div class="feed-row">
+          <span class="killer">玩家A</span>
+          <span class="wtag">[警探]</span>
+          <span class="kill-mark" aria-hidden="true">▸</span>
+          <span class="victim">玩家B</span>
+        </div>
+        <div class="feed-row">
+          <span class="killer">玩家A</span>
+          <span class="wtag">[空境]</span>
+          <span class="kill-mark" aria-hidden="true">▸</span>
+          <span class="victim">玩家C</span>
+          <span class="headshot"><i aria-hidden="true"></i>爆头</span>
+        </div>
+        <div class="feed-row">
+          <span class="killer">玩家C</span>
+          <span class="wtag">[警探]</span>
+          <span class="kill-mark" aria-hidden="true">▸</span>
+          <span class="victim">玩家D</span>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           左下：状态 chips + 角色头像 + 生命 130 / 护甲 80 + 绿色增益
+           ============================================================ -->
+      <div class="hud-leftstack">
+        <div class="hud-states" aria-label="状态指示">
+          <span class="chip"><span><i class="dot" aria-hidden="true"></i>弦化</span></span>
+          <span class="chip"><span><i class="dot" aria-hidden="true"></i>贴墙</span></span>
+          <span class="chip magenta"><span><i class="dot" aria-hidden="true"></i>段跳</span></span>
+        </div>
+
+        <div class="vitals">
+          <!-- 34×34 角色头像方块：千代 -->
+          <div class="v-avatar rc-duelist" aria-label="千代"><b>千</b></div>
+          <div class="v-bars">
+            <div class="v-row health">
+              <span class="v-num">130</span>
+              <span class="v-bar"><i style="width:100%"></i></span>
+            </div>
+            <div class="v-row armor">
+              <span class="v-num">80</span>
+              <span class="v-bar armor"><i style="width:100%"></i></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 增益提示：绿色文字 -->
+        <div class="v-buffs" aria-label="增益状态">
+          <span class="buff"><i aria-hidden="true">▲</i>护甲恢复</span>
+          <span class="buff"><i aria-hidden="true">▲</i>静心凝势</span>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           底部中央：Q / X / C 菱形技能栏
+           ============================================================ -->
+      <div class="hud-skills" aria-label="技能栏">
+        <!-- Q：就绪（青色菱形 + 底部小黄条） -->
+        <div class="skill-slot q">
+          <div class="diamond-wrap">
+            <div class="diamond"><span class="diamond-inner"><i class="glyph" aria-hidden="true"></i></span></div>
+            <span class="charge" aria-hidden="true"></span>
+          </div>
+          <span class="keycap">Q</span>
+        </div>
+        <!-- X：绝招点数 0/7 -->
+        <div class="skill-slot x">
+          <div class="diamond-wrap">
+            <div class="diamond"><span class="diamond-inner"><b class="ult">0/7</b></span></div>
+          </div>
+          <span class="keycap">X</span>
+        </div>
+        <!-- C：未解锁（灰色菱形 + 锁） -->
+        <div class="skill-slot c">
+          <div class="diamond-wrap">
+            <div class="diamond"><span class="diamond-inner"><i class="lock" aria-hidden="true"></i></span></div>
+          </div>
+          <span class="keycap">C</span>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           右下：竖排 1~5 武器栏（1 号高亮展开：枫鸣 20 / 205）
+           ============================================================ -->
+      <div class="hud-weapons" aria-label="武器栏">
+        <!-- 5 战术道具：治疗雷 -->
+        <div class="w-row">
+          <span class="w-label">治疗雷</span>
+          <span class="w-box"><i class="ico ico-heal" aria-hidden="true"></i></span>
+          <span class="w-key">5</span>
+        </div>
+        <!-- 4 战术道具：减速雷 -->
+        <div class="w-row">
+          <span class="w-label">减速雷</span>
+          <span class="w-box"><i class="ico ico-grenade" aria-hidden="true"></i></span>
+          <span class="w-key">4</span>
+        </div>
+        <!-- 3 近战：忍锋 -->
+        <div class="w-row">
+          <span class="w-label">忍锋</span>
+          <span class="w-box"><i class="ico ico-knife" aria-hidden="true"></i></span>
+          <span class="w-key">3</span>
+        </div>
+        <!-- 2 副武器：小蜜蜂 -->
+        <div class="w-row">
+          <span class="w-label">小蜜蜂</span>
+          <span class="w-box"><i class="ico ico-pistol" aria-hidden="true"></i></span>
+          <span class="w-key">2</span>
+        </div>
+        <!-- 1 主武器：枫鸣（当前高亮 + 武器名 + 大号弹药） -->
+        <div class="w-main">
+          <div class="w-info">
+            <span class="w-name">枫鸣</span>
+            <span class="w-ammo"><b class="mag">20</b><span class="slash">/</span><span class="reserve">205</span></span>
+          </div>
+          <span class="w-box"><i class="ico ico-rifle" aria-hidden="true"></i></span>
+          <span class="w-key">1</span>
+        </div>
+      </div>
+
+      <!-- 屏幕中心：动态准星（保留） -->
+      <div class="hud-crosshair" aria-hidden="true">
+        <span class="ch ch-top"></span>
+        <span class="ch ch-bottom"></span>
+        <span class="ch ch-left"></span>
+        <span class="ch ch-right"></span>
+        <span class="ch-dot"></span>
+      </div>
+
+      <!-- 中央：浮动伤害数字（保留） -->
+      <div class="hud-dmg dmg-24" aria-hidden="true">24</div>
+      <div class="hud-dmg dmg-36" aria-hidden="true">36<span class="dmg-label">爆头</span></div>
+
+    </div>
+  </section>
+
+  <!-- 页面底部说明 -->
+  <footer class="page-foot">
+    <span class="foot-tag">P0 画面要素</span>
+    <span>顶部双方头像比分面板</span><span class="sep">·</span>
+    <span>左下头像 + 生命 130 / 护甲 80 + 增益</span><span class="sep">·</span>
+    <span>底部 Q / X / C 菱形技能栏</span><span class="sep">·</span>
+    <span>右下竖排 1~5 武器栏（枫鸣 20 / 205）</span><span class="sep">·</span>
+    <span>准星</span><span class="sep">·</span>
+    <span>伤害数字</span><span class="sep">·</span>
+    <span>击杀播报</span><span class="sep">·</span>
+    <span>配色 <b class="accent-c">#35D6E8</b> / <b class="accent-m">#FF4FA3</b></span>
+  </footer>
+
+</body>
+</html>
