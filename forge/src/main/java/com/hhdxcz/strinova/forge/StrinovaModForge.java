@@ -29,6 +29,9 @@ public class StrinovaModForge {
         MinecraftForge.EVENT_BUS.addListener(StrinovaModForge::onRegisterCommands);
         MinecraftForge.EVENT_BUS.addListener(StrinovaModForge::onPlayerLogin);
         MinecraftForge.EVENT_BUS.addListener(StrinovaModForge::onPlayerLogout);
+        // H8：注册重生克隆与换维度清理事件
+        MinecraftForge.EVENT_BUS.addListener(StrinovaModForge::onPlayerClone);
+        MinecraftForge.EVENT_BUS.addListener(StrinovaModForge::onPlayerChangeDimension);
         DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> StrinovaClientInitForge::init);
     }
 
@@ -68,7 +71,13 @@ public class StrinovaModForge {
         }
         int extraJumps = StrinovaAirJumpSettings.get(server).getExtraJumps(target.getUUID());
         StrinovaNetwork.sendAirJumpSync(target, target.getUUID(), extraJumps);
-        StrinovaNetwork.sendCollisionBoxTuningSync(target, target.getUUID());
+        // M7：登录时下发模组启用状态与禁止贴墙方块名单
+        StrinovaNetwork.sendModEnabled(target, StrinovaMod.isEnabled());
+        StrinovaNetwork.sendWallBlacklist(target);
+        // H4：新玩家登录时同步所有在线玩家（含自身）的完整碰撞配置
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            StrinovaNetwork.sendCollisionConfig(target, p.getUUID());
+        }
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
             UUID playerId = p.getUUID();
             if (WaPaperState.isCtrlPaper(playerId)) {

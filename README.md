@@ -2,7 +2,7 @@
 
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.20.1-brightgreen)](https://www.minecraft.net)
 [![Loader](https://img.shields.io/badge/Loader-Fabric%20%7C%20Forge-orange)](https://architectury.dev)
-[![Version](https://img.shields.io/badge/Version-1.2.1-blue)](https://github.com/hhdxcz/Imitating-the-Strinova-Mechanism)
+[![Version](https://img.shields.io/badge/Version-1.2.2-blue)](https://github.com/hhdxcz/Imitating-the-Strinova-Mechanism)
 [![Java](https://img.shields.io/badge/Java-17-red)](https://adoptium.net/)
 [![License](https://img.shields.io/github/license/hhdxcz/Imitating-the-Strinova-Mechanism)](LICENSE)
 > 在 Minecraft 里还原《卡拉彼丘》的弦化机制喵~
@@ -25,19 +25,19 @@
 
 ### 弦化
 
-按住 `Ctrl` 进入弦化状态，将玩家碰撞箱压缩为薄片，降低受击面积。
+按一下 `Ctrl` 切换弦化状态（再按一下解除），将玩家碰撞箱压缩为薄片，降低受击面积。
 
 - **伤害减免**：可配置 0.0~1.0 的减伤倍率，默认减免 40%
 
 ### 贴墙
 
-弦化状态下按 `R` 贴附到前方墙壁上，沿墙面自由移动。
+按 `R` 贴附到面前的实体墙上（不要求先弦化），贴墙后可沿墙面自由移动，再按 `R` 解除。
 
 - **贴墙黑名单**：可配置禁止贴附的方块列表
 
 ### 飘飞
 
-弦化状态下按空格键触发飘飞，在空中滑翔。
+在空中按一下 `Ctrl` 触发飘飞，朝视线方向滑翔；再按一下 `Ctrl` 可主动取消。
 
 - 落地、入水、撞墙时自动取消
 - 每次离地仅可飘飞一次
@@ -75,9 +75,10 @@
 
 | 按键 | 功能 | 说明 |
 |------|------|------|
-| `Ctrl`（按住） | 弦化 | 变身纸片人，碰撞箱缩小 |
-| `R` | 贴墙 | 弦化状态下贴附到前方墙壁，可自定义按键 |
-| `空格` | 多段跳 / 飘飞 | 空中按跳跃触发多段跳；弦化状态下触发飘飞 |
+| `Ctrl`（按一下） | 弦化 | 变身纸片人，碰撞箱缩小；再按一下解除 |
+| `Ctrl`（空中按一下） | 飘飞 | 空中触发飘飞，朝视线方向滑翔；再按一下主动取消 |
+| `R` | 贴墙 | 面前有实体墙时贴附到墙上（不要求先弦化），可自定义按键 |
+| `空格` | 多段跳 | 在空中按跳跃触发多段跳 |
 
 > 按键绑定可在游戏设置中修改。
 
@@ -86,7 +87,14 @@
 ## 命令一览
 
 > [!IMPORTANT]
-> **以下所有命令都集成在 `/strinova_client edit_collision` 图形化菜单中（以下只解释说明）**
+> **以下大部分命令都集成在 `/strinova_client edit_collision` 图形化菜单中（以下只解释说明）；`/strinova enable`、`/strinova disable` 为服务端 OP 命令，不在图形菜单内。**
+
+### 模组开关
+
+| 命令 | 权限 | 说明 |
+|------|:---:|------|
+| `/strinova enable` | OP | 启用模组玩法（默认启用） |
+| `/strinova disable` | OP | 停用模组玩法（弦化、贴墙、飘飞、多段跳等机制全部失效） |
 
 ### 描边
 
@@ -156,7 +164,10 @@ white（白色）<img src="docs/colors/white.png" width="18" height="18" align="
 
 | 模组 | 说明 |
 |------|------|
+| [Fabric API](https://modrinth.com/mod/fabric-api) | Fabric 端必需（Forge 端无需安装） |
 | [Cloth Config API](https://modrinth.com/mod/cloth-config) | 配置界面 |
+
+> Architectury API 已由模组内嵌（Jar-in-Jar），无需玩家单独安装。
 
 ---
 
@@ -197,7 +208,7 @@ git clone https://github.com/hhdxcz/Imitating-the-Strinova-Mechanism.git
 Imitating the Strinova Mechanism/
 ├── common/          # 核心逻辑（共享代码）
 │   ├── gameplay/    # 游戏机制：弦化、贴墙、飘飞、多段跳
-│   ├── mixin/       # Mixin 注入（17 个注入点）
+│   ├── mixin/       # Mixin 注入（18 个注入点）
 │   ├── net/         # 网络通信（10 个通道）
 │   ├── config/      # 配置管理
 │   ├── command/     # 命令系统

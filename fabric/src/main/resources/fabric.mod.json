@@ -12,7 +12,7 @@
 		"homepage": "",
 		"sources": "https://github.com/hhdxcz/Imitating-the-Strinova-Mechanism"
 	},
-	"license": "MIT",
+	"license": "GPL-3.0-only",
 	"environment": "*",
 	"entrypoints": {
 		"main": [

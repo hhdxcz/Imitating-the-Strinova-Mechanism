@@ -1,6 +1,7 @@
 package com.hhdxcz.strinova.forge.client;
 
 import com.hhdxcz.strinova.collision.StrinovaCollisionBoxTuning;
+import com.hhdxcz.strinova.collision.StrinovaCompoundCollision;
 import com.hhdxcz.strinova.net.StrinovaNetwork;
 import com.hhdxcz.strinova.paper.WaPaperState;
 import com.hhdxcz.strinova.gameplay.StrinovaAirJumpClientState;
@@ -46,6 +47,8 @@ public final class StrinovaClientInitForge {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         modBus.addListener(StrinovaClientInitForge::onRegisterKeys);
         MinecraftForge.EVENT_BUS.addListener(StrinovaClientInitForge::onRegisterClientCommands);
+        // H4：客户端加入服务器时把本地完整碰撞配置上报给服务端
+        MinecraftForge.EVENT_BUS.addListener(StrinovaClientInitForge::onClientLogin);
         MinecraftForge.EVENT_BUS.addListener(StrinovaClientInitForge::onClientLogout);
     }
 
@@ -78,9 +81,17 @@ public final class StrinovaClientInitForge {
         event.getDispatcher().register(root);
     }
 
+    private static void onClientLogin(ClientPlayerNetworkEvent.LoggingIn event) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player != null) {
+            StrinovaNetwork.sendCollisionConfig(client.player.getUUID());
+        }
+    }
+
     private static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         WaPaperState.clearAll();
         StrinovaAirJumpClientState.clearAll();
         StrinovaCollisionBoxTuning.clearAll();
+        StrinovaCompoundCollision.clearAll();
     }
 }

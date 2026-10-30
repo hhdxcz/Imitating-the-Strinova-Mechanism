@@ -398,6 +398,9 @@ public abstract class LocalPlayerMixin {
                 }
             }
 
+            // 贴墙侧（保留较小坐标侧）由服务端同步，未同步时才退回坐标比较，避免与权威状态分歧
+            Boolean keepLess = WaPaperState.getWallKeepLess(self.getUUID());
+
             // 贴墙平面切换时重新计算移动向量
             WaPaperState.WallPlane currentPlane = WaPaperState.getWallPlane(self.getUUID());
             if (currentPlane != null && (currentPlane.axisX != plane.axisX || Math.abs(currentPlane.value - plane.value) > 1.0E-4D)) {
@@ -407,12 +410,12 @@ public abstract class LocalPlayerMixin {
 
                 if (wasAxisX) {
 
-                    boolean oldWallIsEast = self.getX() < oldVal;
+                    boolean oldWallIsEast = keepLess != null ? keepLess.booleanValue() : self.getX() < oldVal;
                     mx = mz * (oldWallIsEast ? 1.0D : -1.0D);
                     mz = 0.0D;
                 } else {
 
-                    boolean oldWallIsSouth = self.getZ() < oldVal;
+                    boolean oldWallIsSouth = keepLess != null ? keepLess.booleanValue() : self.getZ() < oldVal;
                     mz = mx * (oldWallIsSouth ? 1.0D : -1.0D);
                     mx = 0.0D;
                 }
@@ -430,7 +433,9 @@ public abstract class LocalPlayerMixin {
             // 锁定贴墙位置并应用移动速度
             if (plane.axisX) {
                 double half = self.getBoundingBox().getXsize() * 0.5D;
-                double sign = plane.value > self.getX() ? -1.0D : 1.0D;
+                double sign = keepLess != null
+                        ? (keepLess.booleanValue() ? -1.0D : 1.0D)
+                        : (plane.value > self.getX() ? -1.0D : 1.0D);
                 double targetX = plane.value + sign * half;
                 if (Math.abs(self.getX() - targetX) > 0.02D) {
                     self.setPos(targetX, self.getY(), self.getZ());
@@ -438,7 +443,9 @@ public abstract class LocalPlayerMixin {
                 self.setDeltaMovement(0.0D, dy, mz);
             } else {
                 double half = self.getBoundingBox().getZsize() * 0.5D;
-                double sign = plane.value > self.getZ() ? -1.0D : 1.0D;
+                double sign = keepLess != null
+                        ? (keepLess.booleanValue() ? -1.0D : 1.0D)
+                        : (plane.value > self.getZ() ? -1.0D : 1.0D);
                 double targetZ = plane.value + sign * half;
                 if (Math.abs(self.getZ() - targetZ) > 0.02D) {
                     self.setPos(self.getX(), self.getY(), targetZ);

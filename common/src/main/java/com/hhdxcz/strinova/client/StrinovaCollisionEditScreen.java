@@ -3,6 +3,7 @@ package com.hhdxcz.strinova.client;
 import com.hhdxcz.strinova.collision.StrinovaCollisionBoxTuning;
 import com.hhdxcz.strinova.collision.StrinovaCompoundCollision;
 import com.hhdxcz.strinova.collision.StrinovaCompoundCollision.CollisionType;
+import com.hhdxcz.strinova.net.StrinovaNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -427,6 +428,11 @@ public class StrinovaCollisionEditScreen extends StrinovaCollisionPreviewScreen 
     private void close(boolean save) {
         if (save) {
             saveEditors();
+            // 保存后把完整碰撞配置上报服务端，由服务端规范化并广播给所有玩家，
+            // 避免联机时只有本地生效、服务端仍用默认碰撞箱
+            if (playerId != null) {
+                StrinovaNetwork.sendCollisionConfig(playerId);
+            }
 
             if (previewPlayer() != null) {
                 previewPlayer().setPos(previewPlayer().getX(), previewPlayer().getY(), previewPlayer().getZ());

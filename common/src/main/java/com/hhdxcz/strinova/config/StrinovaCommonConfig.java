@@ -230,7 +230,7 @@ public final class StrinovaCommonConfig {
 
     // 配置数据对象：包含所有可配置的字段
     public static final class ConfigData {
-        public boolean modEnabled = false;
+        public boolean modEnabled = true;
         public int defaultExtraJumps = 1;
         public double paperDamageReduction = 0.4D;
         public boolean taczForceFirstPerson = true;

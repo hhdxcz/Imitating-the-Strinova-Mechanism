@@ -188,16 +188,28 @@ public final class StrinovaWallBlacklist {
 
     /**
      * 从分享码解码为黑名单方块列表。
+     *
+     * @return 解码成功时返回方块列表；分享码为空、非法、被截断或解码结果为空时返回 null，
+     *         调用方必须拒绝导入，避免非法分享码把服务器黑名单清空。
      */
     public static List<ResourceLocation> decodeShareCode(String code) {
         if (code == null || code.isBlank()) {
-            return new ArrayList<>();
+            return null;
         }
         try {
             byte[] bytes = Base64.getUrlDecoder().decode(code);
+            if (bytes.length == 0) {
+                return null;
+            }
             BitReader reader = new BitReader(bytes);
             int flag = reader.readBit();
             List<Integer> ids = flag == 1 ? readCombinadic(reader) : readDelta(reader);
+            if (reader.hasOverrun()) {
+                return null;
+            }
+            if (ids.isEmpty()) {
+                return null;
+            }
             List<ResourceLocation> list = new ArrayList<>(ids.size());
             for (int id : ids) {
                 Block block = BuiltInRegistries.BLOCK.byId(id);
@@ -209,9 +221,9 @@ public final class StrinovaWallBlacklist {
                     list.add(rl);
                 }
             }
-            return list;
-        } catch (Exception e) {
-            return new ArrayList<>();
+            return list.isEmpty() ? null : list;
+        } catch (Exception | StackOverflowError e) {
+            return null;
         }
     }
 
@@ -245,7 +257,13 @@ public final class StrinovaWallBlacklist {
      */
     private static List<Integer> readDelta(BitReader r) {
         int k = r.readVarint();
+        if (k < 0 || k > MAX_SHARE_ENTRIES) {
+            throw new IllegalArgumentException("invalid delta entry count: " + k);
+        }
         int bits = r.read(5);
+        if (bits < 0 || bits > 20) {
+            throw new IllegalArgumentException("invalid delta bit width: " + bits);
+        }
         List<Integer> ids = new ArrayList<>(k);
         int prev = -1;
         for (int i = 0; i < k; i++) {
@@ -279,7 +297,13 @@ public final class StrinovaWallBlacklist {
      */
     private static List<Integer> readCombinadic(BitReader r) {
         int k = r.readVarint();
+        if (k < 0 || k > MAX_SHARE_ENTRIES) {
+            throw new IllegalArgumentException("invalid combinadic entry count: " + k);
+        }
         int bl = r.readVarint();
+        if (bl < 0 || bl > 32) {
+            throw new IllegalArgumentException("invalid combinadic bit length: " + bl);
+        }
         BigInteger index = BigInteger.ZERO;
         for (int i = 0; i < bl; i++) {
             if (r.readBit() != 0) {
@@ -347,6 +371,9 @@ public final class StrinovaWallBlacklist {
         return maxValue == 0 ? 0 : 32 - Integer.numberOfLeadingZeros(maxValue);
     }
 
+    /** 分享码允许携带的最大方块条目数，防止恶意超长分享码造成内存问题。 */
+    private static final int MAX_SHARE_ENTRIES = 4096;
+
     /** 组合数编码中 n 的最大值。 */
     private static final int MAX_N = 1 << 20;
 
@@ -412,6 +439,7 @@ public final class StrinovaWallBlacklist {
     private static final class BitReader {
         private final byte[] buf;
         private int bitPos;
+        private boolean overrun;
 
         BitReader(byte[] buf) {
             this.buf = buf;
@@ -435,6 +463,9 @@ public final class StrinovaWallBlacklist {
                     break;
                 }
                 shift += 7;
+                if (shift > 28) {
+                    throw new IllegalArgumentException("varint too long");
+                }
             }
             return result;
         }
@@ -444,9 +475,14 @@ public final class StrinovaWallBlacklist {
             int bitIndex = bitPos & 7;
             bitPos++;
             if (byteIndex >= buf.length) {
+                overrun = true;
                 return 0;
             }
             return (buf[byteIndex] >>> bitIndex) & 1;
+        }
+
+        boolean hasOverrun() {
+            return overrun;
         }
     }
 }

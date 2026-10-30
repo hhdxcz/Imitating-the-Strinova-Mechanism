@@ -1,5 +1,6 @@
 package com.hhdxcz.strinova.fabric.client;
 
+import com.hhdxcz.strinova.StrinovaMod;
 import com.hhdxcz.strinova.net.StrinovaNetwork;
 import com.hhdxcz.strinova.paper.StrinovaWallBlacklist;
 import com.hhdxcz.strinova.paper.WaPaperState;
@@ -77,6 +78,10 @@ public final class StrinovaKeyBindings {
 
     private static void onClientTick(Minecraft client) {
         if (client.player == null || client.level == null) {
+            return;
+        }
+        // 模组未启用时跳过所有按键逻辑（服务端可能下发禁用状态）
+        if (!StrinovaMod.isEnabled()) {
             return;
         }
         var player = client.player;

@@ -575,13 +575,11 @@ public abstract class PlayerMixin {
 
         if (plane.axisX) {
             double half = self.getBoundingBox().getXsize() * 0.5D;
-            double sign = plane.value > self.getX() ? -1.0D : 1.0D;
-            if (!self.level().isClientSide && self instanceof ServerPlayer) {
-                Boolean keepLess = WaPaperState.getWallKeepLess(playerId);
-                if (keepLess != null) {
-                    sign = keepLess.booleanValue() ? -1.0D : 1.0D;
-                }
-            }
+            // 贴墙侧优先使用服务端同步的权威值；尚未同步时才退回坐标比较
+            Boolean keepLess = WaPaperState.getWallKeepLess(playerId);
+            double sign = keepLess != null
+                    ? (keepLess.booleanValue() ? -1.0D : 1.0D)
+                    : (plane.value > self.getX() ? -1.0D : 1.0D);
             double targetX = plane.value + sign * half;
             if (Math.abs(self.getX() - targetX) > 0.02D) {
                 self.setPos(targetX, self.getY(), self.getZ());
@@ -590,13 +588,10 @@ public abstract class PlayerMixin {
             self.setDeltaMovement(0.0D, current.y, current.z);
         } else {
             double half = self.getBoundingBox().getZsize() * 0.5D;
-            double sign = plane.value > self.getZ() ? -1.0D : 1.0D;
-            if (!self.level().isClientSide && self instanceof ServerPlayer) {
-                Boolean keepLess = WaPaperState.getWallKeepLess(playerId);
-                if (keepLess != null) {
-                    sign = keepLess.booleanValue() ? -1.0D : 1.0D;
-                }
-            }
+            Boolean keepLess = WaPaperState.getWallKeepLess(playerId);
+            double sign = keepLess != null
+                    ? (keepLess.booleanValue() ? -1.0D : 1.0D)
+                    : (plane.value > self.getZ() ? -1.0D : 1.0D);
             double targetZ = plane.value + sign * half;
             if (Math.abs(self.getZ() - targetZ) > 0.02D) {
                 self.setPos(self.getX(), self.getY(), targetZ);

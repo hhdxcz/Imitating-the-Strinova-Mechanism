@@ -13,6 +13,7 @@
   "client": [
     "client.AbstractContainerScreenMixin",
     "client.CameraMixin",
+    "client.OptionsMixin",
     "client.EntityPosePreviewMixin",
     "client.EntityRenderDispatcherMixin",
     "client.EntityViewXRotMixin",

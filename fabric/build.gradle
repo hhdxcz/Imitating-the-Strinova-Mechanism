@@ -73,6 +73,11 @@ shadowJar {
     
     // 排除 module-info.class 避免 JPMS 冲突
     exclude 'module-info.class'
+
+    // 确保发布产物（shadowJar → remapJar）包含 GPL-3.0 许可证文本
+    from(rootProject.file('LICENSE')) {
+        rename { "${it}_${base.archivesName.get()}.txt" }
+    }
 }
 
 remapJar {

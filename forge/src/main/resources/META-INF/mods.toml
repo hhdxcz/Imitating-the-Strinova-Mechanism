@@ -1,7 +1,7 @@
 # Forge Mods.toml 配置文件
 modLoader = "javafml"
 loaderVersion = "[47,)"
-license = "MIT"
+license = "GPL-3.0-only"
 
 [[mods]]
 modId = "${mod_id}"

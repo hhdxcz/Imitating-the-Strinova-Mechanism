@@ -89,6 +89,10 @@ public final class StrinovaKeyBindingsForge {
         if (player == null || client.level == null) {
             return;
         }
+        // 模组未启用时跳过所有按键逻辑（服务端可能下发禁用状态）
+        if (!StrinovaMod.isEnabled()) {
+            return;
+        }
 
         var playerId = player.getUUID();
         boolean ctrlDown = client.screen == null && stringifyKey != null

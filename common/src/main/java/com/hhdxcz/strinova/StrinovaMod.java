@@ -30,6 +30,15 @@ public class StrinovaMod {
     }
 
     /**
+     * 应用服务端下发的启用状态。
+     * 客户端收到同步包时调用，只更新内存状态，不写本地配置文件，
+     * 避免多人游戏把服务端的开关覆盖到玩家本地的配置里。
+     */
+    public static void applyRemoteEnabled(boolean value) {
+        enabled = value;
+    }
+
+    /**
      * 初始化模组：加载配置、同步启用状态、注册网络包。
      */
     public static void init() {

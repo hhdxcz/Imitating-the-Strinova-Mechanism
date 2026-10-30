@@ -349,6 +349,10 @@ public final class StrinovaServerCommands {
                                     try {
                                         String raw = StringArgumentType.getString(ctx, "code");
                                         List<ResourceLocation> ids = StrinovaWallBlacklist.decodeShareCode(raw);
+                                        if (ids == null) {
+                                            ctx.getSource().sendFailure(Component.literal("分享码无效或已损坏，未修改禁止贴墙名单"));
+                                            return 0;
+                                        }
                                         int count = StrinovaWallBlacklist.get(ctx.getSource().getServer()).replace(ids);
                                         StrinovaNetwork.broadcastBlacklist(ctx.getSource().getServer());
                                         ctx.getSource().sendSuccess(() -> Component.literal("已导入禁止贴墙名单：" + count + " 项"), true);
@@ -495,7 +499,7 @@ public final class StrinovaServerCommands {
                         StrinovaCollisionBoxTuning.setSyncOffset(self.getUUID(), 0.0D, 0.0D, 0.0D);
                         StrinovaCollisionBoxTuning.setFlyOffset(self.getUUID(), 0.0D, 0.0D, 0.0D);
                         self.refreshDimensions();
-                        StrinovaNetwork.sendCollisionBoxTuningSync(self, self.getUUID());
+                        StrinovaNetwork.broadcastCollisionConfig(ctx.getSource().getServer(), self.getUUID());
                         ctx.getSource().sendSuccess(() -> Component.literal("已恢复默认位置（同步/飘飞）"), false);
                         return 1;
                     } catch (Exception e) {
@@ -510,7 +514,7 @@ public final class StrinovaServerCommands {
                                 ServerPlayer self = ctx.getSource().getPlayerOrException();
                                 StrinovaCollisionBoxTuning.setSyncOffset(self.getUUID(), 0.0D, 0.0D, 0.0D);
                                 self.refreshDimensions();
-                                StrinovaNetwork.sendCollisionBoxTuningSync(self, self.getUUID());
+                                StrinovaNetwork.broadcastCollisionConfig(ctx.getSource().getServer(), self.getUUID());
                                 ctx.getSource().sendSuccess(() -> Component.literal("已恢复默认位置（同步）"), false);
                                 return 1;
                             } catch (Exception e) {
@@ -525,7 +529,7 @@ public final class StrinovaServerCommands {
                                 ServerPlayer self = ctx.getSource().getPlayerOrException();
                                 StrinovaCollisionBoxTuning.setFlyOffset(self.getUUID(), 0.0D, 0.0D, 0.0D);
                                 self.refreshDimensions();
-                                StrinovaNetwork.sendCollisionBoxTuningSync(self, self.getUUID());
+                                StrinovaNetwork.broadcastCollisionConfig(ctx.getSource().getServer(), self.getUUID());
                                 ctx.getSource().sendSuccess(() -> Component.literal("已恢复默认位置（飘飞）"), false);
                                 return 1;
                             } catch (Exception e) {
@@ -549,7 +553,7 @@ public final class StrinovaServerCommands {
                                                 StrinovaCollisionBoxTuning.setSyncOffset(self.getUUID(), x, y, z);
                                                 StrinovaCollisionBoxTuning.Tuning t = StrinovaCollisionBoxTuning.getSync(self.getUUID());
                                                 self.refreshDimensions();
-                                                StrinovaNetwork.sendCollisionBoxTuningSync(self, self.getUUID());
+                                                StrinovaNetwork.broadcastCollisionConfig(ctx.getSource().getServer(), self.getUUID());
                                                 ctx.getSource().sendSuccess(() -> Component.literal("已设置同步碰撞箱位置偏移为：("
                                                         + String.format(java.util.Locale.ROOT, "%.2f", t.offsetX()) + ", "
                                                         + String.format(java.util.Locale.ROOT, "%.2f", t.offsetY()) + ", "
@@ -575,7 +579,7 @@ public final class StrinovaServerCommands {
                                 StrinovaCollisionBoxTuning.setFlyOffset(self.getUUID(), x, 0.0D, z);
                                 StrinovaCollisionBoxTuning.Tuning t = StrinovaCollisionBoxTuning.getFly(self.getUUID());
                                 self.refreshDimensions();
-                                StrinovaNetwork.sendCollisionBoxTuningSync(self, self.getUUID());
+                                StrinovaNetwork.broadcastCollisionConfig(ctx.getSource().getServer(), self.getUUID());
                                 ctx.getSource().sendSuccess(() -> Component.literal("已设置飘飞碰撞箱位置偏移为：("
                                         + String.format(java.util.Locale.ROOT, "%.2f", t.offsetX()) + ", "
                                         + String.format(java.util.Locale.ROOT, "%.2f", t.offsetY()) + ", "
@@ -598,7 +602,7 @@ public final class StrinovaServerCommands {
                                 StrinovaCollisionBoxTuning.setFlyOffset(self.getUUID(), x, y, z);
                                 StrinovaCollisionBoxTuning.Tuning t = StrinovaCollisionBoxTuning.getFly(self.getUUID());
                                 self.refreshDimensions();
-                                StrinovaNetwork.sendCollisionBoxTuningSync(self, self.getUUID());
+                                StrinovaNetwork.broadcastCollisionConfig(ctx.getSource().getServer(), self.getUUID());
                                 ctx.getSource().sendSuccess(() -> Component.literal("已设置飘飞碰撞箱位置偏移为：("
                                         + String.format(java.util.Locale.ROOT, "%.2f", t.offsetX()) + ", "
                                         + String.format(java.util.Locale.ROOT, "%.2f", t.offsetY()) + ", "
@@ -627,7 +631,7 @@ public final class StrinovaServerCommands {
                                                 StrinovaCollisionBoxTuning.setSyncSize(self.getUUID(), x, y, z);
                                                 StrinovaCollisionBoxTuning.Tuning t = StrinovaCollisionBoxTuning.getSync(self.getUUID());
                                                 self.refreshDimensions();
-                                                StrinovaNetwork.sendCollisionBoxTuningSync(self, self.getUUID());
+                                                StrinovaNetwork.broadcastCollisionConfig(ctx.getSource().getServer(), self.getUUID());
                                                 ctx.getSource().sendSuccess(() -> Component.literal("已设置同步碰撞箱长度增量为：("
                                                         + String.format(java.util.Locale.ROOT, "%.2f", t.sizeX()) + ", "
                                                         + String.format(java.util.Locale.ROOT, "%.2f", t.sizeY()) + ", "
@@ -653,7 +657,7 @@ public final class StrinovaServerCommands {
                                 StrinovaCollisionBoxTuning.setFlySize(self.getUUID(), x, 0.0D, z);
                                 StrinovaCollisionBoxTuning.Tuning t = StrinovaCollisionBoxTuning.getFly(self.getUUID());
                                 self.refreshDimensions();
-                                StrinovaNetwork.sendCollisionBoxTuningSync(self, self.getUUID());
+                                StrinovaNetwork.broadcastCollisionConfig(ctx.getSource().getServer(), self.getUUID());
                                 ctx.getSource().sendSuccess(() -> Component.literal("已设置飘飞碰撞箱长度增量为：("
                                         + String.format(java.util.Locale.ROOT, "%.2f", t.sizeX()) + ", "
                                         + String.format(java.util.Locale.ROOT, "%.2f", t.sizeY()) + ", "
@@ -676,7 +680,7 @@ public final class StrinovaServerCommands {
                                 StrinovaCollisionBoxTuning.setFlySize(self.getUUID(), x, y, z);
                                 StrinovaCollisionBoxTuning.Tuning t = StrinovaCollisionBoxTuning.getFly(self.getUUID());
                                 self.refreshDimensions();
-                                StrinovaNetwork.sendCollisionBoxTuningSync(self, self.getUUID());
+                                StrinovaNetwork.broadcastCollisionConfig(ctx.getSource().getServer(), self.getUUID());
                                 ctx.getSource().sendSuccess(() -> Component.literal("已设置飘飞碰撞箱长度增量为：("
                                         + String.format(java.util.Locale.ROOT, "%.2f", t.sizeX()) + ", "
                                         + String.format(java.util.Locale.ROOT, "%.2f", t.sizeY()) + ", "
@@ -695,11 +699,14 @@ public final class StrinovaServerCommands {
         dispatcher.register(Commands.literal("strinova").then(outline).then(wall).then(paper).then(jump).then(boxPos).then(boxLen)
                 .then(Commands.literal("enable").requires(src -> src.hasPermission(2)).executes(ctx -> {
                     StrinovaMod.setEnabled(true);
+                    // 启用状态由服务端权威下发，客户端据此同步门控按键逻辑
+                    StrinovaNetwork.broadcastModEnabled(ctx.getSource().getServer(), true);
                     ctx.getSource().sendSuccess(() -> Component.literal("Strinova mod enabled"), true);
                     return 1;
                 }))
                 .then(Commands.literal("disable").requires(src -> src.hasPermission(2)).executes(ctx -> {
                     StrinovaMod.setEnabled(false);
+                    StrinovaNetwork.broadcastModEnabled(ctx.getSource().getServer(), false);
                     ctx.getSource().sendSuccess(() -> Component.literal("Strinova mod disabled"), true);
                     return 1;
                 })));

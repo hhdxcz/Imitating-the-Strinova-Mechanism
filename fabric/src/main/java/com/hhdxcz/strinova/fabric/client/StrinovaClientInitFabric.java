@@ -1,6 +1,7 @@
 package com.hhdxcz.strinova.fabric.client;
 
 import com.hhdxcz.strinova.collision.StrinovaCollisionBoxTuning;
+import com.hhdxcz.strinova.collision.StrinovaCompoundCollision;
 import com.hhdxcz.strinova.net.StrinovaNetwork;
 import com.hhdxcz.strinova.paper.WaPaperState;
 import com.hhdxcz.strinova.gameplay.StrinovaAirJumpClientState;
@@ -39,10 +40,17 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
     public void onInitializeClient() {
         StrinovaNetwork.initClient();
         StrinovaKeyBindings.register();
+        // H4：客户端加入服务器时把本地完整碰撞配置上报给服务端
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            if (client.player != null) {
+                StrinovaNetwork.sendCollisionConfig(client.player.getUUID());
+            }
+        });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             WaPaperState.clearAll();
             StrinovaAirJumpClientState.clearAll();
             StrinovaCollisionBoxTuning.clearAll();
+            StrinovaCompoundCollision.clearAll();
         });
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
                 ClientCommandManager.literal("strinova_client")

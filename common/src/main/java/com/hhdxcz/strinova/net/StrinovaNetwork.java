@@ -2,6 +2,7 @@ package com.hhdxcz.strinova.net;
 
 import com.hhdxcz.strinova.StrinovaMod;
 import com.hhdxcz.strinova.collision.StrinovaCollisionBoxTuning;
+import com.hhdxcz.strinova.collision.StrinovaCompoundCollision;
 import com.hhdxcz.strinova.gameplay.StrinovaAirJumpClientState;
 import com.hhdxcz.strinova.gameplay.StrinovaDoubleJump;
 import com.hhdxcz.strinova.gameplay.StrinovaFlyRuntime;
@@ -22,6 +23,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 // 网络通信管理器：注册 C2S/S2C 数据包，处理客户端与服务端之间的状态同步
@@ -33,14 +36,30 @@ public final class StrinovaNetwork {
     public static final ResourceLocation C2S_SET_PAPER = new ResourceLocation(StrinovaMod.MOD_ID, "c2s_set_paper");
     public static final ResourceLocation C2S_SET_FLY = new ResourceLocation(StrinovaMod.MOD_ID, "c2s_set_fly");
     public static final ResourceLocation C2S_IMPORT_WALL_BLACKLIST = new ResourceLocation(StrinovaMod.MOD_ID, "c2s_import_wall_blacklist");
+    public static final ResourceLocation C2S_COLLISION_CONFIG = new ResourceLocation(StrinovaMod.MOD_ID, "c2s_collision_config");
 
     // 服务端到客户端数据包标识
     public static final ResourceLocation S2C_WALL_SYNC = new ResourceLocation(StrinovaMod.MOD_ID, "s2c_wall_sync");
     public static final ResourceLocation S2C_PAPER_SYNC = new ResourceLocation(StrinovaMod.MOD_ID, "s2c_paper_sync");
     public static final ResourceLocation S2C_FLY_SYNC = new ResourceLocation(StrinovaMod.MOD_ID, "s2c_fly_sync");
     public static final ResourceLocation S2C_AIR_JUMP_SYNC = new ResourceLocation(StrinovaMod.MOD_ID, "s2c_air_jump_sync");
-    public static final ResourceLocation S2C_COLLISION_BOX_TUNING_SYNC = new ResourceLocation(StrinovaMod.MOD_ID, "s2c_collision_box_tuning_sync");
     public static final ResourceLocation S2C_WALL_BLACKLIST_SYNC = new ResourceLocation(StrinovaMod.MOD_ID, "s2c_wall_blacklist_sync");
+    public static final ResourceLocation S2C_COLLISION_CONFIG = new ResourceLocation(StrinovaMod.MOD_ID, "s2c_collision_config");
+    public static final ResourceLocation S2C_MOD_ENABLED = new ResourceLocation(StrinovaMod.MOD_ID, "s2c_mod_enabled");
+
+    // 碰撞配置同步字段上限，防止恶意客户端发送超大包
+    private static final int MAX_COLLISION_PARTS = 64;
+    private static final int MAX_PART_NAME_LENGTH = 64;
+
+    // 一个玩家的完整碰撞配置：碰撞类型、分体部件、两套微调参数
+    private record CollisionConfig(
+            StrinovaCompoundCollision.CollisionType type,
+            List<StrinovaCompoundCollision.Part> syncParts,
+            List<StrinovaCompoundCollision.Part> flyParts,
+            StrinovaCollisionBoxTuning.Tuning syncTuning,
+            StrinovaCollisionBoxTuning.Tuning flyTuning
+    ) {
+    }
 
     private StrinovaNetwork() {
     }
@@ -227,12 +246,45 @@ public final class StrinovaNetwork {
                 }
                 try {
                     java.util.List<ResourceLocation> ids = StrinovaWallBlacklist.decodeShareCode(code);
+                    if (ids == null) {
+                        StrinovaMod.LOGGER.warn("Rejected invalid wall blacklist share code from {}",
+                                player.getName().getString());
+                        return;
+                    }
                     int count = StrinovaWallBlacklist.get(server).replace(ids);
                     StrinovaNetwork.broadcastBlacklist(server);
                     StrinovaMod.LOGGER.info("Imported wall blacklist: {} blocks (code {} chars)", count, code.length());
                 } catch (Exception e) {
                     StrinovaMod.LOGGER.error("Failed to import wall blacklist", e);
                 }
+            });
+        });
+
+        // 接收客户端提交的完整碰撞配置（碰撞类型 + 分体部件 + 两套微调参数）
+        // 服务端规范化后写入权威状态，再广播给所有客户端，保证联机时判定与显示一致
+        NetworkManager.registerReceiver(NetworkManager.Side.C2S, C2S_COLLISION_CONFIG, (buf, context) -> {
+            var p = context.getPlayer();
+            if (!(p instanceof ServerPlayer player)) {
+                return;
+            }
+            if (!StrinovaMod.isEnabled()) return;
+            CollisionConfig config;
+            try {
+                config = readCollisionConfig(buf);
+            } catch (RuntimeException e) {
+                StrinovaMod.LOGGER.warn("Rejected invalid collision config from {}: {}",
+                        player.getName().getString(), e.getMessage());
+                return;
+            }
+            context.queue(() -> {
+                MinecraftServer server = player.getServer();
+                if (server == null) {
+                    return;
+                }
+                UUID playerId = player.getUUID();
+                applyCollisionConfig(playerId, config);
+                player.refreshDimensions();
+                broadcastCollisionConfig(server, playerId);
             });
         });
     }
@@ -352,20 +404,25 @@ public final class StrinovaNetwork {
             boolean axisX = false;
             double value = 0.0D;
             double anchorY = 0.0D;
+            boolean keepLess = false;
             if (wall) {
                 axisX = buf.readBoolean();
                 value = buf.readDouble();
                 anchorY = buf.readDouble();
+                keepLess = buf.readBoolean();
             }
 
             boolean finalAxisX = axisX;
             double finalValue = value;
             double finalAnchorY = anchorY;
+            boolean finalKeepLess = keepLess;
             context.queue(() -> {
                 WaPaperState.setWall(playerId, wall);
                 if (wall) {
                     WaPaperState.setWallPlane(playerId, finalAxisX, finalValue);
                     WaPaperState.setWallAnchorY(playerId, finalAnchorY);
+                    // 贴墙侧由服务端权威下发，客户端不再用坐标比较自行推断，避免预测与权威分歧
+                    WaPaperState.setWallKeepLess(playerId, finalKeepLess);
                 }
             });
         });
@@ -403,28 +460,26 @@ public final class StrinovaNetwork {
             context.queue(() -> StrinovaAirJumpClientState.setExtraJumps(playerId, extraJumps));
         });
 
-        // 接收碰撞箱微调参数同步
-        NetworkManager.registerReceiver(NetworkManager.Side.S2C, S2C_COLLISION_BOX_TUNING_SYNC, (buf, context) -> {
+        // 接收完整碰撞配置同步（碰撞类型 + 分体部件 + 两套微调参数）
+        NetworkManager.registerReceiver(NetworkManager.Side.S2C, S2C_COLLISION_CONFIG, (buf, context) -> {
             UUID playerId = buf.readUUID();
-            double syncOffX = buf.readDouble();
-            double syncOffY = buf.readDouble();
-            double syncOffZ = buf.readDouble();
-            double syncSizeX = buf.readDouble();
-            double syncSizeY = buf.readDouble();
-            double syncSizeZ = buf.readDouble();
-            double flyOffX = buf.readDouble();
-            double flyOffY = buf.readDouble();
-            double flyOffZ = buf.readDouble();
-            double flySizeX = buf.readDouble();
-            double flySizeY = buf.readDouble();
-            double flySizeZ = buf.readDouble();
+            CollisionConfig config;
+            try {
+                config = readCollisionConfig(buf);
+            } catch (RuntimeException e) {
+                StrinovaMod.LOGGER.warn("Received invalid collision config for {}: {}", playerId, e.getMessage());
+                return;
+            }
             context.queue(() -> {
-                StrinovaCollisionBoxTuning.setSyncOffset(playerId, syncOffX, syncOffY, syncOffZ);
-                StrinovaCollisionBoxTuning.setSyncSize(playerId, syncSizeX, syncSizeY, syncSizeZ);
-                StrinovaCollisionBoxTuning.setFlyOffset(playerId, flyOffX, flyOffY, flyOffZ);
-                StrinovaCollisionBoxTuning.setFlySize(playerId, flySizeX, flySizeY, flySizeZ);
+                applyCollisionConfig(playerId, config);
                 strinova$tryRefreshClientPlayerDimensions(playerId);
             });
+        });
+
+        // 接收模组启用状态同步（服务端权威）
+        NetworkManager.registerReceiver(NetworkManager.Side.S2C, S2C_MOD_ENABLED, (buf, context) -> {
+            boolean enabled = buf.readBoolean();
+            context.queue(() -> StrinovaMod.applyRemoteEnabled(enabled));
         });
     }
 
@@ -514,15 +569,27 @@ public final class StrinovaNetwork {
         if (server == null) {
             return;
         }
-        java.util.List<ResourceLocation> list = StrinovaWallBlacklist.get(server).list();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-            buf.writeVarInt(list.size());
-            for (ResourceLocation id : list) {
-                buf.writeResourceLocation(id);
-            }
-            NetworkManager.sendToPlayer(player, S2C_WALL_BLACKLIST_SYNC, buf);
+            sendWallBlacklist(player);
         }
+    }
+
+    // 向指定玩家发送当前贴墙黑名单（用于登录时同步，避免客户端黑名单为空）
+    public static void sendWallBlacklist(ServerPlayer target) {
+        if (target == null) {
+            return;
+        }
+        MinecraftServer server = target.getServer();
+        if (server == null) {
+            return;
+        }
+        java.util.List<ResourceLocation> list = StrinovaWallBlacklist.get(server).list();
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        buf.writeVarInt(list.size());
+        for (ResourceLocation id : list) {
+            buf.writeResourceLocation(id);
+        }
+        NetworkManager.sendToPlayer(target, S2C_WALL_BLACKLIST_SYNC, buf);
     }
 
     // 向指定玩家发送贴墙状态同步包
@@ -537,6 +604,8 @@ public final class StrinovaNetwork {
             buf.writeBoolean(axisX);
             buf.writeDouble(value);
             buf.writeDouble(anchorY);
+            // 贴墙侧（保留较小坐标侧）由服务端权威决定并同步给所有客户端
+            buf.writeBoolean(Boolean.TRUE.equals(WaPaperState.getWallKeepLess(playerId)));
         }
         NetworkManager.sendToPlayer(target, S2C_WALL_SYNC, buf);
     }
@@ -594,27 +663,165 @@ public final class StrinovaNetwork {
         NetworkManager.sendToPlayer(target, S2C_AIR_JUMP_SYNC, buf);
     }
 
-    // 向指定玩家发送碰撞箱微调参数同步包
-    public static void sendCollisionBoxTuningSync(ServerPlayer target, UUID playerId) {
+    // 客户端把自己的完整碰撞配置上报给服务端
+    public static void sendCollisionConfig(UUID localPlayerId) {
+        if (localPlayerId == null) {
+            return;
+        }
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        writeCollisionConfig(buf, localPlayerId);
+        NetworkManager.sendToServer(C2S_COLLISION_CONFIG, buf);
+    }
+
+    // 向所有在线玩家广播某玩家的完整碰撞配置
+    public static void broadcastCollisionConfig(MinecraftServer server, UUID playerId) {
+        if (server == null || playerId == null) {
+            return;
+        }
+        for (ServerPlayer target : server.getPlayerList().getPlayers()) {
+            sendCollisionConfig(target, playerId);
+        }
+    }
+
+    // 向指定玩家发送某玩家的完整碰撞配置
+    public static void sendCollisionConfig(ServerPlayer target, UUID playerId) {
         if (target == null || playerId == null) {
             return;
         }
-        StrinovaCollisionBoxTuning.Tuning sync = StrinovaCollisionBoxTuning.getSync(playerId);
-        StrinovaCollisionBoxTuning.Tuning fly = StrinovaCollisionBoxTuning.getFly(playerId);
         FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
         buf.writeUUID(playerId);
-        buf.writeDouble(sync.offsetX());
-        buf.writeDouble(sync.offsetY());
-        buf.writeDouble(sync.offsetZ());
-        buf.writeDouble(sync.sizeX());
-        buf.writeDouble(sync.sizeY());
-        buf.writeDouble(sync.sizeZ());
-        buf.writeDouble(fly.offsetX());
-        buf.writeDouble(fly.offsetY());
-        buf.writeDouble(fly.offsetZ());
-        buf.writeDouble(fly.sizeX());
-        buf.writeDouble(fly.sizeY());
-        buf.writeDouble(fly.sizeZ());
-        NetworkManager.sendToPlayer(target, S2C_COLLISION_BOX_TUNING_SYNC, buf);
+        writeCollisionConfig(buf, playerId);
+        NetworkManager.sendToPlayer(target, S2C_COLLISION_CONFIG, buf);
+    }
+
+    // 向指定玩家发送模组启用状态
+    public static void sendModEnabled(ServerPlayer target, boolean enabled) {
+        if (target == null) {
+            return;
+        }
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        buf.writeBoolean(enabled);
+        NetworkManager.sendToPlayer(target, S2C_MOD_ENABLED, buf);
+    }
+
+    // 向所有在线玩家广播模组启用状态
+    public static void broadcastModEnabled(MinecraftServer server, boolean enabled) {
+        if (server == null) {
+            return;
+        }
+        for (ServerPlayer target : server.getPlayerList().getPlayers()) {
+            sendModEnabled(target, enabled);
+        }
+    }
+
+    // 将指定玩家的完整碰撞配置写入包体（碰撞类型 + 分体部件 + 两套微调参数）
+    private static void writeCollisionConfig(FriendlyByteBuf buf, UUID playerId) {
+        StrinovaCompoundCollision.CollisionType type = StrinovaCompoundCollision.getCollisionType(playerId);
+        buf.writeByte(type.ordinal());
+        writeParts(buf, StrinovaCompoundCollision.getSyncParts(playerId));
+        writeParts(buf, StrinovaCompoundCollision.getFlyParts(playerId));
+        writeTuning(buf, StrinovaCollisionBoxTuning.getSync(playerId));
+        writeTuning(buf, StrinovaCollisionBoxTuning.getFly(playerId));
+    }
+
+    // 从包体读取完整碰撞配置（带边界校验，拒绝恶意超长数据）
+    private static CollisionConfig readCollisionConfig(FriendlyByteBuf buf) {
+        int ordinal = buf.readUnsignedByte();
+        StrinovaCompoundCollision.CollisionType[] types = StrinovaCompoundCollision.CollisionType.values();
+        if (ordinal >= types.length) {
+            throw new IllegalArgumentException("unknown collision type " + ordinal);
+        }
+        StrinovaCompoundCollision.CollisionType type = types[ordinal];
+        List<StrinovaCompoundCollision.Part> syncParts = readParts(buf);
+        List<StrinovaCompoundCollision.Part> flyParts = readParts(buf);
+        StrinovaCollisionBoxTuning.Tuning sync = readTuning(buf);
+        StrinovaCollisionBoxTuning.Tuning fly = readTuning(buf);
+        return new CollisionConfig(type, syncParts, flyParts, sync, fly);
+    }
+
+    // 应用碰撞配置：服务端与客户端共用，写入时会由存储层再做范围规范化
+    private static void applyCollisionConfig(UUID playerId, CollisionConfig config) {
+        if (playerId == null || config == null) {
+            return;
+        }
+        StrinovaCompoundCollision.setCollisionType(playerId, config.type());
+        StrinovaCompoundCollision.setSyncParts(playerId,
+                config.type() == StrinovaCompoundCollision.CollisionType.GENERIC ? null : config.syncParts());
+        StrinovaCompoundCollision.setFlyParts(playerId, config.flyParts());
+
+        StrinovaCollisionBoxTuning.Tuning sync = config.syncTuning();
+        StrinovaCollisionBoxTuning.Tuning fly = config.flyTuning();
+        StrinovaCollisionBoxTuning.setSyncOffset(playerId, sync.offsetX(), sync.offsetY(), sync.offsetZ());
+        StrinovaCollisionBoxTuning.setSyncSize(playerId, sync.sizeX(), sync.sizeY(), sync.sizeZ());
+        StrinovaCollisionBoxTuning.setFlyOffset(playerId, fly.offsetX(), fly.offsetY(), fly.offsetZ());
+        StrinovaCollisionBoxTuning.setFlySize(playerId, fly.sizeX(), fly.sizeY(), fly.sizeZ());
+    }
+
+    // 写入分体碰撞部件列表
+    private static void writeParts(FriendlyByteBuf buf, List<StrinovaCompoundCollision.Part> parts) {
+        if (parts == null || parts.isEmpty()) {
+            buf.writeVarInt(0);
+            return;
+        }
+        buf.writeVarInt(parts.size());
+        for (StrinovaCompoundCollision.Part part : parts) {
+            buf.writeUtf(part.name() == null ? "" : part.name(), MAX_PART_NAME_LENGTH);
+            buf.writeDouble(part.offsetX());
+            buf.writeDouble(part.offsetY());
+            buf.writeDouble(part.offsetZ());
+            buf.writeDouble(part.sizeX());
+            buf.writeDouble(part.sizeY());
+            buf.writeDouble(part.sizeZ());
+            boolean hasBone = part.ysmBoneName() != null && !part.ysmBoneName().isEmpty();
+            buf.writeBoolean(hasBone);
+            if (hasBone) {
+                buf.writeUtf(part.ysmBoneName(), MAX_PART_NAME_LENGTH);
+            }
+        }
+    }
+
+    // 读取分体碰撞部件列表
+    private static List<StrinovaCompoundCollision.Part> readParts(FriendlyByteBuf buf) {
+        int size = buf.readVarInt();
+        if (size < 0 || size > MAX_COLLISION_PARTS) {
+            throw new IllegalArgumentException("invalid collision part count " + size);
+        }
+        List<StrinovaCompoundCollision.Part> parts = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            String name = buf.readUtf(MAX_PART_NAME_LENGTH);
+            double offsetX = buf.readDouble();
+            double offsetY = buf.readDouble();
+            double offsetZ = buf.readDouble();
+            double sizeX = buf.readDouble();
+            double sizeY = buf.readDouble();
+            double sizeZ = buf.readDouble();
+            String bone = buf.readBoolean() ? buf.readUtf(MAX_PART_NAME_LENGTH) : null;
+            parts.add(new StrinovaCompoundCollision.Part(name, offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ, bone));
+        }
+        return parts;
+    }
+
+    // 写入一组碰撞箱微调参数
+    private static void writeTuning(FriendlyByteBuf buf, StrinovaCollisionBoxTuning.Tuning tuning) {
+        StrinovaCollisionBoxTuning.Tuning safe = tuning == null
+                ? new StrinovaCollisionBoxTuning.Tuning(0.0D, 0.0D, 0.0D, 0.0D, 0.0D, 0.0D)
+                : tuning;
+        buf.writeDouble(safe.offsetX());
+        buf.writeDouble(safe.offsetY());
+        buf.writeDouble(safe.offsetZ());
+        buf.writeDouble(safe.sizeX());
+        buf.writeDouble(safe.sizeY());
+        buf.writeDouble(safe.sizeZ());
+    }
+
+    // 读取一组碰撞箱微调参数
+    private static StrinovaCollisionBoxTuning.Tuning readTuning(FriendlyByteBuf buf) {
+        double offsetX = buf.readDouble();
+        double offsetY = buf.readDouble();
+        double offsetZ = buf.readDouble();
+        double sizeX = buf.readDouble();
+        double sizeY = buf.readDouble();
+        double sizeZ = buf.readDouble();
+        return new StrinovaCollisionBoxTuning.Tuning(offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ);
     }
 }
