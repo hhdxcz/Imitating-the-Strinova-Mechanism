@@ -3,6 +3,8 @@
   "key.strinova.stringify": "Toggle Stringify/Fly",
   "key.strinova.wall": "Toggle Wall Attach",
   "key.strinova.growth": "Growth Network",
+  "key.strinova.growth_alt": "Growth Network (Alt)",
+  "config.strinova.notice.tacz_b_key": "B is yielded to TACZ fire mode while holding a TACZ gun; press J or /strinova_client growth to open the Growth Network",
   "config.strinova.notice.disabled": "Strinova mechanics are disabled on this server (stringify/multi-jump/glide unavailable): ask an OP to run /strinova enable",
   "config.strinova.notice.server_missing": "No Strinova server handshake: make sure the server also has Imitating the Strinova Mechanism installed (client-only install cannot sync stringify/multi-jump/glide)",
   "config.strinova.title": "Stringify Mechanics Config",

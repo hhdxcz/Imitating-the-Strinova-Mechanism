@@ -33,6 +33,7 @@ public final class StrinovaKeyBindingsForge {
     private static KeyMapping stringifyKey;
     private static KeyMapping wallKey;
     private static KeyMapping growthKey;
+    private static KeyMapping growthAltKey;
     private static String wallKeyName = "key.keyboard.r";
     private static boolean lastCtrlDown;
     private static boolean lastJumpDown;
@@ -65,9 +66,16 @@ public final class StrinovaKeyBindingsForge {
                 GLFW.GLFW_KEY_B,
                 "key.categories.strinova"
         );
+        // J 键：增幅网络备用键（手持 TACZ 枪械时 B 让给开火模式，用 J 打开增幅网络）
+        growthAltKey = new KeyMapping(
+                "key.strinova.growth_alt",
+                GLFW.GLFW_KEY_J,
+                "key.categories.strinova"
+        );
         event.register(stringifyKey);
         event.register(wallKey);
         event.register(growthKey);
+        event.register(growthAltKey);
     }
 
     public static boolean rebindWallKey(String rawKey) {
@@ -113,9 +121,18 @@ public final class StrinovaKeyBindingsForge {
                 }
                 if (com.hhdxcz.strinova.config.StrinovaCommonConfig.isGrowthKeyYieldToTacz()
                         && strinova$isHoldingTaczGun(player)) {
+                    com.hhdxcz.strinova.client.StrinovaClientNotices.notifyTaczBKey();
                     continue;
                 }
                 client.setScreen(new StrinovaGrowthScreen(client.screen));
+            }
+        }
+        // J 键：增幅网络备用键（不受 TACZ 让位影响）
+        if (growthAltKey != null) {
+            while (growthAltKey.consumeClick()) {
+                if (client.screen == null) {
+                    client.setScreen(new StrinovaGrowthScreen(client.screen));
+                }
             }
         }
 

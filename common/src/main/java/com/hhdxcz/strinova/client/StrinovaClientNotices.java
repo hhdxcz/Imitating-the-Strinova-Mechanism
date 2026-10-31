@@ -11,6 +11,7 @@ public final class StrinovaClientNotices {
 
     private static boolean disabledNotified;
     private static boolean missingServerNotified;
+    private static boolean taczBKeyNotified;
 
     private StrinovaClientNotices() {
     }
@@ -33,10 +34,20 @@ public final class StrinovaClientNotices {
         send(Component.translatable("config.strinova.notice.server_missing"));
     }
 
+    /** 手持 TACZ 枪械按 B 被让位时提示备用键。 */
+    public static void notifyTaczBKey() {
+        if (taczBKeyNotified) {
+            return;
+        }
+        taczBKeyNotified = true;
+        send(Component.translatable("config.strinova.notice.tacz_b_key"));
+    }
+
     /** 断开连接/切换世界时允许再次提示。 */
     public static void reset() {
         disabledNotified = false;
         missingServerNotified = false;
+        taczBKeyNotified = false;
     }
 
     private static void send(Component message) {
