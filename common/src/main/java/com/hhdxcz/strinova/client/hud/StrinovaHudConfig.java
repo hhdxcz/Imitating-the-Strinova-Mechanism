@@ -115,6 +115,25 @@ public final class StrinovaHudConfig {
         return layout;
     }
 
+    /** 当前计分板调整值（一行文本，便于发反馈）。 */
+    public String scoreboardValuesSummary() {
+        return String.format(java.util.Locale.ROOT,
+                "scoreboardWidthRatio=%.3f, scoreboardHeightRatio=%.3f, scoreboardOffsetX=%.1f, "
+                        + "scoreboardOffsetY=%.1f, scoreboardTextScale=%.2f, scoreboardRowHeight=%d",
+                scoreboardWidthRatio, scoreboardHeightRatio, scoreboardOffsetX,
+                scoreboardOffsetY, scoreboardTextScale, scoreboardRowHeight);
+    }
+
+    /** 当前计分板调整值（JSON 片段，可直接贴回配置）。 */
+    public String scoreboardValuesJson() {
+        return String.format(java.util.Locale.ROOT,
+                "\"scoreboardWidthRatio\": %.3f, \"scoreboardHeightRatio\": %.3f, "
+                        + "\"scoreboardOffsetX\": %.1f, \"scoreboardOffsetY\": %.1f, "
+                        + "\"scoreboardTextScale\": %.2f, \"scoreboardRowHeight\": %d",
+                scoreboardWidthRatio, scoreboardHeightRatio, scoreboardOffsetX,
+                scoreboardOffsetY, scoreboardTextScale, scoreboardRowHeight);
+    }
+
     public boolean isElementEnabled(StrinovaHudLayout.Element element) {
         return switch (element) {
             case HEALTH_ARMOR -> vitalsEnabled;

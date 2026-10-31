@@ -132,7 +132,20 @@ public final class StrinovaClientInitForge {
                             client.tell(() -> client.setScreen(
                                     new com.hhdxcz.strinova.client.StrinovaScoreboardEditorScreen(client.screen)));
                             return 1;
-                        }))
+                        })
+                        .then(Commands.literal("values")
+                                .executes(ctx -> {
+                                    Minecraft client = Minecraft.getInstance();
+                                    String values = com.hhdxcz.strinova.client.hud.StrinovaHudConfig.get().scoreboardValuesSummary();
+                                    String json = com.hhdxcz.strinova.client.hud.StrinovaHudConfig.get().scoreboardValuesJson();
+                                    if (client.keyboardHandler != null) {
+                                        client.keyboardHandler.setClipboard(values);
+                                    }
+                                    ctx.getSource().sendSuccess(() -> Component.literal("计分板数值（已复制到剪贴板）："), false);
+                                    ctx.getSource().sendSuccess(() -> Component.literal(values), false);
+                                    ctx.getSource().sendSuccess(() -> Component.literal("配置文件片段：" + json), false);
+                                    return 1;
+                                })))
                 .then(Commands.literal("status")
                         .executes(ctx -> {
                             Minecraft client = Minecraft.getInstance();
