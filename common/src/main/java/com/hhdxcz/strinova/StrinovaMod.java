@@ -53,6 +53,12 @@ public class StrinovaMod {
         LOGGER.info(MOD_ID + " initializing...");
         StrinovaCommonConfig.init();
         enabled = StrinovaCommonConfig.isModEnabled();
+        // 启动时自动启用（等效于自动执行 /strinova enable），可在 config/strinova.json 关闭 autoEnableOnStart
+        if (!enabled && StrinovaCommonConfig.isAutoEnableOnStart()) {
+            enabled = true;
+            StrinovaCommonConfig.setModEnabled(true);
+            LOGGER.info("Strinova: 启动自动启用模组（autoEnableOnStart=true）");
+        }
         StrinovaNetwork.init();
     }
 }

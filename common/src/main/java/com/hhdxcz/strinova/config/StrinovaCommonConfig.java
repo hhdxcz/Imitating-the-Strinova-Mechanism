@@ -53,6 +53,11 @@ public final class StrinovaCommonConfig {
         return data.modEnabled;
     }
 
+    /** 是否在每次启动时自动启用模组。 */
+    public static synchronized boolean isAutoEnableOnStart() {
+        return data.autoEnableOnStart;
+    }
+
     public static synchronized void setModEnabled(boolean value) {
         ConfigData next = data.copy();
         next.modEnabled = value;
@@ -255,6 +260,8 @@ public final class StrinovaCommonConfig {
         /** 配置结构版本：0/缺失 = 旧版配置（曾默认关闭），加载时自动迁移为启用。 */
         public int configVersion = 2;
         public boolean modEnabled = true;
+        /** 每次启动游戏/服务器时自动启用模组（相当于自动执行 /strinova enable）。 */
+        public boolean autoEnableOnStart = true;
         public int defaultExtraJumps = 1;
         public double paperDamageReduction = 0.4D;
         public boolean taczForceFirstPerson = true;
@@ -285,6 +292,7 @@ public final class StrinovaCommonConfig {
             ConfigData out = new ConfigData();
             out.configVersion = this.configVersion;
             out.modEnabled = this.modEnabled;
+            out.autoEnableOnStart = this.autoEnableOnStart;
             out.defaultExtraJumps = this.defaultExtraJumps;
             out.paperDamageReduction = this.paperDamageReduction;
             out.taczForceFirstPerson = this.taczForceFirstPerson;
