@@ -116,7 +116,16 @@ public final class StrinovaCommonConfig {
         }
         try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
             ConfigData loaded = GSON.fromJson(reader, ConfigData.class);
-            return sanitize(loaded);
+            ConfigData sanitized = sanitize(loaded);
+            if (sanitized.configVersion < 1) {
+                // 旧版配置（历史默认 modEnabled=false）升级后自动启用一次，
+                // 避免升级后玩家误以为弦化/多段跳/飘飞失效（可再用 /strinova disable 关闭）。
+                sanitized.configVersion = 1;
+                sanitized.modEnabled = true;
+                StrinovaMod.LOGGER.info("Migrated legacy Strinova config: modEnabled -> true");
+                save(sanitized);
+            }
+            return sanitized;
         } catch (Exception e) {
             StrinovaMod.LOGGER.error("Failed to read config, using defaults", e);
             ConfigData defaults = ConfigData.defaults();
@@ -230,6 +239,8 @@ public final class StrinovaCommonConfig {
 
     // 配置数据对象：包含所有可配置的字段
     public static final class ConfigData {
+        /** 配置结构版本：0/缺失 = 旧版配置（曾默认关闭），加载时自动迁移为启用。 */
+        public int configVersion = 1;
         public boolean modEnabled = true;
         public int defaultExtraJumps = 1;
         public double paperDamageReduction = 0.4D;
@@ -257,6 +268,7 @@ public final class StrinovaCommonConfig {
         // 深拷贝当前配置
         public ConfigData copy() {
             ConfigData out = new ConfigData();
+            out.configVersion = this.configVersion;
             out.modEnabled = this.modEnabled;
             out.defaultExtraJumps = this.defaultExtraJumps;
             out.paperDamageReduction = this.paperDamageReduction;

@@ -3,6 +3,8 @@
   "key.strinova.stringify": "切换弦化/飘飞",
   "key.strinova.wall": "切换贴墙",
   "key.strinova.growth": "弦能增幅网络",
+  "config.strinova.notice.disabled": "服务端已关闭 Strinova 机制（弦化/多段跳/飘飞等不可用）：请让 OP 执行 /strinova enable",
+  "config.strinova.notice.server_missing": "未收到服务端模组握手：请确认服务器也安装了 Imitating the Strinova Mechanism（仅客户端安装时弦化/多段跳/飘飞无法同步）",
   "config.strinova.title": "弦化机制配置",
   "config.strinova.category.gameplay": "玩法参数",
   "config.strinova.category.compat": "兼容参数",

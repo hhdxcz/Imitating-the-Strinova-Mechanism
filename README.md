@@ -190,6 +190,22 @@ white（白色）<img src="docs/colors/white.png" width="18" height="18" align="
 
 > Architectury API 已由模组内嵌（Jar-in-Jar），无需玩家单独安装。
 
+### 常见问题排查
+
+**弦化 / 多段跳 / 飘飞突然都用不了？**
+
+1. 先执行 `/strinova_client status`，查看 `enabled=` 与 `serverHandshake=`：
+   - `enabled=false`：服务端关闭了机制 → 让 OP 执行 `/strinova enable`（旧版配置升级后会自动启用一次，重启服务器/游戏生效）；
+   - `serverHandshake=false`：没有收到服务端握手 → **服务器端也要安装本模组**，只装客户端时这些机制无法同步；
+2. 仍不行可删除 `config/strinova.json` 让配置重新生成（会重置贴墙黑名单等设置）。
+
+**TACZ 兼容**
+
+- 手持 TACZ 枪械时：HUD 武器栏显示当前枪械名；击杀播报会尝试通过子弹 owner 归属到开枪玩家；
+- 持枪时「贴墙」键暂不响应（避免与 TACZ 操作冲突），弦化 / 多段跳 / 飘飞不受影响；
+- 若 TACZ 也占用了 `B` 键（弦能增幅网络默认键），请在「选项 → 控制」里改掉本模组的按键；
+- HUD 弹药数字要等 TACZ API 接入（当前显示 0/0）。
+
 ---
 
 ## 从源码构建

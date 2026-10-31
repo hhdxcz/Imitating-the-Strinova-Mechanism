@@ -69,6 +69,14 @@ public final class StrinovaHudRenderer {
         if (minecraft.player == null || minecraft.options == null || minecraft.options.hideGui) {
             return;
         }
+        // 客户端握手诊断：进入世界一段时间仍未收到服务端启用状态 → 服务端未安装/未启用模组
+        if (minecraft.player.tickCount > 100
+                && com.hhdxcz.strinova.StrinovaMod.lastRemoteEnabledMs() == 0L) {
+            try {
+                com.hhdxcz.strinova.client.StrinovaClientNotices.notifyServerMissingMod();
+            } catch (Throwable ignored) {
+            }
+        }
         StrinovaHudConfig config = StrinovaHudConfig.get();
         if (!config.hudEnabled) {
             return;
@@ -101,6 +109,14 @@ public final class StrinovaHudRenderer {
             float maxHealth = Math.max(1.0F, player.getMaxHealth());
             StrinovaHudState.setHealth(player.getHealth() / maxHealth * 150.0F, 150.0F);
             StrinovaHudState.setArmor(0.0F, 80.0F);
+            // 显示手持武器名（兼容 TACZ 等枪械模组；弹药数值待枪械系统接入）
+            var held = player.getMainHandItem();
+            if (!held.isEmpty()) {
+                StrinovaHudState.setWeapon(held.getHoverName().getString(),
+                        StrinovaHudState.getFireMode(),
+                        StrinovaHudState.getMagazine(),
+                        StrinovaHudState.getReserve());
+            }
         }
 
         float spread = 0.0F;

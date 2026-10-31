@@ -490,6 +490,12 @@ public final class StrinovaNetwork {
         // 接收模组启用状态同步（服务端权威）
         NetworkManager.registerReceiver(NetworkManager.Side.S2C, S2C_MOD_ENABLED, (buf, context) -> {
             boolean enabled = buf.readBoolean();
+            if (!enabled) {
+                try {
+                    com.hhdxcz.strinova.client.StrinovaClientNotices.notifyModDisabled();
+                } catch (Throwable ignored) {
+                }
+            }
             context.queue(() -> StrinovaMod.applyRemoteEnabled(enabled));
         });
 

@@ -321,11 +321,39 @@ public final class StrinovaCombatManager {
 
     // 解析攻击者为服务端玩家：直接玩家优先生效，否则尝试取弹射物（箭/子弹等）的 owner
     private static ServerPlayer resolvePlayer(Entity attacker) {
+        if (attacker == null) {
+            return null;
+        }
         if (attacker instanceof ServerPlayer serverPlayer) {
             return serverPlayer;
         }
         if (attacker instanceof Projectile projectile && projectile.getOwner() instanceof ServerPlayer owner) {
             return owner;
+        }
+        // 兼容第三方枪械（如 TACZ）的自定义子弹实体：owner/shooter/thrower 字段或 getter
+        try {
+            for (String methodName : new String[]{"getOwner", "getShooter", "getThrower"}) {
+                try {
+                    var method = attacker.getClass().getMethod(methodName);
+                    Object value = method.invoke(attacker);
+                    if (value instanceof ServerPlayer owner) {
+                        return owner;
+                    }
+                } catch (NoSuchMethodException ignored) {
+                }
+            }
+            for (String fieldName : new String[]{"owner", "shooter", "thrower"}) {
+                try {
+                    var field = attacker.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true);
+                    Object value = field.get(attacker);
+                    if (value instanceof ServerPlayer owner) {
+                        return owner;
+                    }
+                } catch (NoSuchFieldException ignored) {
+                }
+            }
+        } catch (Throwable ignored) {
         }
         return null;
     }

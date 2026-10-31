@@ -13,6 +13,8 @@ public class StrinovaMod {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     private static volatile boolean enabled;
+    /** 最近一次收到服务端启用状态同步的时间（0 = 从未收到，可用于判断服务端是否安装/握手）。 */
+    private static volatile long lastRemoteEnabledMs;
 
     /**
      * 查询模组是否已启用。
@@ -36,6 +38,12 @@ public class StrinovaMod {
      */
     public static void applyRemoteEnabled(boolean value) {
         enabled = value;
+        lastRemoteEnabledMs = System.currentTimeMillis();
+    }
+
+    /** 最近一次收到服务端启用状态的时间戳（0 表示从未收到过，用于判断服务端是否安装模组）。 */
+    public static long lastRemoteEnabledMs() {
+        return lastRemoteEnabledMs;
     }
 
     /**

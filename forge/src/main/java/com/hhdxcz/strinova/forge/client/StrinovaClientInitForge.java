@@ -125,6 +125,15 @@ public final class StrinovaClientInitForge {
                             Minecraft client = Minecraft.getInstance();
                             client.tell(() -> client.setScreen(new StrinovaGrowthScreen(client.screen)));
                             return 1;
+                        }))
+                .then(Commands.literal("status")
+                        .executes(ctx -> {
+                            ctx.getSource().sendSuccess(() -> Component.literal(
+                                    "Strinova: enabled=" + com.hhdxcz.strinova.StrinovaMod.isEnabled()
+                                            + " serverHandshake=" + (com.hhdxcz.strinova.StrinovaMod.lastRemoteEnabledMs() != 0L)
+                                            + " mock=" + StrinovaHudRenderer.isMockEnabled()
+                                            + " match=" + com.hhdxcz.strinova.client.hud.StrinovaHudState.isServerMatchActive()), false);
+                            return 1;
                         }));
         event.getDispatcher().register(root);
     }
@@ -141,5 +150,6 @@ public final class StrinovaClientInitForge {
         StrinovaAirJumpClientState.clearAll();
         StrinovaCollisionBoxTuning.clearAll();
         StrinovaCompoundCollision.clearAll();
+        com.hhdxcz.strinova.client.StrinovaClientNotices.reset();
     }
 }

@@ -60,6 +60,7 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
             StrinovaAirJumpClientState.clearAll();
             StrinovaCollisionBoxTuning.clearAll();
             StrinovaCompoundCollision.clearAll();
+            com.hhdxcz.strinova.client.StrinovaClientNotices.reset();
         });
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             var root = ClientCommandManager.literal("strinova_client")
@@ -120,6 +121,15 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
                             .executes(ctx -> {
                                 Minecraft client = Minecraft.getInstance();
                                 client.tell(() -> client.setScreen(new StrinovaGrowthScreen(client.screen)));
+                                return 1;
+                            }))
+                    .then(ClientCommandManager.literal("status")
+                            .executes(ctx -> {
+                                ctx.getSource().sendFeedback(Component.literal(
+                                        "Strinova: enabled=" + com.hhdxcz.strinova.StrinovaMod.isEnabled()
+                                                + " serverHandshake=" + (com.hhdxcz.strinova.StrinovaMod.lastRemoteEnabledMs() != 0L)
+                                                + " mock=" + StrinovaHudRenderer.isMockEnabled()
+                                                + " match=" + com.hhdxcz.strinova.client.hud.StrinovaHudState.isServerMatchActive()));
                                 return 1;
                             }));
             dispatcher.register(root);

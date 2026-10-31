@@ -304,7 +304,9 @@ public final class StrinovaKeyBindingsForge {
             return false;
         }
         var id = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem());
-        return id != null && id.toString().contains("tacz:modern_kinetic_gun");
+        // 兼容所有 TACZ 枪械物品（旧版只匹配 modern_kinetic_gun，自定义枪械 id 会漏判）
+        return id != null && "tacz".equals(id.getNamespace())
+                && id.getPath() != null && id.getPath().contains("gun");
     }
 
     private static boolean strinova$shouldSkipInputsForCompat(Minecraft client) {
