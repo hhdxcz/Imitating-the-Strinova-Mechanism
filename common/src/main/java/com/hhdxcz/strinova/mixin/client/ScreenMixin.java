@@ -2,6 +2,7 @@ package com.hhdxcz.strinova.mixin.client;
 
 import com.hhdxcz.strinova.client.StrinovaRenderPoseLeakGuard;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import org.spongepowered.asm.mixin.Mixin;
@@ -27,5 +28,23 @@ public abstract class ScreenMixin {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
+    }
+
+    // 打开本模组界面时给游戏画面加轻量高斯模糊
+    @Inject(method = "init(Lnet/minecraft/client/Minecraft;II)V", at = @At("HEAD"), require = 0)
+    private void strinova$beginUiBlur(Minecraft minecraft, int width, int height, CallbackInfo ci) {
+        if (((Object) this) instanceof Screen screen
+                && screen.getClass().getName().startsWith("com.hhdxcz.strinova")) {
+            com.hhdxcz.strinova.client.StrinovaUiBlur.begin();
+        }
+    }
+
+    // 关闭界面时恢复清晰画面
+    @Inject(method = "removed", at = @At("HEAD"), require = 0)
+    private void strinova$endUiBlur(CallbackInfo ci) {
+        if (((Object) this) instanceof Screen screen
+                && screen.getClass().getName().startsWith("com.hhdxcz.strinova")) {
+            com.hhdxcz.strinova.client.StrinovaUiBlur.end();
+        }
     }
 }

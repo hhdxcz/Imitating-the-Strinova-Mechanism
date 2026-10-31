@@ -13,6 +13,7 @@
   "client": [
     "client.AbstractContainerScreenMixin",
     "client.CameraMixin",
+    "client.GameRendererAccessor",
     "client.GuiMixin",
     "client.PlayerTabOverlayMixin",
     "client.OptionsMixin",

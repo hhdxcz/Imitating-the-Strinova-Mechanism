@@ -45,6 +45,8 @@ public final class StrinovaHudConfig {
     public boolean scoreboardEnabled = true;
     /** HUD/计分板是否使用微软雅黑（关闭则用原版像素字体）。 */
     public boolean useYaheiFont = true;
+    /** 打开本模组界面时是否给游戏画面加轻量高斯模糊。 */
+    public boolean uiBlurEnabled = true;
     public String selectedAgentId = "";
     public StrinovaHudLayout layout = new StrinovaHudLayout();
 

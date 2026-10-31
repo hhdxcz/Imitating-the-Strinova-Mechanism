@@ -241,7 +241,7 @@ public final class StrinovaSystemFontRenderer {
             atlasId = new ResourceLocation(StrinovaMod.MOD_ID, "dynamic_scoreboard_font");
             Minecraft.getInstance().getTextureManager().register(atlasId, atlasTexture);
             ready = true;
-            StrinovaMod.LOGGER.info("Strinova: 已加载系统字体 {}（计分板/HUD 使用微软雅黑）", fontFile.getName());
+            StrinovaMod.LOGGER.info("Strinova: 已加载系统字体 {}（HUD/计分板使用该字体）", fontFile.getName());
         } catch (Throwable throwable) {
             ready = false;
             StrinovaMod.LOGGER.warn("Strinova: 加载微软雅黑失败，回退原版字体: {}", throwable.toString());
@@ -249,30 +249,57 @@ public final class StrinovaSystemFontRenderer {
     }
 
     private static File findFontFile() {
+        // 1) config/strinova-fonts：优先文泉驿微米黑，其次其它 ttf/ttc
         try {
             File configFonts = dev.architectury.platform.Platform.getConfigFolder()
                     .resolve("strinova-fonts").toFile();
             if (configFonts.isDirectory()) {
                 File[] files = configFonts.listFiles();
                 if (files != null) {
+                    File fallback = null;
                     for (File file : files) {
                         String name = file.getName().toLowerCase(java.util.Locale.ROOT);
-                        if (name.endsWith(".ttf") || name.endsWith(".ttc")) {
+                        if (!name.endsWith(".ttf") && !name.endsWith(".ttc")) {
+                            continue;
+                        }
+                        if (name.contains("wqy") || name.contains("microhei") || name.contains("wenquanyi")) {
                             return file;
                         }
+                        if (fallback == null) {
+                            fallback = file;
+                        }
+                    }
+                    if (fallback != null) {
+                        return fallback;
                     }
                 }
             }
         } catch (Throwable ignored) {
         }
+        // 2) 系统字体：文泉驿微米黑优先，找不到再回退微软雅黑/黑体
         String windir = System.getenv("WINDIR");
         if (windir == null || windir.isEmpty()) {
             windir = "C:\\Windows";
         }
         File fontsDir = new File(windir, "Fonts");
-        String[] candidates = {"msyh.ttc", "msyh.ttf", "msyhbd.ttc", "simhei.ttf"};
+        String[] candidates = {
+                "wqy-microhei.ttc", "wqy-microhei.ttf", "wqy-zenhei.ttc",
+                "msyh.ttc", "msyh.ttf", "simhei.ttf"
+        };
         for (String candidate : candidates) {
             File file = new File(fontsDir, candidate);
+            if (file.isFile()) {
+                return file;
+            }
+        }
+        // 3) Linux 常见路径（在 Linux 客户端上直接可用）
+        String[] linuxPaths = {
+                "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+                "/usr/share/fonts/wqy-microhei/wqy-microhei.ttc",
+                "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"
+        };
+        for (String path : linuxPaths) {
+            File file = new File(path);
             if (file.isFile()) {
                 return file;
             }
