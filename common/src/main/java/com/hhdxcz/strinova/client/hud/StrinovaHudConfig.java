@@ -117,6 +117,8 @@ public final class StrinovaHudConfig {
         public float fontScale = 1.0F;
         public int textColor = 0;
         public int backgroundColor = 0;
+        /** 文字水平居中（垂直方向默认就在单元格内居中）。 */
+        public boolean centerH = false;
     }
 
     /** 计分板部件 key 列表（编辑器与覆盖层共用）。 */
@@ -219,8 +221,7 @@ public final class StrinovaHudConfig {
         for (String key : SCOREBOARD_COMPONENT_KEYS) {
             ScoreboardComponentStyle style = scoreboardComponent(key);
             style.fontScale = clampf(style.fontScale, 0.5F, 2.0F);
-        }
-        if (scoreboardColumnWeights == null) {
+        }        if (scoreboardColumnWeights == null) {
             scoreboardColumnWeights = defaultScoreboardColumnWeights();
         }
         for (String key : SCOREBOARD_COLUMN_KEYS) {

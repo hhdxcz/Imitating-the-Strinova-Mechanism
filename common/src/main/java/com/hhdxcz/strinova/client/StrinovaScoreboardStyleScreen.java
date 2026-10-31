@@ -120,17 +120,18 @@ public class StrinovaScoreboardStyleScreen extends Screen {
                 + "（" + selectedKey + "）";
         graphics.drawString(this.font, label, 8, areaTop + 5, 0xFFEAF2FA, false);
 
-        // 第一行：可见 / 字号 / 重置 / 保存 / 返回
+        // 第一行：可见 / 字号 / 居中 / 重置 / 保存 / 返回
         int y = areaTop + 20;
         int x = 8;
-        x = button(graphics, x, y, 54, style.visible ? "可见: 开" : "可见: 关", 1, 0);
-        x = button(graphics, x, y, 38, "字号-", 2, 0);
+        x = button(graphics, x, y, 48, style.visible ? "可见: 开" : "可见: 关", 1, 0);
+        x = button(graphics, x, y, 34, "字号-", 2, 0);
         String fontSize = String.format(java.util.Locale.ROOT, "%.2fx", style.fontScale);
-        graphics.drawString(this.font, fontSize, x + 4, y + 4, 0xFFEAF2FA, false);
-        x += 42;
-        x = button(graphics, x, y, 38, "字号+", 3, 0);
-        x = button(graphics, x, y, 46, "重置本项", 8, 0);
-        x = button(graphics, x, y, 46, "全部重置", 9, 0);
+        graphics.drawString(this.font, fontSize, x + 2, y + 4, 0xFFEAF2FA, false);
+        x += 34;
+        x = button(graphics, x, y, 34, "字号+", 3, 0);
+        x = button(graphics, x, y, 34, style.centerH ? "居中: 开" : "居中: 关", 14, 0);
+        x = button(graphics, x, y, 40, "重置本项", 8, 0);
+        x = button(graphics, x, y, 40, "全部重置", 9, 0);
         // 保存/返回靠右
         buttonAt(graphics, this.width - 116, y, 52, "保存", 6, 0);
         buttonAt(graphics, this.width - 56, y, 48, "返回", 7, 0);
@@ -193,26 +194,28 @@ public class StrinovaScoreboardStyleScreen extends Screen {
         graphics.drawString(this.font, "（也可在布局编辑器里拖列头边界）", x + 52, y + 2, 0xFF7A8794, false);
     }
 
-    /** 在预览上高亮当前选中的部件，方便知道自己在改哪里。 */
+    /** 在预览上高亮当前选中的部件；数据行/列头/列会同时高亮两个阵营。 */
     private void drawSelectionHighlight(GuiGraphics graphics) {
         StrinovaScoreboardOverlay.Layout layout =
                 StrinovaScoreboardOverlay.computeLayoutPublic(this.width, this.height);
-        int[] rect = selectionRect(layout);
-        if (rect == null || rect[2] <= 0 || rect[3] <= 0) {
-            return;
+        int[][] rects = selectionRects(layout);
+        for (int[] rect : rects) {
+            if (rect == null || rect[2] <= 0 || rect[3] <= 0) {
+                continue;
+            }
+            int x = rect[0];
+            int y = rect[1];
+            int w = rect[2];
+            int h = rect[3];
+            graphics.fill(x, y, x + w, y + h, 0x2235D6E8);
+            graphics.fill(x, y, x + w, y + 2, 0xFF35D6E8);
+            graphics.fill(x, y + h - 2, x + w, y + h, 0xFF35D6E8);
+            graphics.fill(x, y, x + 2, y + h, 0xFF35D6E8);
+            graphics.fill(x + w - 2, y, x + w, y + h, 0xFF35D6E8);
         }
-        int x = rect[0];
-        int y = rect[1];
-        int w = rect[2];
-        int h = rect[3];
-        graphics.fill(x, y, x + w, y + h, 0x2235D6E8);
-        graphics.fill(x, y, x + w, y + 2, 0xFF35D6E8);
-        graphics.fill(x, y + h - 2, x + w, y + h, 0xFF35D6E8);
-        graphics.fill(x, y, x + 2, y + h, 0xFF35D6E8);
-        graphics.fill(x + w - 2, y, x + w, y + h, 0xFF35D6E8);
     }
 
-    private int[] selectionRect(StrinovaScoreboardOverlay.Layout layout) {
+    private int[][] selectionRects(StrinovaScoreboardOverlay.Layout layout) {
         int left = layout.left();
         int blockTop = layout.blockTop();
         int enemyTop = layout.enemyTop();
@@ -222,34 +225,42 @@ public class StrinovaScoreboardStyleScreen extends Screen {
         int headerHeight = layout.headerHeight();
         int rowsTop = blockTop + headerHeight;
         int rowsHeight = 5 * rowHeight;
+        int enemyRowsTop = enemyTop + headerHeight;
         int middleTop = layout.middleTop();
         int middleHeight = layout.middleHeight();
         if (selectedKey == null) {
-            return null;
+            return new int[0][];
         }
         return switch (selectedKey) {
-            case "panel" -> new int[]{left, blockTop, layout.width(), layout.height()};
-            case "sidebar" -> new int[]{left, blockTop, layout.sidebarWidth(), layout.blockHeight()};
-            case "header" -> new int[]{contentX, blockTop, contentW, headerHeight};
-            case "rows" -> new int[]{contentX, rowsTop, contentW, rowsHeight};
-            case "rounds" -> new int[]{left, middleTop, layout.width(), middleHeight};
-            case "roundAlly" -> new int[]{left, middleTop + 1, layout.width(), Math.max(2, middleHeight / 2 - 1)};
-            case "roundEnemy" -> new int[]{left, middleTop + middleHeight / 2, layout.width(),
-                    Math.max(2, middleHeight / 2)};
-            default -> columnRect(contentX, contentW, rowsTop, rowsHeight);
+            case "panel" -> new int[][]{{left, blockTop, layout.width(), layout.height()}};
+            case "sidebar" -> new int[][]{
+                    {left, blockTop, layout.sidebarWidth(), layout.blockHeight()},
+                    {left, enemyTop, layout.sidebarWidth(), layout.blockHeight()}};
+            case "header" -> new int[][]{
+                    {contentX, blockTop, contentW, headerHeight},
+                    {contentX, enemyTop, contentW, headerHeight}};
+            case "rows" -> new int[][]{
+                    {contentX, rowsTop, contentW, rowsHeight},
+                    {contentX, enemyRowsTop, contentW, rowsHeight}};
+            case "rounds" -> new int[][]{{left, middleTop, layout.width(), middleHeight}};
+            case "roundAlly" -> new int[][]{{left, middleTop + 1, layout.width(),
+                    Math.max(2, middleHeight / 2 - 1)}};
+            case "roundEnemy" -> new int[][]{{left, middleTop + middleHeight / 2, layout.width(),
+                    Math.max(2, middleHeight / 2)}};
+            default -> {
+                int[] allyRect = columnRect(contentX, contentW, rowsTop, rowsHeight);
+                int[] enemyRect = columnRect(contentX, contentW, enemyRowsTop, rowsHeight);
+                if (allyRect == null) {
+                    yield new int[0][];
+                }
+                yield new int[][]{allyRect, enemyRect};
+            }
         };
     }
 
     private int[] columnRect(int contentX, int contentW, int rowsTop, int rowsHeight) {
         String[] keys = StrinovaHudConfig.SCOREBOARD_COLUMN_KEYS;
-        int[] anchors = StrinovaScoreboardOverlay.columnAnchors(contentW);
-        // anchors 只有 8 个（name..assist 的起点），这里补出 PING 的起点，避免访问 anchors[8] 越界
-        int pingStart = Math.max(anchors[anchors.length - 1] + 8,
-                contentW - Math.max(28, contentW / 10));
-        int[] starts = new int[keys.length];
-        for (int i = 0; i < keys.length; i++) {
-            starts[i] = i < anchors.length ? anchors[i] : pingStart;
-        }
+        int[] starts = StrinovaScoreboardOverlay.columnStarts(contentW);
         for (int i = 0; i < keys.length; i++) {
             if (!keys[i].equals(selectedKey)) {
                 continue;
@@ -359,6 +370,8 @@ public class StrinovaScoreboardStyleScreen extends Screen {
                 int height = StrinovaScoreboardOverlay.effectiveRoundRowHeight();
                 config.scoreboardRoundRowHeight = Math.min(24, height + 1);
             }
+            case 14 -> config.scoreboardComponent(selectedKey).centerH =
+                    !config.scoreboardComponent(selectedKey).centerH;
             case 9 -> {
                 for (String key : StrinovaHudConfig.SCOREBOARD_COMPONENT_KEYS) {
                     StrinovaHudConfig.ScoreboardComponentStyle style = config.scoreboardComponent(key);

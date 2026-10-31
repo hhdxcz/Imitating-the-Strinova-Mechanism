@@ -32,7 +32,16 @@ public final class StrinovaProgrammaticPainter implements StrinovaHudPainter {
 
     @Override
     public int textWidth(String text) {
-        return text == null ? 0 : font.width(text);
+        if (text == null) {
+            return 0;
+        }
+        if (StrinovaSystemFontRenderer.isReady()) {
+            int width = StrinovaSystemFontRenderer.width(text);
+            if (width > 0 || text.isEmpty()) {
+                return width;
+            }
+        }
+        return font.width(text);
     }
 
     @Override
@@ -45,12 +54,20 @@ public final class StrinovaProgrammaticPainter implements StrinovaHudPainter {
         if (graphics == null || text == null || text.isEmpty()) {
             return;
         }
+        if (StrinovaSystemFontRenderer.isReady()
+                && StrinovaSystemFontRenderer.draw(graphics, text, x, y, 1.0F, argb, shadow)) {
+            return;
+        }
         graphics.drawString(font, text, x, y, argb, shadow);
     }
 
     @Override
     public void textScaled(String text, float x, float y, float scale, int argb, boolean shadow) {
         if (graphics == null || text == null || text.isEmpty()) {
+            return;
+        }
+        if (StrinovaSystemFontRenderer.isReady()
+                && StrinovaSystemFontRenderer.draw(graphics, text, x, y, scale, argb, shadow)) {
             return;
         }
         PoseStack pose = graphics.pose();
