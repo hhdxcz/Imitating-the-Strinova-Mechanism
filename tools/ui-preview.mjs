@@ -308,7 +308,7 @@ function growthHtml(agent, lang) {
   .awakenPanel { height:188px; flex:none; position:relative; display:flex; align-items:stretch;
     background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.12); border-radius:5px;
     padding:27px 0 6px; }
-  .awtoggle { position:absolute; right:8px; top:5px; z-index:3; height:19px; padding:0 8px;
+  .awtoggle { position:absolute; top:5px; z-index:3; height:19px; padding:0 8px;
     background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.45); color:#EAF2FA;
     font-size:11px; font-weight:700; display:flex; align-items:center; gap:5px; font-family:inherit; }
   .awswap { width:12px; height:9px; position:relative; display:inline-block; }
@@ -360,7 +360,8 @@ function growthHtml(agent, lang) {
           </div>
         </div>
         <div class="awakenPanel">
-          <button class="awtoggle"><i class="awswap"></i>切换激活</button>
+          <button class="awtoggle" style="left:calc(50% - 43px)">
+            <i class="awswap"></i>切换激活</button>
           ${awakenCards}
         </div>
       </div>

@@ -761,35 +761,45 @@ public class StrinovaGrowthEditScreen extends Screen {
             int dividerX = this.mapX(x0 + Math.round(totalW * i / 3.0F));
             graphics.fill(dividerX, mappedY + 2, dividerX + 1, mappedY + mappedH - 2, 0x33EAF2FA);
         }
-        // 三份内容示意（mock：第 1 个已激活、其余未激活）
+        // 顶部条带：按钮跟随当前（mock）选择，显示在下次点击会激活的那一格上方
+        int topStrip = clamp(Math.round(totalH * 0.26F), 16, 24);
+        int stripY = this.mapY(y0 + topStrip);
+        graphics.fill(mappedX + 2, stripY, mappedX + mappedW - 2, stripY + 1, 0x22EAF2FA);
+        int mockSelected = StrinovaGrowthState.hasData()
+                ? StrinovaGrowthState.selectedAwakening23() : 3;
+        int targetColumn = mockSelected == 3 ? 1 : 2; // 觉醒2=1, 觉醒3=2
+        int targetLeft = x0 + Math.round(totalW * targetColumn / 3.0F);
+        int targetRight = x0 + Math.round(totalW * (targetColumn + 1) / 3.0F);
+        int targetCellW = Math.max(1, targetRight - targetLeft);
+        int toggleW = targetCellW >= 170 ? clamp(Math.round(targetCellW * 0.30F), 44, 60) : 16;
+        int toggleX = targetLeft + (targetCellW - toggleW) / 2;
+        int toggleY = y0 + Math.max(1, (topStrip - 14) / 2);
+        // 三份内容示意（mock：第 1 个已激活、其余未激活），统一从条带下方开始
         List<StrinovaWikiData.Awakening> source = (this.wiki == null || this.wiki.awakenings() == null)
                 ? List.of() : this.wiki.awakenings();
         int activeNameColor = ui.awakenNameColor != 0 ? ui.awakenNameColor : COLOR_GOLD;
         int inactiveNameColor = ui.awakenNameColor != 0
                 ? ((ui.awakenNameColor & 0x00FFFFFF) | 0xCC000000) : COLOR_TEXT_DIM;
-        int cellW = Math.max(1, totalW / 3);
-        int toggleW = cellW >= 170 ? clamp(Math.round(cellW * 0.30F), 44, 60) : 16;
+        int contentTop = y0 + topStrip + 2;
         for (int i = 0; i < 3; i++) {
             int cellLeft = x0 + Math.round(totalW * i / 3.0F);
             int cellRight = x0 + Math.round(totalW * (i + 1) / 3.0F);
-            int reserve = (i == 2) ? toggleW + 10 : 0;
-            this.drawAwakeningCellPreview(graphics, source, i, cellLeft, cellRight - reserve,
+            this.drawAwakeningCellPreview(graphics, source, i, cellLeft, cellRight, contentTop,
                     activeNameColor, inactiveNameColor);
         }
-        // 右上角「⇄ 切换激活」
-        int toggleX = x0 + totalW - toggleW - 4;
-        this.drawMiniAwakenToggle(graphics, toggleX, y0 + 4, toggleW, 14);
+        // 「⇄ 切换激活」画在目标列上方居中
+        this.drawMiniAwakenToggle(graphics, toggleX, toggleY, toggleW, 14);
     }
 
     /** 示意图里的一份觉醒：需求图标行 → 「觉醒N：」+ 圆角徽章 → 名称 → 描述。 */
     private void drawAwakeningCellPreview(GuiGraphics graphics, List<StrinovaWikiData.Awakening> source,
-                                          int index, int cellLeft, int cellRight,
+                                          int index, int cellLeft, int cellRight, int contentTop,
                                           int activeNameColor, int inactiveNameColor) {
         PreviewLayout l = this.preview;
         int mappedX = this.mapX(cellLeft) + 2;
         int mappedRight = this.mapX(cellRight) - 2;
         int maxW = Math.max(8, mappedRight - mappedX);
-        int top = this.mapY(l.awakenTop) + 3;
+        int top = this.mapY(contentTop);
         int bottom = this.mapY(l.awakenTop + l.awakenHeight) - 2;
         boolean active = index == 0; // 示意图 mock 状态
         StrinovaWikiData.Awakening src = index < source.size() ? source.get(index) : null;

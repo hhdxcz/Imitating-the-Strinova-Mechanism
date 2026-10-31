@@ -910,7 +910,8 @@ public class StrinovaGrowthScreen extends Screen {
      * 渲染觉醒区（横跨立绘右侧到 innerRight、位于网络 + 武器区下方）：
      * 一个整体圆角面板，内部 2 条细竖线分成 3 等份；每份自上而下为
      * 需求图标行 → 「觉醒N：」+ 圆角状态徽章 → 名称 → 描述（自动换行 1~3 行）；
-     * 「⇄ 切换激活」按钮固定在面板右上角（空间不足时只显示图标）。
+     * 面板顶部留出约 20~24px 条带放「⇄ 切换激活」按钮——按钮跟随当前选择，
+     * 显示在「下一次点击会激活的那一格」上方（选三觉时在觉醒2上方，选二觉时在觉醒3上方）。
      */
     private void renderAwakenings(GuiGraphics graphics, int mouseX, int mouseY) {
         List<StrinovaGrowthState.Awakening> awakenings = StrinovaGrowthState.awakenings();
@@ -934,12 +935,18 @@ public class StrinovaGrowthScreen extends Screen {
             graphics.fill(dividerX, y0 + 5, dividerX + 1, y0 + totalH - 5, 0x33EAF2FA);
         }
 
-        // 右上角「⇄ 切换激活」按钮（空间不足时只显示图标）
-        int cellW = Math.max(1, totalW / 3);
-        int toggleW = cellW >= 170 ? clamp(Math.round(cellW * 0.30F), 44, 60) : 16;
+        // 顶部条带：按钮跟随当前选择，位于「下一次点击会激活的那一格」上方
+        int topStrip = clamp(Math.round(totalH * 0.26F), 16, 24);
+        graphics.fill(x0 + 6, y0 + topStrip, x0 + totalW - 6, y0 + topStrip + 1, 0x22EAF2FA);
+        int targetColumn = StrinovaGrowthState.selectedAwakening23() == 3 ? 1 : 2; // 觉醒2=1, 觉醒3=2
+        int colLeft = x0 + Math.round(totalW * targetColumn / 3.0F);
+        int colRight = x0 + Math.round(totalW * (targetColumn + 1) / 3.0F);
+        int targetCellW = Math.max(1, colRight - colLeft);
+        int toggleW = targetCellW >= 170 ? clamp(Math.round(targetCellW * 0.30F), 44, 60) : 16;
         int toggleH = 14;
-        int toggleX = x0 + totalW - toggleW - 4;
-        int toggleY = y0 + 4;
+        int toggleX = clamp(colLeft + (targetCellW - toggleW) / 2,
+                x0 + 2, Math.max(x0 + 2, x0 + totalW - toggleW - 2));
+        int toggleY = y0 + Math.max(1, (topStrip - toggleH) / 2);
         this.awakenToggleX = toggleX;
         this.awakenToggleY = toggleY;
         this.awakenToggleW = toggleW;
@@ -950,20 +957,20 @@ public class StrinovaGrowthScreen extends Screen {
                 && mouseY >= toggleY && mouseY < toggleY + toggleH;
         this.hoveredAwakenToggle = hoveredToggle;
 
-        // 3 等份内容（第三份内容给右上角按钮留出空间，避免按钮压字）
+        // 3 等份内容统一从顶部条带下方开始（不再为按钮预留第三列空间）
+        int contentTop = y0 + topStrip + 2;
         for (int i = 0; i < awakenings.size() && i < 3; i++) {
             int cellX = x0 + Math.round(totalW * i / 3.0F);
             int cellRight = x0 + Math.round(totalW * (i + 1) / 3.0F);
-            int reserve = (i == 2) ? toggleW + 10 : 0;
             this.renderAwakeningCell(graphics, awakenings.get(i), i, cellX, cellRight,
-                    reserve, mouseX, mouseY);
+                    contentTop, mouseX, mouseY);
         }
         this.renderAwakenToggle(graphics, toggleX, toggleY, toggleW, toggleH, enabled, hoveredToggle);
     }
 
     /** 觉醒面板中的一份：需求图标行 → 「觉醒N：」+ 圆角状态徽章 → 名称 → 描述（自动换行）。 */
     private void renderAwakeningCell(GuiGraphics graphics, StrinovaGrowthState.Awakening awakening,
-                                     int index, int cellX, int cellRight, int rightReserve,
+                                     int index, int cellX, int cellRight, int contentTop,
                                      int mouseX, int mouseY) {
         boolean active = awakening.active();
         if (mouseX >= cellX && mouseX < cellRight
@@ -971,13 +978,16 @@ public class StrinovaGrowthScreen extends Screen {
             this.hoveredAwakening = index;
         }
         int contentLeft = cellX + 5;
-        int contentRight = cellRight - 5 - rightReserve;
+        int contentRight = cellRight - 5;
         if (contentRight < contentLeft + 12) {
             contentRight = cellRight - 4;
         }
         int maxWidth = Math.max(8, contentRight - contentLeft);
-        int top = this.awakenTop + 4;
+        int top = contentTop;
         int bottom = this.awakenTop + this.awakenHeight - 3;
+        if (top >= bottom) {
+            return;
+        }
 
         // 1) 需求图标行：蓝方块 / 黄圆 / 绿三角，重复数量 = 需求，左对齐；已满足点亮、未满足半透明
         int[] needs = {awakening.needWeapon(), awakening.needSkill(), awakening.needDefense()};
