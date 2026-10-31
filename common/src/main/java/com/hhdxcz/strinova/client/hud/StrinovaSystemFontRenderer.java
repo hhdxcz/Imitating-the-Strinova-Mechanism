@@ -21,32 +21,33 @@ import java.util.Map;
 /**
  * 运行时可选的「微软雅黑」字体渲染器：
  * 从系统字体目录（C:\Windows\Fonts\msyh.ttc / msyhbd.ttc）或 config/strinova-fonts/ 下的
- * .ttf/.ttc 字体文件加载，把字符按需绘制到一张 512×512 的动态字形图集，再用 GuiGraphics 绘制。
+ * .ttf/.ttc 字体文件加载，把字符按需绘制到动态字形图集。
  *
- * <p>找不到字体 / 加载失败时自动回退原版字体（{@link #isReady()} 为 false）。</p>
+ * <p>绘制时只按每个字的**实际墨迹包围盒**缩放输出（而不是整个方格），
+ * 字间距按 AWT 字宽推进，避免相邻字互相覆盖导致的“糊在一起”。</p>
  */
 public final class StrinovaSystemFontRenderer {
 
     private static final int ATLAS_SIZE = 512;
-    /** 字形单元格与 AWT 渲染字号：尽量接近实际显示像素，减少缩小比例。 */
-    private static final int CELL = 20;
+    private static final int CELL = 16;
     private static final int COLS = ATLAS_SIZE / CELL;
     private static final int MAX_GLYPHS = COLS * COLS;
-    private static final int FONT_PX = 14;
+    private static final int FONT_PX = 12;
     private static final int TARGET_TEXT_PX = 9;
+
+    /** 每个字形的图集位置 + 墨迹包围盒 + 字宽。 */
+    private record GlyphData(int cell, int inkX, int inkY, int inkW, int inkH, int advance) {
+    }
 
     private static boolean triedInit;
     private static boolean ready;
     private static Font awtFont;
-    private static BufferedImage measureImage;
-    private static FontMetrics measureMetrics;
     private static NativeImage atlasImage;
     private static DynamicTexture atlasTexture;
     private static ResourceLocation atlasId;
     private static int nextGlyph;
     private static boolean dirty;
-    private static final Map<Integer, Integer> GLYPH_CELL = new HashMap<>();
-    private static final Map<Integer, Integer> GLYPH_ADVANCE = new HashMap<>();
+    private static final Map<Integer, GlyphData> GLYPHS = new HashMap<>();
 
     private StrinovaSystemFontRenderer() {
     }
@@ -68,20 +69,11 @@ public final class StrinovaSystemFontRenderer {
         if (!ready) {
             return 0;
         }
-        float sum = 0.0F;
+        int total = 0;
         for (int i = 0; i < text.length(); i++) {
-            int ch = text.charAt(i);
-            Integer advance = GLYPH_ADVANCE.get(ch);
-            if (advance == null) {
-                ensureGlyph(ch);
-                advance = GLYPH_ADVANCE.get(ch);
-            }
-            if (advance == null) {
-                advance = FONT_PX / 2;
-            }
-            sum += advance;
+            total += advanceOf(text.charAt(i));
         }
-        return Math.round(sum * ((float) TARGET_TEXT_PX / FONT_PX));
+        return Math.round(total * ((float) TARGET_TEXT_PX / FONT_PX));
     }
 
     /**
@@ -102,86 +94,109 @@ public final class StrinovaSystemFontRenderer {
         int red = (argb >> 16) & 0xFF;
         int green = (argb >> 8) & 0xFF;
         int blue = argb & 0xFF;
-        float pxPerFontPx = (TARGET_TEXT_PX * scale) / FONT_PX;
-        float drawX = x;
+        float ratio = (TARGET_TEXT_PX * scale) / FONT_PX;
         try {
             if (shadow) {
                 RenderSystem.setShaderColor(0.0F, 0.0F, 0.0F, alpha / 255.0F * 0.6F);
-                drawGlyphs(graphics, text, drawX + 1.0F, y + 1.0F, pxPerFontPx);
+                drawGlyphs(graphics, text, x + 1.0F, y + 1.0F, ratio);
             }
             RenderSystem.setShaderColor(red / 255.0F, green / 255.0F, blue / 255.0F, alpha / 255.0F);
-            drawGlyphs(graphics, text, drawX, y, pxPerFontPx);
+            drawGlyphs(graphics, text, x, y, ratio);
         } finally {
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         }
         return true;
     }
 
-    private static void drawGlyphs(GuiGraphics graphics, String text, float x, float y, float pxPerFontPx) {
-        float drawX = x;
+    private static void drawGlyphs(GuiGraphics graphics, String text, float startX, float startY, float ratio) {
+        float drawX = startX;
         for (int i = 0; i < text.length(); i++) {
-            int ch = text.charAt(i);
+            char ch = text.charAt(i);
             if (ch == ' ') {
-                drawX += (FONT_PX / 3.0F) * pxPerFontPx;
+                drawX += (FONT_PX / 3.0F) * ratio;
                 continue;
             }
-            int cell = ensureGlyph(ch);
-            if (cell < 0) {
+            GlyphData glyph = glyph(ch);
+            if (glyph == null) {
                 continue;
             }
-            int cellX = (cell % COLS) * CELL;
-            int cellY = (cell / COLS) * CELL;
-            int drawW = Math.max(1, Math.round(CELL * pxPerFontPx));
-            int drawH = Math.max(1, Math.round(CELL * pxPerFontPx));
             flushAtlas();
-            // 画到整数像素，避免半像素采样导致的“像素块”感
-            graphics.blit(atlasId, Math.round(drawX), Math.round(y), drawW, drawH,
-                    cellX, cellY, CELL, CELL, ATLAS_SIZE, ATLAS_SIZE);
-            Integer advance = GLYPH_ADVANCE.get(ch);
-            drawX += (advance == null ? FONT_PX / 2.0F : advance) * pxPerFontPx;
+            int cellX = (glyph.cell() % COLS) * CELL;
+            int cellY = (glyph.cell() / COLS) * CELL;
+            int drawXpx = Math.round(drawX + glyph.inkX() * ratio);
+            int drawYpx = Math.round(startY + glyph.inkY() * ratio);
+            int drawW = Math.max(1, Math.round(glyph.inkW() * ratio));
+            int drawH = Math.max(1, Math.round(glyph.inkH() * ratio));
+            graphics.blit(atlasId, drawXpx, drawYpx, drawW, drawH,
+                    cellX + glyph.inkX(), cellY + glyph.inkY(), glyph.inkW(), glyph.inkH(),
+                    ATLAS_SIZE, ATLAS_SIZE);
+            drawX += glyph.advance() * ratio;
         }
     }
 
-    private static int ensureGlyph(int ch) {
-        Integer cached = GLYPH_CELL.get(ch);
+    private static int advanceOf(int ch) {
+        if (ch == ' ') {
+            return FONT_PX / 3;
+        }
+        GlyphData glyph = glyph(ch);
+        return glyph == null ? FONT_PX / 2 : glyph.advance();
+    }
+
+    private static GlyphData glyph(int ch) {
+        GlyphData cached = GLYPHS.get(ch);
         if (cached != null) {
             return cached;
         }
         if (nextGlyph >= MAX_GLYPHS) {
-            return -1;
+            return null;
         }
         int cell = nextGlyph++;
         int cellX = (cell % COLS) * CELL;
         int cellY = (cell / COLS) * CELL;
-        BufferedImage glyph = new BufferedImage(CELL, CELL, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = glyph.createGraphics();
+        BufferedImage glyphImage = new BufferedImage(CELL, CELL, BufferedImage.TYPE_INT_ARGB);
+        int advance;
+        Graphics2D g2 = glyphImage.createGraphics();
         try {
             g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setFont(awtFont.deriveFont((float) FONT_PX));
             g2.setColor(Color.WHITE);
-            g2.drawString(String.valueOf((char) ch), 1, CELL - 6);
+            g2.drawString(String.valueOf((char) ch), 1, CELL - 3);
             FontMetrics metrics = g2.getFontMetrics();
-            int advance = metrics.charWidth((char) ch);
+            advance = metrics.charWidth((char) ch);
             if (advance <= 0) {
                 advance = FONT_PX / 2;
             }
-            GLYPH_ADVANCE.put(ch, advance);
         } finally {
             g2.dispose();
         }
+        // 计算墨迹包围盒（去掉透明边，避免相邻字互相覆盖）
+        int minX = CELL;
+        int minY = CELL;
+        int maxX = -1;
+        int maxY = -1;
         for (int py = 0; py < CELL; py++) {
             for (int px = 0; px < CELL; px++) {
-                int argb = glyph.getRGB(px, py);
-                int alpha = (argb >>> 24) & 0xFF;
+                int alpha = (glyphImage.getRGB(px, py) >>> 24) & 0xFF;
                 if (alpha > 0) {
+                    minX = Math.min(minX, px);
+                    minY = Math.min(minY, py);
+                    maxX = Math.max(maxX, px);
+                    maxY = Math.max(maxY, py);
                     atlasImage.setPixelRGBA(cellX + px, cellY + py, (alpha << 24) | 0xFFFFFF);
                 }
             }
         }
-        GLYPH_CELL.put(ch, cell);
+        if (maxX < minX || maxY < minY) {
+            minX = 0;
+            minY = 0;
+            maxX = 0;
+            maxY = 0;
+        }
+        GlyphData data = new GlyphData(cell, minX, minY, maxX - minX + 1, maxY - minY + 1, advance);
+        GLYPHS.put(ch, data);
         dirty = true;
-        return cell;
+        return data;
     }
 
     private static void flushAtlas() {
@@ -219,15 +234,9 @@ public final class StrinovaSystemFontRenderer {
                 return;
             }
             awtFont = fonts[0];
-            measureImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2 = measureImage.createGraphics();
-            g2.setFont(awtFont.deriveFont((float) FONT_PX));
-            measureMetrics = g2.getFontMetrics();
-            g2.dispose();
             atlasImage = new NativeImage(ATLAS_SIZE, ATLAS_SIZE, true);
             atlasImage.fillRect(0, 0, ATLAS_SIZE, ATLAS_SIZE, 0);
             atlasTexture = new DynamicTexture(atlasImage);
-            // 线性过滤：缩小时平滑（之前用最近邻，缩小后就是一块块像素）
             atlasTexture.setFilter(true, false);
             atlasId = new ResourceLocation(StrinovaMod.MOD_ID, "dynamic_scoreboard_font");
             Minecraft.getInstance().getTextureManager().register(atlasId, atlasTexture);
