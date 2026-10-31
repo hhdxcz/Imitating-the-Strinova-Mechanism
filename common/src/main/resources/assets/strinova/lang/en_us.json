@@ -127,6 +127,7 @@
   "config.strinova.hud.crosshair.thickness": "Crosshair Thickness",
   "config.strinova.hud.crosshair.dynamic": "Dynamic Crosshair",
   "config.strinova.hud.editor.entry": "Layout Editor",
+  "config.strinova.hud.scoreboard_editor.entry": "Scoreboard Layout",
   "config.strinova.hud.editor.title": "HUD Layout Editor",
   "config.strinova.hud.editor.tip": "Drag HUD elements to adjust their positions",
   "config.strinova.hud.editor.reset": "Reset Layout",

@@ -127,6 +127,7 @@
   "config.strinova.hud.crosshair.thickness": "准星粗细",
   "config.strinova.hud.crosshair.dynamic": "动态准星",
   "config.strinova.hud.editor.entry": "布局编辑",
+  "config.strinova.hud.scoreboard_editor.entry": "计分板布局",
   "config.strinova.hud.editor.title": "HUD布局编辑",
   "config.strinova.hud.editor.tip": "拖动 HUD 元素调整位置",
   "config.strinova.hud.editor.reset": "重置布局",

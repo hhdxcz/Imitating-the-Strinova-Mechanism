@@ -126,6 +126,13 @@ public final class StrinovaClientInitForge {
                             client.tell(() -> client.setScreen(new StrinovaGrowthScreen(client.screen)));
                             return 1;
                         }))
+                .then(Commands.literal("scoreboard")
+                        .executes(ctx -> {
+                            Minecraft client = Minecraft.getInstance();
+                            client.tell(() -> client.setScreen(
+                                    new com.hhdxcz.strinova.client.StrinovaScoreboardEditorScreen(client.screen)));
+                            return 1;
+                        }))
                 .then(Commands.literal("status")
                         .executes(ctx -> {
                             Minecraft client = Minecraft.getInstance();

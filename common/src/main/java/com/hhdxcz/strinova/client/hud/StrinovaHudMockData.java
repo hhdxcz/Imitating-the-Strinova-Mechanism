@@ -118,6 +118,13 @@ public final class StrinovaHudMockData {
                 new StrinovaMatchState.RoundResult(true, "hud.strinova.match.reason.elimination")));
     }
 
+    /** 计分板编辑器预览：没有真实计分板数据时填入模拟数据（不改对局状态）。 */
+    public static void ensureScoreboardPreview() {
+        if (StrinovaScoreboardState.entries().isEmpty()) {
+            fillScoreboard();
+        }
+    }
+
     /** 模拟 5v5 计分板数据（列数据参考真实 TAB 计分板截图）。 */
     private static void fillScoreboard() {
         List<StrinovaScoreboardState.Entry> entries = new ArrayList<>();

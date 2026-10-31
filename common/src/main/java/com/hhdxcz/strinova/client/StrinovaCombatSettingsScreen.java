@@ -143,16 +143,21 @@ public class StrinovaCombatSettingsScreen extends Screen {
                 () -> StrinovaHudConfig.get().crosshairThickness,
                 value -> StrinovaHudConfig.get().crosshairThickness = value, 1, 4);
 
-        // 底部：布局编辑入口 + 返回
+        // 底部：HUD 布局编辑 + 计分板编辑 + 返回
         int bottomY = this.height - 28;
         int bottomCenterX = this.width / 2;
+        int groupStart = bottomCenterX - (BOTTOM_BUTTON_WIDTH * 3 + 8) / 2;
         this.addRenderableWidget(Button.builder(Component.translatable("config.strinova.hud.editor.entry"),
                         button -> this.openLayoutEditor())
-                .bounds(bottomCenterX - BOTTOM_BUTTON_WIDTH - 4, bottomY, BOTTOM_BUTTON_WIDTH, ROW_HEIGHT)
+                .bounds(groupStart, bottomY, BOTTOM_BUTTON_WIDTH, ROW_HEIGHT)
+                .build());
+        this.addRenderableWidget(Button.builder(Component.translatable("config.strinova.hud.scoreboard_editor.entry"),
+                        button -> this.openScoreboardEditor())
+                .bounds(groupStart + BOTTOM_BUTTON_WIDTH + 4, bottomY, BOTTOM_BUTTON_WIDTH, ROW_HEIGHT)
                 .build());
         this.addRenderableWidget(Button.builder(Component.translatable("config.strinova.hud.back"),
                         button -> this.onClose())
-                .bounds(bottomCenterX + 4, bottomY, BOTTOM_BUTTON_WIDTH, ROW_HEIGHT)
+                .bounds(groupStart + (BOTTOM_BUTTON_WIDTH + 4) * 2, bottomY, BOTTOM_BUTTON_WIDTH, ROW_HEIGHT)
                 .build());
 
         this.refreshWidgetState();
@@ -244,6 +249,14 @@ public class StrinovaCombatSettingsScreen extends Screen {
         StrinovaHudConfig.get().save();
         if (this.minecraft != null) {
             this.minecraft.setScreen(new StrinovaHudEditorScreen(this));
+        }
+    }
+
+    /** 打开计分板可视化编辑器。 */
+    private void openScoreboardEditor() {
+        StrinovaHudConfig.get().save();
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(new StrinovaScoreboardEditorScreen(this));
         }
     }
 
