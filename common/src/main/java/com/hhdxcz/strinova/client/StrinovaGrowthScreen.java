@@ -20,10 +20,11 @@ import java.util.List;
  * 顶部栏：标题·角色名 / 拥有能量点 / 准备阶段倒计时 / 关闭按钮（高度 = 窗口高 × headerHeightRatio）；
  * 左侧：满高角色立绘占位（渐变 + 名字首字大字，底部角色名 / 定位 / 数值 / 身份）；
  * 中间：8 类增幅网络两列排布（列宽由 networkSplitRatio 分配、4 行高度由 networkRowWeights 归一化；
- *       每类 2 个升级项，标题右上角「刷新」可返还能量重新选择，每类只能选一项，已选后其余项灰显），
- *       网格下方为 3 个觉醒卡（图标 + 名称 + 状态 + 描述），觉醒 2/3 卡片间隙有「⇄ 切换激活」按钮；
- * 右侧：满高武器栏——1/2/3 主武器 / 副武器 / 近战各占整列宽等分高度，4/5 战术道具底部并排各半宽，
- *       每张卡右下角有黄色「切换」双向箭头装饰。
+ *       每类 2 个升级项，标题右上角「刷新」可返还能量重新选择，每类只能选一项，已选后其余项灰显）；
+ * 右侧：武器栏（与网络区同高）——1/2/3 主武器 / 副武器 / 近战各占整列宽等分高度，
+ *       4/5 战术道具底部并排各半宽且底边与网络最后一行对齐，每张卡右下角有黄色「切换」双向箭头装饰；
+ * 底部（横跨立绘右侧到 innerRight）：一个整体圆角觉醒面板，内部 2 条细竖线分成 3 等份，
+ *       每份自上而下：需求图标行 → 「觉醒N：」+ 圆角状态徽章 → 名称 → 描述；右上角有「⇄ 切换激活」按钮。
  *
  * <p>纯 {@link GuiGraphics} 程序化绘制，不依赖任何贴图；小窗口会自动隐藏立绘、觉醒描述
  * 与武器名称等次要信息，保证 320×240 ~ 高分辨率下都不溢出。</p>
@@ -259,30 +260,33 @@ public class StrinovaGrowthScreen extends Screen {
             }
         }
 
-        // 觉醒区：只在立绘右侧的中间列底部，高度 = 窗口高度 × awakenHeightRatio
+        // 觉醒区：横跨「立绘右边缘 + gap」到 innerRight，位于网络 + 武器区下方、延伸到底部
+        // 网络区与武器区同高：contentTop → 觉醒区上边界 - gap（武器 4/5 底 = 网络最后一行底）
         int gridMinHeight = CATEGORY_ROWS * 18 + (CATEGORY_ROWS - 1) * 2;
-        int middleWidth = Math.max(0, this.categoriesRight - this.categoriesLeft);
         int awakenMax = Math.max(34,
                 this.contentBottom - this.contentTop - gridMinHeight - this.gap * 2);
+        this.awakenLeft = this.categoriesLeft;
+        this.awakenRight = this.innerRight;
+        this.awakenWidth = Math.max(0, this.awakenRight - this.awakenLeft);
         this.showAwakenings = ui.showAwakenings && this.width >= 260 && this.height >= 220
-                && middleWidth >= 120;
+                && this.awakenWidth >= 120;
         if (this.showAwakenings) {
             this.awakenHeight = clamp(Math.round(this.height * ui.awakenHeightRatio),
                     34, Math.max(34, Math.min(awakenMax, this.height / 2)));
-            this.showAwakenDescription = this.awakenHeight >= 56 && middleWidth >= 480;
+            this.showAwakenDescription = this.awakenHeight >= 56 && this.awakenWidth >= 480;
         } else {
             this.awakenHeight = 0;
             this.showAwakenDescription = false;
         }
-        this.awakenLeft = this.categoriesLeft;
-        this.awakenRight = this.categoriesRight;
-        this.awakenWidth = middleWidth;
         this.awakenTop = this.showAwakenings
                 ? this.contentBottom - this.awakenHeight
                 : this.contentBottom;
-        this.categoriesBottom = this.showAwakenings
+        // 网络区 / 武器区共用底部 = 觉醒区上边界 - gap
+        int networkBottom = this.showAwakenings
                 ? Math.max(this.categoriesTop + 8, this.awakenTop - this.gap)
                 : this.contentBottom;
+        this.categoriesBottom = networkBottom;
+        this.weaponsBottom = networkBottom;
 
         // 增幅网络列宽：左列 = (可用宽 - 列间距) × networkSplitRatio，右列取剩余
         this.categoryColumnGap = clamp(Math.round(ui.columnGap), 0, 32);
@@ -708,19 +712,20 @@ public class StrinovaGrowthScreen extends Screen {
         int cardLeft = this.weaponsX;
         int cardWidth = Math.max(8, this.innerRight - 4 - cardLeft);
         int slotGap = 3;
-        int top = this.weaponsY + 4;
-        int bottom = this.weaponsBottom - 4;
-        int rowHeight = Math.max(12, (bottom - top - slotGap * 3) / 4);
-        // 1 / 2 / 3：整列宽、四行等高
+        // 武器列与网络区同高：1/2/3 等分，4/5 底边与网络最后一行底部对齐
+        int top = this.weaponsY;
+        int bottom = this.weaponsBottom;
+        int rowHeight = Math.max(8, (bottom - top - slotGap * 3) / 4);
         for (int i = 0; i < 3; i++) {
             int slotY = top + i * (rowHeight + slotGap);
             this.renderWeaponCard(graphics, i, cardLeft, slotY, cardWidth, rowHeight, slots);
         }
-        // 4 / 5：底部一行并排各半宽
+        // 4 / 5：底部一行并排各半宽，底边严格对齐网络区最后一行底
         int rowY = top + 3 * (rowHeight + slotGap);
+        int lastHeight = Math.max(8, bottom - rowY);
         int halfWidth = Math.max(8, (cardWidth - slotGap) / 2);
-        this.renderWeaponCard(graphics, 3, cardLeft, rowY, halfWidth, rowHeight, slots);
-        this.renderWeaponCard(graphics, 4, cardLeft + halfWidth + slotGap, rowY, halfWidth, rowHeight, slots);
+        this.renderWeaponCard(graphics, 3, cardLeft, rowY, halfWidth, lastHeight, slots);
+        this.renderWeaponCard(graphics, 4, cardLeft + halfWidth + slotGap, rowY, halfWidth, lastHeight, slots);
     }
 
     /** 单张武器卡：序号 + 槽位类型、居中几何图标、底部名称/战术提示、右下角黄色切换图标。 */
@@ -902,54 +907,173 @@ public class StrinovaGrowthScreen extends Screen {
     // ==================== 底部觉醒 ====================
 
     /**
-     * 渲染觉醒区（位于立绘右侧、中间列底部）：3 张卡；觉醒 2 与觉醒 3 的卡片间隙中放
-     * 「⇄ 切换激活」小按钮（二觉/三觉二选一）。按钮宽度随觉醒区宽度自适应。
+     * 渲染觉醒区（横跨立绘右侧到 innerRight、位于网络 + 武器区下方）：
+     * 一个整体圆角面板，内部 2 条细竖线分成 3 等份；每份自上而下为
+     * 需求图标行 → 「觉醒N：」+ 圆角状态徽章 → 名称 → 描述（自动换行 1~3 行）；
+     * 「⇄ 切换激活」按钮固定在面板右上角（空间不足时只显示图标）。
      */
     private void renderAwakenings(GuiGraphics graphics, int mouseX, int mouseY) {
         List<StrinovaGrowthState.Awakening> awakenings = StrinovaGrowthState.awakenings();
         this.hoveredAwakening = -1;
         this.hoveredAwakenToggle = false;
         this.awakenToggleVisible = false;
-        if (awakenings.isEmpty() || this.awakenWidth <= 0) {
+        if (awakenings.isEmpty() || this.awakenWidth <= 0 || this.awakenHeight <= 0) {
             return;
         }
-        int cardGap = this.gap;
-        if (awakenings.size() != 3) {
-            // 非标准 3 卡数据时按普通等分排布（不显示切换按钮）
-            int cardWidth = Math.max(8,
-                    (this.awakenWidth - (awakenings.size() - 1) * cardGap) / awakenings.size());
-            for (int i = 0; i < awakenings.size(); i++) {
-                int x = this.awakenLeft + i * (cardWidth + cardGap);
-                this.renderAwakeningCard(graphics, awakenings.get(i), i, x, cardWidth, mouseX, mouseY);
-            }
-            return;
+        int x0 = this.awakenLeft;
+        int y0 = this.awakenTop;
+        int totalW = this.awakenWidth;
+        int totalH = this.awakenHeight;
+        // 整体容器：圆角边框 + 背景（不为每个觉醒单独画框）
+        drawRoundedRect(graphics, x0, y0, totalW, totalH, 4, this.cardColor(0x6635D6E8));
+        drawRoundedRect(graphics, x0 + 1, y0 + 1, Math.max(1, totalW - 2), Math.max(1, totalH - 2),
+                3, this.cardColor(COLOR_CARD_BG));
+        // 内部 2 条细竖线分成 3 等份
+        for (int i = 1; i <= 2; i++) {
+            int dividerX = x0 + Math.round(totalW * i / 3.0F);
+            graphics.fill(dividerX, y0 + 5, dividerX + 1, y0 + totalH - 5, 0x33EAF2FA);
         }
-        // 卡片间隙加宽出「切换激活」按钮的位置；过窄时按钮只保留图标
-        int toggleW = clamp(Math.round(this.awakenWidth * 0.16F), 16, 60);
-        int cardWidth = (this.awakenWidth - 3 * cardGap - toggleW) / 3;
-        if (cardWidth < 30) {
-            toggleW = Math.max(10, this.awakenWidth - 3 * cardGap - 3 * 30);
-            cardWidth = Math.max(8, (this.awakenWidth - 3 * cardGap - toggleW) / 3);
-        }
-        int card0X = this.awakenLeft;
-        int card1X = card0X + cardWidth + cardGap;
-        int toggleX = card1X + cardWidth + cardGap;
-        int card2X = toggleX + toggleW + cardGap;
-        this.renderAwakeningCard(graphics, awakenings.get(0), 0, card0X, cardWidth, mouseX, mouseY);
-        this.renderAwakeningCard(graphics, awakenings.get(1), 1, card1X, cardWidth, mouseX, mouseY);
-        this.renderAwakeningCard(graphics, awakenings.get(2), 2, card2X, cardWidth, mouseX, mouseY);
 
-        int toggleH = clamp(this.awakenHeight - 12, 14, 18);
+        // 右上角「⇄ 切换激活」按钮（空间不足时只显示图标）
+        int cellW = Math.max(1, totalW / 3);
+        int toggleW = cellW >= 170 ? clamp(Math.round(cellW * 0.30F), 44, 60) : 16;
+        int toggleH = 14;
+        int toggleX = x0 + totalW - toggleW - 4;
+        int toggleY = y0 + 4;
         this.awakenToggleX = toggleX;
-        this.awakenToggleY = this.awakenTop + (this.awakenHeight - toggleH) / 2;
+        this.awakenToggleY = toggleY;
         this.awakenToggleW = toggleW;
         this.awakenToggleH = toggleH;
         this.awakenToggleVisible = true;
         boolean enabled = StrinovaGrowthState.canToggleAwakenings();
-        boolean hovered = mouseX >= toggleX && mouseX < toggleX + toggleW
-                && mouseY >= this.awakenToggleY && mouseY < this.awakenToggleY + toggleH;
-        this.hoveredAwakenToggle = hovered;
-        this.renderAwakenToggle(graphics, toggleX, this.awakenToggleY, toggleW, toggleH, enabled, hovered);
+        boolean hoveredToggle = mouseX >= toggleX && mouseX < toggleX + toggleW
+                && mouseY >= toggleY && mouseY < toggleY + toggleH;
+        this.hoveredAwakenToggle = hoveredToggle;
+
+        // 3 等份内容（第三份内容给右上角按钮留出空间，避免按钮压字）
+        for (int i = 0; i < awakenings.size() && i < 3; i++) {
+            int cellX = x0 + Math.round(totalW * i / 3.0F);
+            int cellRight = x0 + Math.round(totalW * (i + 1) / 3.0F);
+            int reserve = (i == 2) ? toggleW + 10 : 0;
+            this.renderAwakeningCell(graphics, awakenings.get(i), i, cellX, cellRight,
+                    reserve, mouseX, mouseY);
+        }
+        this.renderAwakenToggle(graphics, toggleX, toggleY, toggleW, toggleH, enabled, hoveredToggle);
+    }
+
+    /** 觉醒面板中的一份：需求图标行 → 「觉醒N：」+ 圆角状态徽章 → 名称 → 描述（自动换行）。 */
+    private void renderAwakeningCell(GuiGraphics graphics, StrinovaGrowthState.Awakening awakening,
+                                     int index, int cellX, int cellRight, int rightReserve,
+                                     int mouseX, int mouseY) {
+        boolean active = awakening.active();
+        if (mouseX >= cellX && mouseX < cellRight
+                && mouseY >= this.awakenTop && mouseY < this.awakenTop + this.awakenHeight) {
+            this.hoveredAwakening = index;
+        }
+        int contentLeft = cellX + 5;
+        int contentRight = cellRight - 5 - rightReserve;
+        if (contentRight < contentLeft + 12) {
+            contentRight = cellRight - 4;
+        }
+        int maxWidth = Math.max(8, contentRight - contentLeft);
+        int top = this.awakenTop + 4;
+        int bottom = this.awakenTop + this.awakenHeight - 3;
+
+        // 1) 需求图标行：蓝方块 / 黄圆 / 绿三角，重复数量 = 需求，左对齐；已满足点亮、未满足半透明
+        int[] needs = {awakening.needWeapon(), awakening.needSkill(), awakening.needDefense()};
+        int[] colors = {0xFF4FA3FF, 0xFFFFD166, 0xFF54E0A0};
+        int[] owned = {StrinovaGrowthState.purchasedWeapon(),
+                StrinovaGrowthState.purchasedSkill(),
+                StrinovaGrowthState.purchasedDefense()};
+        int totalNeeds = Math.max(1, needs[0] + needs[1] + needs[2]);
+        int shape = clamp(maxWidth / (totalNeeds + 1), 4, 8);
+        int cursor = contentLeft;
+        for (int k = 0; k < 3; k++) {
+            if (needs[k] <= 0) {
+                continue;
+            }
+            boolean met = owned[k] >= needs[k];
+            int color = met ? colors[k] : ((colors[k] & 0x00FFFFFF) | 0x66000000);
+            for (int n = 0; n < needs[k]; n++) {
+                if (cursor + shape > contentLeft + maxWidth) {
+                    break;
+                }
+                switch (k) {
+                    case 0 -> drawFilledSquare(graphics, cursor, top, shape, color);
+                    case 1 -> drawFilledCircle(graphics, cursor, top, shape, color);
+                    default -> drawFilledTriangle(graphics, cursor, top, shape, color);
+                }
+                cursor += shape + 2;
+            }
+            cursor += 2;
+        }
+        int y = top + shape + 4;
+        if (y + 11 > bottom) {
+            return;
+        }
+        // 2) 「觉醒N：」+ 紧跟的圆角状态徽章
+        String label = "觉醒" + (index + 1) + "：";
+        String statusText = Component.translatable(active
+                ? "config.strinova.growth.activated"
+                : "config.strinova.growth.not_activated").getString();
+        int badgeW = Math.min(this.font.width(statusText) + 8, Math.max(10, maxWidth));
+        int badgeH = 11;
+        String labelShown = truncate(label, Math.max(4, maxWidth - badgeW - 4));
+        graphics.drawString(this.font, labelShown, contentLeft, y, COLOR_TEXT_DIM, false);
+        int badgeX = contentLeft + this.font.width(labelShown) + 4;
+        if (badgeX + badgeW > contentLeft + maxWidth) {
+            badgeX = contentLeft + maxWidth - badgeW;
+        }
+        this.drawStatusBadge(graphics, badgeX, y - 1, badgeW, badgeH, active, statusText);
+        y += 12;
+        // 3) 名称（激活金色）
+        if (y + 9 <= bottom) {
+            graphics.drawString(this.font,
+                    truncate(awakening.name() == null ? "" : awakening.name(), maxWidth),
+                    contentLeft, y, this.awakenNameColor(active), false);
+            y += LINE_STEP;
+        }
+        // 4) 描述自动换行（最多 3 行，空间不足自动减少）
+        int maxLines = Math.min(this.showAwakenDescription ? 3 : 2,
+                Math.max(0, (bottom - y + 2) / LINE_STEP));
+        if (maxLines > 0 && !isBlank(awakening.desc())) {
+            drawWrapped(graphics, Component.literal(awakening.desc()), contentLeft, y, maxWidth,
+                    maxLines, 0xFFB4C0CC);
+        }
+    }
+
+    /** 圆角状态徽章：未激活灰底灰字，已激活绿底金字，文字居中。 */
+    private void drawStatusBadge(GuiGraphics graphics, int x, int y, int width, int height,
+                                 boolean active, String text) {
+        int bg = this.cardColor(active ? 0xFF2E7D5B : 0xFF3A4756);
+        int fg = active ? 0xFFFFD166 : 0xFFB4C0CC;
+        drawRoundedRect(graphics, x, y, width, height, 3, bg);
+        String shown = truncate(text, Math.max(4, width - 4));
+        graphics.drawString(this.font, shown,
+                x + Math.max(2, (width - this.font.width(shown)) / 2),
+                y + (height - 9) / 2, fg, false);
+    }
+
+    /** 纯 fill 绘制圆角矩形（半径 3~4px 的四角阶梯）。 */
+    private static void drawRoundedRect(GuiGraphics graphics, int x, int y, int width, int height,
+                                        int radius, int color) {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        int r = Math.min(radius, Math.min(width / 2, height / 2));
+        if (r <= 0) {
+            graphics.fill(x, y, x + width, y + height, color);
+            return;
+        }
+        for (int row = 0; row < height; row++) {
+            int d = Math.min(row, height - 1 - row);
+            int inset = 0;
+            if (d < r) {
+                inset = r - (int) Math.round(Math.sqrt(
+                        (double) (r * r - (r - d - 1) * (r - d - 1))));
+            }
+            graphics.fill(x + inset, y + row, x + width - inset, y + row + 1, color);
+        }
     }
 
     /** 觉醒 2/3 二选一的「切换激活」按钮：图标「⇄」+ 文案（宽度足够时显示）。 */
@@ -965,7 +1089,7 @@ public class StrinovaGrowthScreen extends Screen {
         int color = enabled ? (hovered ? 0xFF7BE8AC : COLOR_CYAN) : 0x665E6874;
         String text = "切换激活";
         int textW = this.font.width(text);
-        boolean showText = width >= textW + 16;
+        boolean showText = width >= textW + 14;
         int iconW = 10;
         int contentW = showText ? iconW + 3 + textW : iconW;
         int startX = x + Math.max(2, (width - contentW) / 2);
@@ -982,84 +1106,6 @@ public class StrinovaGrowthScreen extends Screen {
         graphics.fill(x + 7, y - 1, x + 9, y + 2, color);
         graphics.fill(x + 2, y + 5, x + 9, y + 6, color);
         graphics.fill(x, y + 4, x + 2, y + 7, color);
-    }
-
-    /** 渲染单个觉醒卡片。 */
-    private void renderAwakeningCard(GuiGraphics graphics, StrinovaGrowthState.Awakening awakening,
-                                     int index, int x, int cardWidth, int mouseX, int mouseY) {
-        boolean active = awakening.active();
-        int accent = active ? COLOR_GOLD : 0xFF3A4756;
-        graphics.fill(x, this.awakenTop, x + cardWidth, this.awakenTop + this.awakenHeight,
-                this.cardColor(COLOR_CARD_BG));
-        graphics.fill(x, this.awakenTop, x + cardWidth, this.awakenTop + 2, accent);
-        graphics.fill(x, this.awakenTop, x + 1, this.awakenTop + this.awakenHeight,
-                active ? 0x8035D6E8 : 0x30FFFFFF);
-        if (mouseX >= x && mouseX < x + cardWidth
-                && mouseY >= this.awakenTop && mouseY < this.awakenTop + this.awakenHeight) {
-            this.hoveredAwakening = index;
-        }
-        if (this.showAwakenDescription) {
-            drawAwakeningNeeds(graphics, awakening, x + cardWidth - 5, this.awakenTop + 4);
-        }
-
-        Component label = Component.translatable("config.strinova.growth.awakening")
-                .append(" " + (index + 1));
-        Component name = Component.literal(awakening.name() == null ? "" : awakening.name());
-        Component status = Component.translatable(active
-                ? "config.strinova.growth.activated"
-                : "config.strinova.growth.not_activated");
-        int nameColor = this.awakenNameColor(active);
-        if (!this.showAwakenDescription && this.awakenHeight < 20) {
-            // 觉醒区被压到极矮时只保留图标与色条，避免文字越界
-            int iconSize = clamp(this.awakenHeight - 4, 8, 12);
-            drawAwakeningIcon(graphics, x + 4, this.awakenTop + (this.awakenHeight - iconSize) / 2,
-                    iconSize, active);
-            return;
-        }
-
-        if (this.showAwakenDescription) {
-            int iconSize = 22;
-            int iconX = x + 8;
-            int iconY = this.awakenTop + 8;
-            drawAwakeningIcon(graphics, iconX, iconY, iconSize, active);
-            int textX = iconX + iconSize + 8;
-            int textMax = Math.max(24, x + cardWidth - 8 - textX - 38);
-            graphics.drawString(this.font, truncate(label.getString(), textMax),
-                    textX, iconY, COLOR_TEXT_DIM, false);
-            graphics.drawString(this.font, truncate(name.getString(), textMax),
-                    textX, iconY + LINE_STEP, nameColor, false);
-            graphics.drawString(this.font, truncate(status.getString(), textMax),
-                    textX, iconY + LINE_STEP * 2, active ? COLOR_SUCCESS : COLOR_TEXT_DISABLED, false);
-            int descTop = iconY + LINE_STEP * 3 + 2;
-            int maxLines = Math.max(1,
-                    (this.awakenTop + this.awakenHeight - 6 - descTop) / LINE_STEP);
-            drawWrapped(graphics, Component.literal(awakening.desc() == null ? "" : awakening.desc()),
-                    x + 8, descTop, cardWidth - 16, maxLines, 0xFFB4C0CC);
-        } else {
-            if (cardWidth < 30) {
-                // 卡片过窄（极小窗口）时只画图标，避免文字越界
-                int iconSize = clamp(this.awakenHeight - 8, 10, 16);
-                drawAwakeningIcon(graphics, x + Math.max(1, (cardWidth - iconSize) / 2),
-                        this.awakenTop + (this.awakenHeight - iconSize) / 2, iconSize, active);
-                return;
-            }
-            int iconSize = clamp(this.awakenHeight - 8, 12, 16);
-            int iconX = x + 4;
-            int iconY = this.awakenTop + (this.awakenHeight - iconSize) / 2;
-            drawAwakeningIcon(graphics, iconX, iconY, iconSize, active);
-            int textX = iconX + iconSize + 5;
-            int textMax = Math.max(20, x + cardWidth - 5 - textX);
-            int statusWidth = this.font.width(status);
-            int labelMax = Math.max(10, textMax - statusWidth - 4);
-            int lineY = this.awakenTop + (this.awakenHeight - LINE_STEP * 2) / 2;
-            graphics.drawString(this.font, truncate(label.getString(), labelMax),
-                    textX, lineY, COLOR_TEXT_DIM, false);
-            graphics.drawString(this.font, status,
-                    x + cardWidth - 5 - statusWidth, lineY,
-                    active ? COLOR_SUCCESS : COLOR_TEXT_DISABLED, false);
-            graphics.drawString(this.font, truncate(name.getString(), textMax),
-                    textX, lineY + LINE_STEP, nameColor, false);
-        }
     }
 
     /**

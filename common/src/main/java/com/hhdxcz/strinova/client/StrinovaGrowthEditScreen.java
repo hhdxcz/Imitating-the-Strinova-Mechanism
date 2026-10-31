@@ -694,19 +694,19 @@ public class StrinovaGrowthEditScreen extends Screen {
         int cardLeft = l.weaponsX;
         int cardWidth = Math.max(8, l.innerRight - 4 - cardLeft);
         int slotGap = 3;
-        int top = l.weaponsY + 4;
-        int bottom = l.weaponsBottom - 4;
-        int rowHeight = Math.max(12, (bottom - top - slotGap * 3) / 4);
-        // 1 / 2 / 3：整列宽、四行等高
+        int top = l.weaponsY;
+        int bottom = l.weaponsBottom;
+        int rowHeight = Math.max(8, (bottom - top - slotGap * 3) / 4);
+        // 1 / 2 / 3：整列宽、等分；4 / 5 底边与网络区最后一行对齐
         for (int i = 0; i < 3; i++) {
             int slotY = top + i * (rowHeight + slotGap);
             this.drawWeaponCardPreview(graphics, i, cardLeft, slotY, cardWidth, rowHeight);
         }
-        // 4 / 5：底部一行并排各半宽
         int rowY = top + 3 * (rowHeight + slotGap);
+        int lastHeight = Math.max(8, bottom - rowY);
         int halfWidth = Math.max(8, (cardWidth - slotGap) / 2);
-        this.drawWeaponCardPreview(graphics, 3, cardLeft, rowY, halfWidth, rowHeight);
-        this.drawWeaponCardPreview(graphics, 4, cardLeft + halfWidth + slotGap, rowY, halfWidth, rowHeight);
+        this.drawWeaponCardPreview(graphics, 3, cardLeft, rowY, halfWidth, lastHeight);
+        this.drawWeaponCardPreview(graphics, 4, cardLeft + halfWidth + slotGap, rowY, halfWidth, lastHeight);
     }
 
     /** 单张武器卡示意：序号 + 槽位类型、几何图标、右下角黄色「切换」双向箭头。 */
@@ -739,44 +739,122 @@ public class StrinovaGrowthEditScreen extends Screen {
 
     private void drawAwakeningsPreview(GuiGraphics graphics, StrinovaGrowthUi ui) {
         PreviewLayout l = this.preview;
-        int cardGap = l.gap;
-        // 觉醒 2/3 卡片间隙加宽出「切换激活」按钮位置（与真实界面一致）
-        int toggleW = clamp(Math.round(l.awakenWidth * 0.16F), 16, 60);
-        int cardWidth = (l.awakenWidth - 3 * cardGap - toggleW) / 3;
-        if (cardWidth < 30) {
-            toggleW = Math.max(10, l.awakenWidth - 3 * cardGap - 3 * 30);
-            cardWidth = Math.max(8, (l.awakenWidth - 3 * cardGap - toggleW) / 3);
+        int x0 = l.awakenLeft;
+        int y0 = l.awakenTop;
+        int totalW = l.awakenWidth;
+        int totalH = l.awakenHeight;
+        if (totalW <= 0 || totalH <= 0) {
+            return;
         }
-        int card0X = l.awakenLeft;
-        int card1X = card0X + cardWidth + cardGap;
-        int toggleX = card1X + cardWidth + cardGap;
-        int card2X = toggleX + toggleW + cardGap;
-        int[] cardXs = {card0X, card1X, card2X};
-        // 觉醒名称色 / 顶条：自定义 awakenNameColor 非 0 时同步示意
+        int mappedX = this.mapX(x0);
+        int mappedY = this.mapY(y0);
+        int mappedW = Math.max(8, this.mapX(x0 + totalW) - mappedX);
+        int mappedH = Math.max(6, this.mapY(y0 + totalH) - mappedY);
+        // 整体圆角容器（3 个觉醒不再各自画框）
+        this.drawMiniRoundedRect(graphics, mappedX, mappedY, mappedW, mappedH, 3,
+                withOpacity(0x6635D6E8, ui.opacity));
+        this.drawMiniRoundedRect(graphics, mappedX + 1, mappedY + 1,
+                Math.max(2, mappedW - 2), Math.max(2, mappedH - 2), 2,
+                withOpacity(0xCC101823, ui.opacity));
+        // 内部 2 条细竖线分成 3 等份
+        for (int i = 1; i <= 2; i++) {
+            int dividerX = this.mapX(x0 + Math.round(totalW * i / 3.0F));
+            graphics.fill(dividerX, mappedY + 2, dividerX + 1, mappedY + mappedH - 2, 0x33EAF2FA);
+        }
+        // 三份内容示意（mock：第 1 个已激活、其余未激活）
+        List<StrinovaWikiData.Awakening> source = (this.wiki == null || this.wiki.awakenings() == null)
+                ? List.of() : this.wiki.awakenings();
         int activeNameColor = ui.awakenNameColor != 0 ? ui.awakenNameColor : COLOR_GOLD;
         int inactiveNameColor = ui.awakenNameColor != 0
                 ? ((ui.awakenNameColor & 0x00FFFFFF) | 0xCC000000) : COLOR_TEXT_DIM;
+        int cellW = Math.max(1, totalW / 3);
+        int toggleW = cellW >= 170 ? clamp(Math.round(cellW * 0.30F), 44, 60) : 16;
         for (int i = 0; i < 3; i++) {
-            int x = cardXs[i];
-            this.fillVirtual(graphics, x, l.awakenTop, x + cardWidth, l.awakenTop + l.awakenHeight,
-                    withOpacity(0xCC101823, ui.opacity));
-            this.fillVirtual(graphics, x, l.awakenTop, x + cardWidth, l.awakenTop + 2,
-                    i == 0 ? activeNameColor : 0xFF3A4756);
-            this.fillVirtual(graphics, x, l.awakenTop, x + 1, l.awakenTop + l.awakenHeight,
-                    i == 0 ? 0x8035D6E8 : 0x30FFFFFF);
-            int cardW = this.mapX(x + cardWidth) - this.mapX(x);
-            int cardH = this.mapY(l.awakenTop + l.awakenHeight) - this.mapY(l.awakenTop);
-            if (cardW >= 30 && cardH >= 9) {
-                String label = "觉醒 " + (i + 1);
-                graphics.drawString(this.font, this.truncate(label, cardW - 6),
-                        this.mapX(x) + 3, this.mapY(l.awakenTop) + 4,
-                        i == 0 ? activeNameColor : inactiveNameColor, false);
+            int cellLeft = x0 + Math.round(totalW * i / 3.0F);
+            int cellRight = x0 + Math.round(totalW * (i + 1) / 3.0F);
+            int reserve = (i == 2) ? toggleW + 10 : 0;
+            this.drawAwakeningCellPreview(graphics, source, i, cellLeft, cellRight - reserve,
+                    activeNameColor, inactiveNameColor);
+        }
+        // 右上角「⇄ 切换激活」
+        int toggleX = x0 + totalW - toggleW - 4;
+        this.drawMiniAwakenToggle(graphics, toggleX, y0 + 4, toggleW, 14);
+    }
+
+    /** 示意图里的一份觉醒：需求图标行 → 「觉醒N：」+ 圆角徽章 → 名称 → 描述。 */
+    private void drawAwakeningCellPreview(GuiGraphics graphics, List<StrinovaWikiData.Awakening> source,
+                                          int index, int cellLeft, int cellRight,
+                                          int activeNameColor, int inactiveNameColor) {
+        PreviewLayout l = this.preview;
+        int mappedX = this.mapX(cellLeft) + 2;
+        int mappedRight = this.mapX(cellRight) - 2;
+        int maxW = Math.max(8, mappedRight - mappedX);
+        int top = this.mapY(l.awakenTop) + 3;
+        int bottom = this.mapY(l.awakenTop + l.awakenHeight) - 2;
+        boolean active = index == 0; // 示意图 mock 状态
+        StrinovaWikiData.Awakening src = index < source.size() ? source.get(index) : null;
+        int needW = src == null ? 1 : Math.max(0, src.needWeapon());
+        int needS = src == null ? 1 : Math.max(0, src.needSkill());
+        int needD = src == null ? 1 : Math.max(0, src.needDefense());
+        int total = Math.max(1, needW + needS + needD);
+        int shape = clamp(maxW / (total + 1), 3, 6);
+        int cursor = mappedX;
+        for (int k = 0; k < 3; k++) {
+            int count = k == 0 ? needW : (k == 1 ? needS : needD);
+            int base = k == 0 ? 0xFF4FA3FF : (k == 1 ? 0xFFFFD166 : 0xFF54E0A0);
+            int color = (base & 0x00FFFFFF) | 0x88000000;
+            for (int n = 0; n < count && cursor + shape <= mappedRight; n++) {
+                switch (k) {
+                    case 0 -> graphics.fill(cursor, top, cursor + shape, top + shape, color);
+                    case 1 -> this.drawMiniCircle(graphics, cursor, top, shape, color);
+                    default -> this.drawMiniTriangle(graphics, cursor, top, shape, color);
+                }
+                cursor += shape + 1;
+            }
+            cursor += 1;
+        }
+        int lineY = top + shape + 3;
+        if (lineY + 9 > bottom) {
+            return;
+        }
+        // 「觉醒N：」+ 圆角状态徽章
+        String label = "觉醒" + (index + 1) + "：";
+        String statusText = active ? "已激活" : "未激活";
+        int badgeW = Math.min(this.font.width(statusText) + 6, Math.max(8, maxW));
+        int badgeH = 9;
+        String labelShown = this.truncate(label, Math.max(4, maxW - badgeW - 3));
+        graphics.drawString(this.font, labelShown, mappedX, lineY, COLOR_TEXT_DIM, false);
+        int badgeX = mappedX + this.font.width(labelShown) + 3;
+        if (badgeX + badgeW > mappedRight) {
+            badgeX = Math.max(mappedX, mappedRight - badgeW);
+        }
+        this.drawMiniRoundedRect(graphics, badgeX, lineY - 1, badgeW, badgeH, 2,
+                active ? 0xFF2E7D5B : 0xFF3A4756);
+        String badgeShown = this.truncate(statusText, badgeW - 3);
+        graphics.drawString(this.font, badgeShown,
+                badgeX + Math.max(1, (badgeW - this.font.width(badgeShown)) / 2),
+                lineY, active ? 0xFFFFD166 : 0xFFB4C0CC, false);
+        lineY += 11;
+        // 名称
+        if (lineY + 9 <= bottom) {
+            String name = src == null || src.name() == null ? ("觉醒" + (index + 1)) : src.name();
+            graphics.drawString(this.font, this.truncate(name, maxW), mappedX, lineY,
+                    active ? activeNameColor : inactiveNameColor, false);
+            lineY += 11;
+        }
+        // 描述（最多 2 行）
+        int maxLines = Math.min(2, Math.max(0, (bottom - lineY + 1) / 9));
+        String desc = src == null || src.desc() == null ? "" : src.desc();
+        if (maxLines > 0 && !desc.isEmpty()) {
+            int drawn = 0;
+            for (var line : this.font.split(Component.literal(desc), maxW)) {
+                if (drawn >= maxLines) {
+                    break;
+                }
+                graphics.drawString(this.font, line, mappedX, lineY + drawn * 9, 0xFFB4C0CC, false);
+                drawn++;
             }
         }
-        // 觉醒 2/3 二选一「切换激活」按钮（示意图内为可用态）
-        int toggleH = clamp(l.awakenHeight - 12, 14, 18);
-        int toggleY = l.awakenTop + (l.awakenHeight - toggleH) / 2;
-        this.drawMiniAwakenToggle(graphics, toggleX, toggleY, toggleW, toggleH);
     }
 
     /** 示意图里的迷你「切换激活」按钮（⇄ 图标 + 文案，宽度不足时只画图标）。 */
@@ -819,6 +897,48 @@ public class StrinovaGrowthEditScreen extends Screen {
         graphics.fill(x, y + 4, x + 2, y + 7, color);
     }
 
+    /** 迷你圆角矩形（示意图容器 / 状态徽章用）。 */
+    private void drawMiniRoundedRect(GuiGraphics graphics, int x, int y, int width, int height,
+                                     int radius, int color) {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        int r = Math.min(radius, Math.min(width / 2, height / 2));
+        if (r <= 0) {
+            graphics.fill(x, y, x + width, y + height, color);
+            return;
+        }
+        for (int row = 0; row < height; row++) {
+            int d = Math.min(row, height - 1 - row);
+            int inset = 0;
+            if (d < r) {
+                inset = r - (int) Math.round(Math.sqrt(
+                        (double) (r * r - (r - d - 1) * (r - d - 1))));
+            }
+            graphics.fill(x + inset, y + row, x + width - inset, y + row + 1, color);
+        }
+    }
+
+    /** 迷你实心圆（需求图标行用）。 */
+    private void drawMiniCircle(GuiGraphics graphics, int x, int y, int size, int color) {
+        int radius = size / 2;
+        int cx = x + radius;
+        int cy = y + radius;
+        for (int dy = -radius; dy <= radius; dy++) {
+            int half = (int) Math.sqrt(Math.max(0, radius * radius - dy * dy));
+            graphics.fill(cx - half, cy + dy, cx + half + 1, cy + dy + 1, color);
+        }
+    }
+
+    /** 迷你实心倒三角（需求图标行用）。 */
+    private void drawMiniTriangle(GuiGraphics graphics, int x, int y, int size, int color) {
+        int cx = x + size / 2;
+        for (int dy = 0; dy < size; dy++) {
+            int half = (size / 2) * (dy + 1) / Math.max(1, size);
+            graphics.fill(cx - half, y + dy, cx + half + 1, y + dy + 1, color);
+        }
+    }
+
     // ==================== 边界与隐藏标注 ====================
 
     /** 画 8 条可拖拽分割线：3 竖（立绘右边界 / 网络列分界 / 武器栏左边界）+ 5 横（标题栏底边 / 3 条行分隔 / 觉醒上边界）。 */
@@ -838,10 +958,11 @@ public class StrinovaGrowthEditScreen extends Screen {
         int splitX = this.mapX(l.categoriesLeft + l.columnW[0] + l.categoryColumnGap / 2);
         this.drawVerticalBoundary(graphics, splitX, top, this.mapY(l.categoriesBottom),
                 this.isBoundaryActive(DRAG_NETWORK_SPLIT));
-        // 竖线 3：武器栏左边界
+        // 竖线 3：武器栏左边界（武器列与网络区同高 → 到 weaponsBottom 为止）
         if (l.showWeapons) {
+            int weaponsBottom = this.mapY(l.weaponsBottom);
             this.drawVerticalBoundary(graphics, this.mapX(l.weaponsX),
-                    top, bottom, this.isBoundaryActive(DRAG_WEAPONS));
+                    top, Math.max(top + 1, weaponsBottom), this.isBoundaryActive(DRAG_WEAPONS));
         }
         // 横线 1：标题栏底边
         if (l.showHeader) {
@@ -1025,7 +1146,8 @@ public class StrinovaGrowthEditScreen extends Screen {
         }
         if (l.showWeapons) {
             int boundaryX = this.mapX(l.weaponsX);
-            if (Math.abs(mouseX - boundaryX) <= 5.0D && mouseY >= top && mouseY <= bottom) {
+            int weaponsBottom = this.mapY(l.weaponsBottom);
+            if (Math.abs(mouseX - boundaryX) <= 5.0D && mouseY >= top && mouseY <= weaponsBottom) {
                 return DRAG_WEAPONS;
             }
         }
@@ -1408,28 +1530,30 @@ public class StrinovaGrowthEditScreen extends Screen {
                 }
             }
 
-            // 觉醒区：只在立绘右侧的中间列底部
+            // 觉醒区：横跨「立绘右边缘 + gap」到 innerRight，位于网络 + 武器区下方
             int gridMinHeight = CATEGORY_ROWS * 18 + (CATEGORY_ROWS - 1) * 2;
-            int middleWidth = Math.max(0, l.categoriesRight - l.categoriesLeft);
             int awakenMax = Math.max(34,
                     l.contentBottom - l.contentTop - gridMinHeight - l.gap * 2);
+            l.awakenLeft = l.categoriesLeft;
+            l.awakenRight = l.innerRight;
+            l.awakenWidth = Math.max(0, l.awakenRight - l.awakenLeft);
             l.showAwakenings = ui.showAwakenings && width >= 260 && height >= 220
-                    && middleWidth >= 120;
+                    && l.awakenWidth >= 120;
             if (l.showAwakenings) {
                 l.awakenHeight = clamp(Math.round(height * ui.awakenHeightRatio),
                         34, Math.max(34, Math.min(awakenMax, height / 2)));
-                l.showAwakenDescription = l.awakenHeight >= 56 && middleWidth >= 480;
+                l.showAwakenDescription = l.awakenHeight >= 56 && l.awakenWidth >= 480;
             } else {
                 l.awakenHeight = 0;
                 l.showAwakenDescription = false;
             }
-            l.awakenLeft = l.categoriesLeft;
-            l.awakenRight = l.categoriesRight;
-            l.awakenWidth = middleWidth;
             l.awakenTop = l.showAwakenings ? l.contentBottom - l.awakenHeight : l.contentBottom;
-            l.categoriesBottom = l.showAwakenings
+            // 网络区 / 武器区共用底部 = 觉醒区上边界 - gap
+            int networkBottom = l.showAwakenings
                     ? Math.max(l.categoriesTop + 8, l.awakenTop - l.gap)
                     : l.contentBottom;
+            l.categoriesBottom = networkBottom;
+            l.weaponsBottom = networkBottom;
 
             // 增幅网络列宽：左列 = (可用宽 - 列间距) × networkSplitRatio
             l.categoryColumnGap = clamp(Math.round(ui.columnGap), 0, 32);

@@ -200,20 +200,16 @@ function growthHtml(agent, lang) {
   const awakenCards = agent.awakenings.map((awakening, index) => {
     // 演示：觉醒1 与 觉醒3 激活（二觉/三觉二选一）
     const active = index !== 1;
-    const card = `
-    <div class="acard ${active ? 'on' : 'off'}">
+    return `
+    <div class="acard${active ? ' active' : ''}">
+      <div class="aneed">${needShapes(awakening)}</div>
       <div class="atop">
         <span class="alabel">${t.awakening}${index + 1}：</span>
-        <span class="aneed">${needShapes(awakening)}</span>
-        <span class="astatus">${active ? t.activated : t.inactive}</span>
+        <span class="status${active ? ' on' : ''}">${active ? t.activated : t.inactive}</span>
       </div>
       <div class="aname">${esc(awakening.name)}</div>
       <div class="adesc">${esc(awakening.desc)}</div>
     </div>`;
-    if (index === 1) {
-      return card + '<button class="awtoggle"><i class="awswap"></i>切换激活</button>';
-    }
-    return card;
   }).join('');
 
   let tip = null;
@@ -258,7 +254,8 @@ function growthHtml(agent, lang) {
   .portrait .rolechip i { width:12px; height:12px; background:${accent}; transform:rotate(45deg); display:inline-block; }
   .portrait .stats { position:absolute; left:14px; right:10px; bottom:16px; font-size:12px;
     color:#9AA8B8; letter-spacing:.5px; }
-  .centerCol { flex:1; min-width:0; display:flex; flex-direction:column; gap:12px; }
+  .rightSide { flex:1; min-width:0; display:flex; flex-direction:column; gap:10px; }
+  .topArea { flex:1; min-height:0; display:flex; gap:14px; }
   .network { flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(4,1fr);
     grid-auto-flow:column; gap:8px 22px; }
   .branch { padding:2px 2px 4px; }
@@ -304,34 +301,33 @@ function growthHtml(agent, lang) {
   .wicon.grenade::before { clip-path:polygon(50% 12%, 92% 52%, 50% 92%, 8% 52%); }
   .wname { position:absolute; left:7px; bottom:5px; font-size:12px; color:#D8E2EC;
     max-width:112px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .whint { position:absolute; left:5px; right:3px; bottom:4px; font-size:10px; color:#FF6B6B;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .wcard:has(.whint) .wname { display:none; }
   .swap { position:absolute; right:5px; bottom:4px; width:15px; height:10px; opacity:.9; }
   .swap::before { content:''; position:absolute; left:0; top:2px; width:11px; height:2px; background:#FFC94A; }
   .swap::after { content:''; position:absolute; left:0; top:0; border-right:4px solid #FFC94A;
     border-top:2px solid transparent; border-bottom:2px solid transparent; transform:rotate(180deg); }
-  .awaken { height:186px; flex:none; display:flex; gap:10px; align-items:stretch; }
-  .awtoggle { flex:none; width:86px; align-self:center; height:30px; background:rgba(0,0,0,.55);
-    border:1px solid rgba(255,255,255,.45); color:#EAF2FA; font-size:12px; font-weight:700;
-    display:flex; align-items:center; justify-content:center; gap:6px; font-family:inherit; }
-  .awswap { width:14px; height:10px; position:relative; display:inline-block; }
-  .awswap::before { content:''; position:absolute; left:0; top:1px; width:12px; height:2px; background:#EAF2FA; }
-  .awswap::after { content:''; position:absolute; left:0; top:4px; width:12px; height:2px; background:#EAF2FA;
-    transform:scaleX(-1); }
-  .acard { flex:1; min-width:0; padding:9px 11px; background:rgba(255,255,255,.045);
-    border:1px solid rgba(255,255,255,.10); position:relative; }
-  .acard.on { border-color:rgba(255,209,102,.7); background:rgba(255,209,102,.07); }
-  .atop { display:flex; align-items:center; gap:6px; font-size:11.5px; color:#C8D4E0; }
-  .aneed { display:flex; align-items:center; gap:3px; }
-  .needneed { width:8px; height:8px; display:inline-block; }
+  .awakenPanel { height:188px; flex:none; position:relative; display:flex; align-items:stretch;
+    background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.12); border-radius:5px;
+    padding:27px 0 6px; }
+  .awtoggle { position:absolute; right:8px; top:5px; z-index:3; height:19px; padding:0 8px;
+    background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.45); color:#EAF2FA;
+    font-size:11px; font-weight:700; display:flex; align-items:center; gap:5px; font-family:inherit; }
+  .awswap { width:12px; height:9px; position:relative; display:inline-block; }
+  .awswap::before { content:''; position:absolute; left:0; top:1px; width:10px; height:2px; background:#EAF2FA; }
+  .awswap::after { content:''; position:absolute; left:0; top:4px; width:10px; height:2px;
+    background:#EAF2FA; transform:scaleX(-1); }
+  .acard { flex:1; min-width:0; padding:0 12px; position:relative; }
+  .acard + .acard { border-left:1px solid rgba(255,255,255,.10); }
+  .aneed { display:flex; align-items:center; gap:4px; height:14px; }
+  .needneed { width:9px; height:9px; display:inline-block; }
   .needneed.sq { border-radius:1px; }
   .needneed.ci { border-radius:50%; }
   .needneed.tri { clip-path:polygon(50% 0, 100% 100%, 0 100%); }
-  .astatus { margin-left:auto; font-size:11px; color:#7f8c9a; }
-  .acard.on .astatus { color:#54E0A0; }
-  .aname { font-size:15px; font-weight:800; margin:5px 0 4px; color:#EAF2FA; }
-  .acard.on .aname { color:#FFD166; }
+  .atop { display:flex; align-items:center; gap:6px; font-size:12px; color:#C8D4E0; margin-top:3px; }
+  .status { padding:0 6px; border-radius:8px; font-size:10.5px; line-height:15px;
+    background:rgba(255,255,255,.10); color:#9AA8B8; }
+  .status.on { background:rgba(84,224,160,.18); color:#54E0A0; }
+  .aname { font-size:15px; font-weight:800; margin:4px 0 3px; color:#EAF2FA; }
+  .acard.active .aname { color:#FFD166; }
   .adesc { font-size:11.5px; line-height:1.5; color:#B4C0CC;
     display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
   .tooltip { position:absolute; left:24px; top:96px; width:250px; background:#0C121A;
@@ -353,15 +349,20 @@ function growthHtml(agent, lang) {
         <div class="rolechip"><i></i>${esc(agent.role)}</div>
         <div class="stats">${t.statHp} ${agent.stats.hp}　${t.statArmor} ${agent.stats.armor}　${t.statSpeed} ${agent.stats.moveSpeed}</div>
       </div>
-      <div class="centerCol">
-        <div class="network">${branches}</div>
-        <div class="awaken">${awakenCards}</div>
-      </div>
-      <div class="weapons">
-        ${weaponCard(0)}
-        ${weaponCard(1)}
-        ${weaponCard(2)}
-        <div class="wrowlow">${weaponCard(3)}${weaponCard(4)}</div>
+      <div class="rightSide">
+        <div class="topArea">
+          <div class="network">${branches}</div>
+          <div class="weapons">
+            ${weaponCard(0)}
+            ${weaponCard(1)}
+            ${weaponCard(2)}
+            <div class="wrowlow">${weaponCard(3)}${weaponCard(4)}</div>
+          </div>
+        </div>
+        <div class="awakenPanel">
+          <button class="awtoggle"><i class="awswap"></i>切换激活</button>
+          ${awakenCards}
+        </div>
       </div>
     </div>
     ${tipHtml}
