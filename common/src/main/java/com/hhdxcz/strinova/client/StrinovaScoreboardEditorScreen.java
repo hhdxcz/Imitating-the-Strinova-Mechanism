@@ -160,6 +160,8 @@ public class StrinovaScoreboardEditorScreen extends Screen {
 
         // 计分板实时预览（不压暗）
         StrinovaScoreboardOverlay.renderPreview(graphics, new StrinovaProgrammaticPainter(graphics));
+        // 列/行边界参考线（靠近时高亮，方便拖拽）
+        drawAlignmentGuides(graphics, mouseX, mouseY);
 
         // 顶部标题与参数
         String title = "计分板布局编辑器";
@@ -171,10 +173,46 @@ public class StrinovaScoreboardEditorScreen extends Screen {
                 config.scoreboardTextScale, config.scoreboardRowHeight,
                 Math.round(config.scoreboardOffsetX), Math.round(config.scoreboardOffsetY));
         graphics.drawString(this.font, info, (this.width - this.font.width(info)) / 2, 18, 0xFF9BAEBF, false);
-        String hint = "拖动面板移动 · 拖列头边界改列宽 · 拖行边界改行高 · 滚轮调字体 · ESC 放弃";
+        String hint = "拖动面板移动 · 列/行边界靠近会高亮，按住拖动即可改列宽/行高 · 滚轮调字体 · ESC 放弃";
         graphics.drawString(this.font, hint, (this.width - this.font.width(hint)) / 2, 30, 0xFF9BAEBF, false);
 
         super.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    /** 绘制列/行边界参考线：平时淡显，鼠标靠近时变青色高亮，表头处加拖动把手。 */
+    private void drawAlignmentGuides(GuiGraphics graphics, int mouseX, int mouseY) {
+        StrinovaScoreboardOverlay.Layout layout =
+                StrinovaScoreboardOverlay.computeLayoutPublic(this.width, this.height);
+        int contentX = layout.left() + layout.sidebarWidth();
+        int contentW = layout.width() - layout.sidebarWidth() - 1;
+        int[] anchors = StrinovaScoreboardOverlay.columnAnchors(contentW);
+        int[] blockTops = {layout.blockTop(), layout.enemyTop()};
+
+        // 列边界
+        for (int i = 0; i < 8; i++) {
+            int boundary = contentX + (i + 1 < 8 ? anchors[i + 1] : contentW);
+            boolean hover = Math.abs(mouseX - boundary) <= 6;
+            boolean active = resizingColumn == i;
+            int color = (hover || active) ? 0xFF35D6E8 : 0x33FFFFFF;
+            for (int blockTop : blockTops) {
+                int top = blockTop;
+                int bottom = blockTop + layout.blockHeight() - 1;
+                graphics.fill(boundary, top, boundary + 1, bottom, color);
+                // 表头拖动把手
+                int handleColor = (hover || active) ? 0x8835D6E8 : 0x22FFFFFF;
+                graphics.fill(boundary - 2, top + 1, boundary + 3, top + layout.headerHeight() - 1, handleColor);
+            }
+        }
+        // 行边界
+        for (int blockTop : blockTops) {
+            int rowsTop = blockTop + layout.headerHeight();
+            for (int k = 1; k < 5; k++) {
+                int rowY = rowsTop + k * layout.rowHeight();
+                boolean hover = Math.abs(mouseY - rowY) <= 5;
+                int color = hover ? 0xFF35D6E8 : 0x22FFFFFF;
+                graphics.fill(contentX, rowY, contentX + contentW, rowY + 1, color);
+            }
+        }
     }
 
     @Override
@@ -193,7 +231,7 @@ public class StrinovaScoreboardEditorScreen extends Screen {
                 // 列边界：name|kda ... assist|ping（共 8 个边界）
                 for (int i = 0; i < 8; i++) {
                     int boundary = contentX + (i + 1 < 8 ? anchors[i + 1] : contentW);
-                    if (Math.abs(mouseX - boundary) <= 4.0D) {
+                    if (Math.abs(mouseX - boundary) <= 6.0D) {
                         String[] keys = StrinovaHudConfig.SCOREBOARD_COLUMN_KEYS;
                         resizingColumn = i;
                         resizeStartX = mouseX;
@@ -210,7 +248,7 @@ public class StrinovaScoreboardEditorScreen extends Screen {
             for (int blockRowTop : blockRowTops) {
                 for (int k = 1; k < 5; k++) {
                     int boundaryY = blockRowTop + k * layout.rowHeight();
-                    if (Math.abs(mouseY - boundaryY) <= 3.0D
+                    if (Math.abs(mouseY - boundaryY) <= 5.0D
                             && mouseX >= contentX && mouseX <= contentX + contentW) {
                         resizingRow = true;
                         resizeStartY = mouseY;

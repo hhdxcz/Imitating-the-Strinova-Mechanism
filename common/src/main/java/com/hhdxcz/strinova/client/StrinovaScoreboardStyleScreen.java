@@ -109,7 +109,8 @@ public class StrinovaScoreboardStyleScreen extends Screen {
     private void drawPropertyPanel(GuiGraphics graphics) {
         StrinovaHudConfig config = StrinovaHudConfig.get();
         StrinovaHudConfig.ScoreboardComponentStyle style = config.scoreboardComponent(selectedKey);
-        int areaTop = this.height - 92;
+        boolean columnKey = isColumnKey(selectedKey);
+        int areaTop = this.height - (columnKey ? 114 : 92);
         graphics.fill(0, areaTop, this.width, this.height, 0xE60B0F14);
         graphics.fill(0, areaTop, this.width, areaTop + 1, 0x44FFFFFF);
 
@@ -132,10 +133,43 @@ public class StrinovaScoreboardStyleScreen extends Screen {
         buttonAt(graphics, this.width - 116, y, 52, "保存", 6, 0);
         buttonAt(graphics, this.width - 56, y, 48, "返回", 7, 0);
 
-        // 第二行：文字颜色
-        drawColorRow(graphics, areaTop + 42, "文字色", 4, style.textColor);
-        // 第三行：背景颜色
-        drawColorRow(graphics, areaTop + 64, "背景色", 5, style.backgroundColor);
+        int rowY = areaTop + 42;
+        if (columnKey) {
+            drawColumnWidthRow(graphics, rowY, config);
+            rowY += 22;
+        }
+        // 文字颜色
+        drawColorRow(graphics, rowY, "文字色", 4, style.textColor);
+        // 背景颜色
+        rowY += 22;
+        drawColorRow(graphics, rowY, "背景色", 5, style.backgroundColor);
+    }
+
+    private boolean isColumnKey(String key) {
+        for (String columnKey : StrinovaHudConfig.SCOREBOARD_COLUMN_KEYS) {
+            if (columnKey.equals(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void drawColumnWidthRow(GuiGraphics graphics, int y, StrinovaHudConfig config) {
+        graphics.drawString(this.font, "列宽", 8, y + 2, 0xFF9BAEBF, false);
+        int x = 8 + 40;
+        x = button(graphics, x, y - 2, 44, "列宽-", 10, 0);
+        float weight = config.scoreboardColumnWeight(selectedKey);
+        // 显示占总内容宽度的百分比
+        float total = 0.0F;
+        for (String key : StrinovaHudConfig.SCOREBOARD_COLUMN_KEYS) {
+            total += config.scoreboardColumnWeight(key);
+        }
+        float pct = total <= 0.0F ? 0.0F : weight / total * 100.0F;
+        String text = String.format(java.util.Locale.ROOT, "%.1f%%", pct);
+        graphics.drawString(this.font, text, x + 4, y + 2, 0xFFEAF2FA, false);
+        x += 52;
+        button(graphics, x, y - 2, 44, "列宽+", 11, 0);
+        graphics.drawString(this.font, "（也可在布局编辑器里拖列头边界）", x + 52, y + 2, 0xFF7A8794, false);
     }
 
     private void drawColorRow(GuiGraphics graphics, int y, String title, int action, int current) {
@@ -216,6 +250,17 @@ public class StrinovaScoreboardStyleScreen extends Screen {
                 style.fontScale = 1.0F;
                 style.textColor = 0;
                 style.backgroundColor = 0;
+                if (isColumnKey(selectedKey)) {
+                    config.setScoreboardColumnWeight(selectedKey, 0.10F);
+                }
+            }
+            case 10 -> {
+                float weight = config.scoreboardColumnWeight(selectedKey);
+                config.setScoreboardColumnWeight(selectedKey, weight - 0.01F);
+            }
+            case 11 -> {
+                float weight = config.scoreboardColumnWeight(selectedKey);
+                config.setScoreboardColumnWeight(selectedKey, weight + 0.01F);
             }
             case 9 -> {
                 for (String key : StrinovaHudConfig.SCOREBOARD_COMPONENT_KEYS) {
