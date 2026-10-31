@@ -817,24 +817,25 @@ public class StrinovaGrowthEditScreen extends Screen {
         if (lineY + 9 > bottom) {
             return;
         }
-        // 「觉醒N：」+ 圆角状态徽章
+        // 「觉醒N：」+ 圆角描边状态徽章（透明底、1px 描边，与真实界面一致）
         String label = "觉醒" + (index + 1) + "：";
         String statusText = active ? "已激活" : "未激活";
-        int badgeW = Math.min(this.font.width(statusText) + 6, Math.max(8, maxW));
-        int badgeH = 9;
+        int badgeTextW = this.font.width(statusText);
+        int badgeW = Math.min(badgeTextW + 8, Math.max(8, maxW));
+        int badgeH = 13;
         String labelShown = this.truncate(label, Math.max(4, maxW - badgeW - 3));
-        graphics.drawString(this.font, labelShown, mappedX, lineY, COLOR_TEXT_DIM, false);
+        graphics.drawString(this.font, labelShown, mappedX, lineY + 2, COLOR_TEXT_DIM, false);
         int badgeX = mappedX + this.font.width(labelShown) + 3;
         if (badgeX + badgeW > mappedRight) {
             badgeX = Math.max(mappedX, mappedRight - badgeW);
         }
-        this.drawMiniRoundedRect(graphics, badgeX, lineY - 1, badgeW, badgeH, 2,
-                active ? 0xFF2E7D5B : 0xFF3A4756);
-        String badgeShown = this.truncate(statusText, badgeW - 3);
+        this.drawMiniRoundedOutline(graphics, badgeX, lineY, badgeW, badgeH, 2,
+                active ? 0xFF54E0A0 : 0x998A94A0);
+        String badgeShown = this.truncate(statusText, Math.max(3, badgeW - 6));
         graphics.drawString(this.font, badgeShown,
                 badgeX + Math.max(1, (badgeW - this.font.width(badgeShown)) / 2),
-                lineY, active ? 0xFFFFD166 : 0xFFB4C0CC, false);
-        lineY += 11;
+                lineY + 2, active ? 0xFF54E0A0 : 0xFF8A94A0, false);
+        lineY += badgeH + 3;
         // 名称
         if (lineY + 9 <= bottom) {
             String name = src == null || src.name() == null ? ("觉醒" + (index + 1)) : src.name();
@@ -916,6 +917,34 @@ public class StrinovaGrowthEditScreen extends Screen {
                         (double) (r * r - (r - d - 1) * (r - d - 1))));
             }
             graphics.fill(x + inset, y + row, x + width - inset, y + row + 1, color);
+        }
+    }
+
+    /** 迷你 1px 圆角描边（透明底，状态徽章示意用）。 */
+    private void drawMiniRoundedOutline(GuiGraphics graphics, int x, int y, int width, int height,
+                                        int radius, int color) {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        int r = Math.min(radius, Math.min(width / 2, height / 2));
+        if (r <= 0) {
+            graphics.fill(x, y, x + width, y + 1, color);
+            graphics.fill(x, y + height - 1, x + width, y + height, color);
+            graphics.fill(x, y, x + 1, y + height, color);
+            graphics.fill(x + width - 1, y, x + width, y + height, color);
+            return;
+        }
+        graphics.fill(x + r, y, x + width - r, y + 1, color);
+        graphics.fill(x + r, y + height - 1, x + width - r, y + height, color);
+        graphics.fill(x, y + r, x + 1, y + height - r, color);
+        graphics.fill(x + width - 1, y + r, x + width, y + height - r, color);
+        for (int i = 1; i < r; i++) {
+            int offset = r - i;
+            graphics.fill(x + i, y + offset, x + i + 1, y + offset + 1, color);
+            graphics.fill(x + width - 1 - i, y + offset, x + width - i, y + offset + 1, color);
+            graphics.fill(x + i, y + height - 1 - offset, x + i + 1, y + height - offset, color);
+            graphics.fill(x + width - 1 - i, y + height - 1 - offset,
+                    x + width - i, y + height - offset, color);
         }
     }
 

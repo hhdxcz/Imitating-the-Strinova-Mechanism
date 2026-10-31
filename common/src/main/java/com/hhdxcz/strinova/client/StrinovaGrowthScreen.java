@@ -1008,24 +1008,26 @@ public class StrinovaGrowthScreen extends Screen {
             cursor += 2;
         }
         int y = top + shape + 4;
-        if (y + 11 > bottom) {
+        if (bottom - y < 11) {
             return;
         }
-        // 2) 「觉醒N：」+ 紧跟的圆角状态徽章
+        // 2) 「觉醒N：」+ 紧跟的圆角描边状态徽章（透明底、1px 描边、文字内边距 4~6px）
         String label = "觉醒" + (index + 1) + "：";
         String statusText = Component.translatable(active
                 ? "config.strinova.growth.activated"
                 : "config.strinova.growth.not_activated").getString();
-        int badgeW = Math.min(this.font.width(statusText) + 8, Math.max(10, maxWidth));
-        int badgeH = 11;
+        int badgeTextW = this.font.width(statusText);
+        int badgeH = clamp(17, 11, Math.max(11, bottom - y));
+        int badgeW = Math.min(badgeTextW + 10, Math.max(12, maxWidth));
         String labelShown = truncate(label, Math.max(4, maxWidth - badgeW - 4));
-        graphics.drawString(this.font, labelShown, contentLeft, y, COLOR_TEXT_DIM, false);
+        int labelY = y + Math.max(0, (badgeH - 9) / 2);
+        graphics.drawString(this.font, labelShown, contentLeft, labelY, COLOR_TEXT_DIM, false);
         int badgeX = contentLeft + this.font.width(labelShown) + 4;
         if (badgeX + badgeW > contentLeft + maxWidth) {
             badgeX = contentLeft + maxWidth - badgeW;
         }
-        this.drawStatusBadge(graphics, badgeX, y - 1, badgeW, badgeH, active, statusText);
-        y += 12;
+        this.drawStatusBadge(graphics, badgeX, y, badgeW, badgeH, active, statusText);
+        y += badgeH + 3;
         // 3) 名称（激活金色）
         if (y + 9 <= bottom) {
             graphics.drawString(this.font,
@@ -1042,13 +1044,13 @@ public class StrinovaGrowthScreen extends Screen {
         }
     }
 
-    /** 圆角状态徽章：未激活灰底灰字，已激活绿底金字，文字居中。 */
+    /** 圆角描边状态徽章：透明底 + 1px 圆角矩形描边；未激活灰描边灰字、已激活绿描边绿字，文字居中且留 4~6px 内边距。 */
     private void drawStatusBadge(GuiGraphics graphics, int x, int y, int width, int height,
                                  boolean active, String text) {
-        int bg = this.cardColor(active ? 0xFF2E7D5B : 0xFF3A4756);
-        int fg = active ? 0xFFFFD166 : 0xFFB4C0CC;
-        drawRoundedRect(graphics, x, y, width, height, 3, bg);
-        String shown = truncate(text, Math.max(4, width - 4));
+        int border = active ? 0xFF54E0A0 : 0x998A94A0;
+        int fg = active ? 0xFF54E0A0 : 0xFF8A94A0;
+        drawRoundedOutline(graphics, x, y, width, height, 3, border);
+        String shown = truncate(text, Math.max(4, width - 10));
         graphics.drawString(this.font, shown,
                 x + Math.max(2, (width - this.font.width(shown)) / 2),
                 y + (height - 9) / 2, fg, false);
@@ -1073,6 +1075,36 @@ public class StrinovaGrowthScreen extends Screen {
                         (double) (r * r - (r - d - 1) * (r - d - 1))));
             }
             graphics.fill(x + inset, y + row, x + width - inset, y + row + 1, color);
+        }
+    }
+
+    /** 1px 圆角矩形描边（透明底，用于状态徽章；圆角约 3px 的阶梯像素）。 */
+    private static void drawRoundedOutline(GuiGraphics graphics, int x, int y, int width, int height,
+                                           int radius, int color) {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        int r = Math.min(radius, Math.min(width / 2, height / 2));
+        if (r <= 0) {
+            graphics.fill(x, y, x + width, y + 1, color);
+            graphics.fill(x, y + height - 1, x + width, y + height, color);
+            graphics.fill(x, y, x + 1, y + height, color);
+            graphics.fill(x + width - 1, y, x + width, y + height, color);
+            return;
+        }
+        // 四边直线
+        graphics.fill(x + r, y, x + width - r, y + 1, color);
+        graphics.fill(x + r, y + height - 1, x + width - r, y + height, color);
+        graphics.fill(x, y + r, x + 1, y + height - r, color);
+        graphics.fill(x + width - 1, y + r, x + width, y + height - r, color);
+        // 四角阶梯像素
+        for (int i = 1; i < r; i++) {
+            int offset = r - i;
+            graphics.fill(x + i, y + offset, x + i + 1, y + offset + 1, color);
+            graphics.fill(x + width - 1 - i, y + offset, x + width - i, y + offset + 1, color);
+            graphics.fill(x + i, y + height - 1 - offset, x + i + 1, y + height - offset, color);
+            graphics.fill(x + width - 1 - i, y + height - 1 - offset,
+                    x + width - i, y + height - offset, color);
         }
     }
 

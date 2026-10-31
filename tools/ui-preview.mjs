@@ -324,8 +324,8 @@ function growthHtml(agent, lang) {
   .needneed.tri { clip-path:polygon(50% 0, 100% 100%, 0 100%); }
   .atop { display:flex; align-items:center; gap:6px; font-size:12px; color:#C8D4E0; margin-top:3px; }
   .status { padding:0 6px; border-radius:8px; font-size:10.5px; line-height:15px;
-    background:rgba(255,255,255,.10); color:#9AA8B8; }
-  .status.on { background:rgba(84,224,160,.18); color:#54E0A0; }
+    background:transparent; border:1px solid rgba(154,168,184,.65); color:#9AA8B8; }
+  .status.on { background:transparent; border-color:rgba(84,224,160,.85); color:#7BF0B8; }
   .aname { font-size:15px; font-weight:800; margin:4px 0 3px; color:#EAF2FA; }
   .acard.active .aname { color:#FFD166; }
   .adesc { font-size:11.5px; line-height:1.5; color:#B4C0CC;
