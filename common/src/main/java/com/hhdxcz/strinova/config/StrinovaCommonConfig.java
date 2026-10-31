@@ -79,6 +79,11 @@ public final class StrinovaCommonConfig {
         return data.tpsExitFlyOnAction;
     }
 
+    /** 手持 TACZ 枪械时，是否把「弦能增幅网络」的 B 键让给 TACZ 的切换开火模式。 */
+    public static synchronized boolean isGrowthKeyYieldToTacz() {
+        return data.growthKeyYieldToTacz;
+    }
+
     // 获取默认的同步碰撞箱偏移/尺寸参数
     public static synchronized StrinovaCollisionBoxTuning.Tuning getDefaultSyncTuning() {
         return new StrinovaCollisionBoxTuning.Tuning(
@@ -248,6 +253,8 @@ public final class StrinovaCommonConfig {
         public boolean taczExitStatesOnAction = true;
         public boolean thirdPersonCompatBypass = true;
         public boolean tpsExitFlyOnAction = true;
+        /** 手持 TACZ 枪械时，把「弦能增幅网络」的默认 B 键让给 TACZ 的切换开火模式。 */
+        public boolean growthKeyYieldToTacz = true;
         public String wallBlacklistCsv = "";
         public double defaultSyncOffsetX = 0.0D;
         public double defaultSyncOffsetY = 0.0D;
@@ -276,6 +283,7 @@ public final class StrinovaCommonConfig {
             out.taczExitStatesOnAction = this.taczExitStatesOnAction;
             out.thirdPersonCompatBypass = this.thirdPersonCompatBypass;
             out.tpsExitFlyOnAction = this.tpsExitFlyOnAction;
+            out.growthKeyYieldToTacz = this.growthKeyYieldToTacz;
             out.wallBlacklistCsv = this.wallBlacklistCsv;
             out.defaultSyncOffsetX = this.defaultSyncOffsetX;
             out.defaultSyncOffsetY = this.defaultSyncOffsetY;

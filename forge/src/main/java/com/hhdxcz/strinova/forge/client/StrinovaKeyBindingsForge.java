@@ -58,11 +58,11 @@ public final class StrinovaKeyBindingsForge {
                 "key.categories.strinova"
         );
         wallKeyName = "key.keyboard.r";
-        // J 键：打开弦能增幅网络（成长/加点）界面。
-        // 不使用 B：TACZ 的「切换开火模式」默认键是 G/B，占用 B 会导致 TACZ 枪械无法解除保险/开火。
+        // B 键：打开弦能增幅网络（成长/加点）界面。
+        // 与 TACZ 的 G/B「切换开火模式」冲突时，默认在手持 TACZ 枪械时把 B 让给 TACZ（可在配置里关闭该让位）。
         growthKey = new KeyMapping(
                 "key.strinova.growth",
-                GLFW.GLFW_KEY_J,
+                GLFW.GLFW_KEY_B,
                 "key.categories.strinova"
         );
         event.register(stringifyKey);
@@ -103,12 +103,19 @@ public final class StrinovaKeyBindingsForge {
         if (!StrinovaMod.isEnabled()) {
             return;
         }
-        // B 键：打开弦能增幅网络（成长/加点）界面
+        // B 键：打开弦能增幅网络（成长/加点）界面。
+        // 手持 TACZ 枪械时默认把 B 让给 TACZ 的「切换开火模式」，避免枪械卡在保险状态；
+        // 可在配置「兼容参数 → B 键让位给 TACZ」里关闭该让位。
         if (growthKey != null) {
             while (growthKey.consumeClick()) {
-                if (client.screen == null) {
-                    client.setScreen(new StrinovaGrowthScreen(client.screen));
+                if (client.screen != null) {
+                    continue;
                 }
+                if (com.hhdxcz.strinova.config.StrinovaCommonConfig.isGrowthKeyYieldToTacz()
+                        && strinova$isHoldingTaczGun(player)) {
+                    continue;
+                }
+                client.setScreen(new StrinovaGrowthScreen(client.screen));
             }
         }
 

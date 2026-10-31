@@ -175,7 +175,7 @@ white（白色）<img src="docs/colors/white.png" width="18" height="18" align="
 | `/strinova_client hud mock` | 玩家 | 开/关模拟对局数据（无对局时预览完整 HUD） |
 | `/strinova_client hud test` | 玩家 | 触发演示命中/击杀反馈 |
 | `/strinova_client agent` | 玩家 | 超弦体选角界面 |
-| `/strinova_client growth` 或 `J` 键 | 玩家 | 弦能增幅网络（成长/加点；默认键避开 TACZ 的 B 键，可自行改键） |
+| `/strinova_client growth` 或 `B` 键 | 玩家 | 弦能增幅网络（成长/加点；手持 TACZ 枪械时 B 让给 TACZ 开火模式，可在配置关闭让位） |
 
 ---
 
@@ -204,7 +204,7 @@ white（白色）<img src="docs/colors/white.png" width="18" height="18" align="
 - 右下武器栏：5 格对应快捷栏 1~5 号位，手持 TACZ 枪械时自动读取**枪名 / 弹匣 / 备弹**（反射 TACZ API，失败则退回 NBT/0），选中槽向左展开武器卡（大剪影 + 名称 + 白色弹匣数 + 蓝色备弹）；
 - 击杀播报会通过子弹 owner/shooter 反射把击杀归给开枪玩家（KDA、绝招点也计入）；
 - 持枪时「贴墙」键暂不响应（避免与 TACZ 操作冲突），弦化 / 多段跳 / 飘飞不受影响；
-- **弦能增幅网络默认键已从 `B` 改为 `J`**：TACZ 的「切换开火模式/解除保险」默认键是 `G / B`，占用 `B` 会导致 TACZ 枪械无法开火；如无 TACZ 可在「选项 → 控制」里改回 `B`。
+- **弦能增幅网络仍然是 `B` 键**：TACZ 的「切换开火模式/解除保险」默认键是 `G / B`，两者同键会冲突；现在的规则是**手持 TACZ 枪械时按 B 让给 TACZ**（正常切换开火模式/解除保险），**空手或拿其他物品时按 B 打开增幅网络**。想 B 永远打开增幅网络：把配置「兼容参数 → 手持TACZ枪械时把B键让给切换开火模式」关掉，或把 TACZ 的开火模式键改成别的。
 
 ---
 
