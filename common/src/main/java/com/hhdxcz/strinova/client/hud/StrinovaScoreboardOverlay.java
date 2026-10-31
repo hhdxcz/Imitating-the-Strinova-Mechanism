@@ -464,8 +464,17 @@ public final class StrinovaScoreboardOverlay {
         int padding = Math.max(0, Math.min(24, StrinovaHudConfig.get().scoreboardNameLeftPadding));
         starts[0] = Math.min(starts[1] - 8, anchors[0] + padding);
         starts[0] = Math.max(1, starts[0]);
-        starts[8] = Math.max(anchors[anchors.length - 1] + 8,
-                contentW - Math.max(28, contentW / 10));
+        // PING 起点按「协作分宽度权重」累计，这样拖动「协作分|PING」边界时边界会跟着动
+        StrinovaHudConfig config = StrinovaHudConfig.get();
+        String[] keys = StrinovaHudConfig.SCOREBOARD_COLUMN_KEYS;
+        float total = 0.0F;
+        for (String key : keys) {
+            total += config.scoreboardColumnWeight(key);
+        }
+        float assistFraction = total <= 0.0F ? 0.10F
+                : Math.max(0.02F, config.scoreboardColumnWeight("assist") / total);
+        int pingStart = anchors[anchors.length - 1] + Math.round(contentW * assistFraction);
+        starts[8] = Math.max(starts[7] + 8, Math.min(contentW - 8, pingStart));
         return starts;
     }
 
