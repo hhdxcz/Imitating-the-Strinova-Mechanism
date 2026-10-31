@@ -130,6 +130,13 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
                                         new com.hhdxcz.strinova.client.StrinovaScoreboardEditorScreen(client.screen)));
                                 return 1;
                             })
+                            .then(ClientCommandManager.literal("style")
+                                    .executes(ctx -> {
+                                        Minecraft client = Minecraft.getInstance();
+                                        client.tell(() -> client.setScreen(
+                                                new com.hhdxcz.strinova.client.StrinovaScoreboardStyleScreen(client.screen)));
+                                        return 1;
+                                    }))
                             .then(ClientCommandManager.literal("values")
                                     .executes(ctx -> {
                                         Minecraft client = Minecraft.getInstance();

@@ -1,4 +1,4 @@
-﻿# Imitating the Strinova Mechanism
+# Imitating the Strinova Mechanism
 
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.20.1-brightgreen)](https://www.minecraft.net)
 [![Loader](https://img.shields.io/badge/Loader-Fabric%20%7C%20Forge-orange)](https://architectury.dev)
@@ -174,6 +174,8 @@ white（白色）<img src="docs/colors/white.png" width="18" height="18" align="
 | `/strinova_client hud editor` | 玩家 | HUD 布局编辑器（拖拽/重置/保存） |
 | `/strinova_client hud mock` | 玩家 | 开/关模拟对局数据（无对局时预览完整 HUD） |
 | `/strinova_client scoreboard` | 玩家 | 计分板可视化编辑器（拖动移动、调宽度/高度/字体/行高，保存到客户端配置） |
+| `/strinova_client scoreboard style` | 玩家 | 计分板部件样式编辑（选中部件：可见性/单独字号/文字色/背景色） |
+| `/strinova_client scoreboard values` | 玩家 | 打印并复制当前计分板数值（便于反馈/写默认值） |
 | `/strinova_client hud test` | 玩家 | 触发演示命中/击杀反馈 |
 | `/strinova_client agent` | 玩家 | 超弦体选角界面 |
 | `/strinova_client growth` 或 `B` 键 | 玩家 | 弦能增幅网络（成长/加点；手持 TACZ 枪械时 B 让给 TACZ 开火模式，可在配置关闭让位） |

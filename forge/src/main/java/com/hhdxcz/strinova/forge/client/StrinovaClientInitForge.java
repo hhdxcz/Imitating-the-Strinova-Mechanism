@@ -133,6 +133,13 @@ public final class StrinovaClientInitForge {
                                     new com.hhdxcz.strinova.client.StrinovaScoreboardEditorScreen(client.screen)));
                             return 1;
                         })
+                        .then(Commands.literal("style")
+                                .executes(ctx -> {
+                                    Minecraft client = Minecraft.getInstance();
+                                    client.tell(() -> client.setScreen(
+                                            new com.hhdxcz.strinova.client.StrinovaScoreboardStyleScreen(client.screen)));
+                                    return 1;
+                                }))
                         .then(Commands.literal("values")
                                 .executes(ctx -> {
                                     Minecraft client = Minecraft.getInstance();

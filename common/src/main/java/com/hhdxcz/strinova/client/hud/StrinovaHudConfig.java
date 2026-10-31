@@ -54,6 +54,62 @@ public final class StrinovaHudConfig {
     /** 数据行高度（GUI 像素）。 */
     public int scoreboardRowHeight = 20;
 
+    /** 每个部件独立样式（可见性/字号/文字色/背景色）。 */
+    public java.util.LinkedHashMap<String, ScoreboardComponentStyle> scoreboardComponents = defaultScoreboardComponents();
+
+    /** 单个计分板部件的独立样式；颜色为 0 表示用默认色。 */
+    public static final class ScoreboardComponentStyle {
+        public boolean visible = true;
+        public float fontScale = 1.0F;
+        public int textColor = 0;
+        public int backgroundColor = 0;
+    }
+
+    /** 计分板部件 key 列表（编辑器与覆盖层共用）。 */
+    public static final String[] SCOREBOARD_COMPONENT_KEYS = {
+            "panel", "sidebar", "header", "name", "kda", "ultimate", "growth", "weapon",
+            "damage", "skill", "assist", "ping", "rows", "rounds", "roundAlly", "roundEnemy"
+    };
+
+    /** 部件的默认中文名（编辑器显示用）。 */
+    public static String scoreboardComponentLabel(String key) {
+        return switch (key) {
+            case "panel" -> "面板";
+            case "sidebar" -> "左侧竖栏";
+            case "header" -> "列头行";
+            case "name" -> "头像+名字";
+            case "kda" -> "击败/阵亡/助攻";
+            case "ultimate" -> "绝招";
+            case "growth" -> "成长等级";
+            case "weapon" -> "主武器";
+            case "damage" -> "输出分";
+            case "skill" -> "技能分";
+            case "assist" -> "协作分";
+            case "ping" -> "PING";
+            case "rows" -> "数据行";
+            case "rounds" -> "回合记录带";
+            case "roundAlly" -> "我方回合";
+            case "roundEnemy" -> "敌方回合";
+            default -> key;
+        };
+    }
+
+    private static java.util.LinkedHashMap<String, ScoreboardComponentStyle> defaultScoreboardComponents() {
+        java.util.LinkedHashMap<String, ScoreboardComponentStyle> map = new java.util.LinkedHashMap<>();
+        for (String key : SCOREBOARD_COMPONENT_KEYS) {
+            map.put(key, new ScoreboardComponentStyle());
+        }
+        return map;
+    }
+
+    /** 取部件样式；不存在时补默认。 */
+    public ScoreboardComponentStyle scoreboardComponent(String key) {
+        if (scoreboardComponents == null) {
+            scoreboardComponents = defaultScoreboardComponents();
+        }
+        return scoreboardComponents.computeIfAbsent(key, k -> new ScoreboardComponentStyle());
+    }
+
     private StrinovaHudConfig() {
     }
 
@@ -102,6 +158,13 @@ public final class StrinovaHudConfig {
         scoreboardOffsetY = clampf(scoreboardOffsetY, -400.0F, 400.0F);
         scoreboardTextScale = clampf(scoreboardTextScale, 0.6F, 1.8F);
         scoreboardRowHeight = clamp(scoreboardRowHeight, 14, 30);
+        if (scoreboardComponents == null) {
+            scoreboardComponents = defaultScoreboardComponents();
+        }
+        for (String key : SCOREBOARD_COMPONENT_KEYS) {
+            ScoreboardComponentStyle style = scoreboardComponent(key);
+            style.fontScale = clampf(style.fontScale, 0.5F, 2.0F);
+        }
     }
 
     private static float clampf(float value, float min, float max) {

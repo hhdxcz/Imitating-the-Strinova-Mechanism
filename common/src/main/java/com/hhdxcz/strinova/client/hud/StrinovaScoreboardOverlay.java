@@ -7,31 +7,16 @@ import net.minecraft.network.chat.Component;
 import java.util.List;
 
 /**
- * TAB 计分板（对齐卡拉彼丘布局、支持可视化编辑器调整）。
+ * TAB 计分板（对齐卡拉彼丘布局、支持可视化编辑器逐部件自定义）。
  *
- * <p>所有尺寸/位置/字号都来自客户端配置 {@link StrinovaHudConfig}：
- * scoreboardWidthRatio / scoreboardHeightRatio / scoreboardOffsetX / scoreboardOffsetY /
- * scoreboardTextScale / scoreboardRowHeight，因此可以通过计分板编辑器（/strinova_client scoreboard）
- * 拖动和按钮实时调整。</p>
- *
- * <pre>
- * 左竖栏            右内容区
- * ┌──────┬────────────────────────────────────────────────────┐
- * │ 剪刀手│ 头像+名字 | 击败/阵亡/助攻 | 绝招 | 成长等级 | 主武器 | 输出分 | 技能分 | 协作分 | PING
- * │ logo ├────────────────────────────────────────────────────┤
- * │ 比分 │ 玩家数据行 ×5
- * ├──────┼────────────────────────────────────────────────────┤
- * │ 我方 │ ●爆   ○    ●灭   ○   ...  ← 我方赢下的回合（格子里是赢法）
- * │ 敌方 │ ○    ●拆   ○    ●时  ...  ← 敌方赢下的回合
- * ├──────┼────────────────────────────────────────────────────┤
- * │ 欧泊 │ 列头 + 玩家数据行 ×5
- * │ logo │
- * └──────┴────────────────────────────────────────────────────┘
- * </pre>
+ * <p>全局尺寸/位置/字号来自 {@link StrinovaHudConfig} 的 scoreboard* 字段；
+ * 每个部件（面板、竖栏、列头、名字、各数据列、数据行、回合记录带、我方/敌方回合）
+ * 还可以用 {@link StrinovaHudConfig.ScoreboardComponentStyle} 单独设置：
+ * 可见性、字号倍率、文字色、背景色（/strinova_client scoreboard style 打开样式面板）。</p>
  */
 public final class StrinovaScoreboardOverlay {
 
-    // ==================== 颜色 ====================
+    // ==================== 默认颜色（部件样式为 0 时使用） ====================
     private static final int DIM = 0xB3000000;
     private static final int PANEL_BG = 0xF20C1016;
     private static final int PANEL_BORDER = 0x55FFFFFF;
@@ -52,7 +37,7 @@ public final class StrinovaScoreboardOverlay {
     private static final int ALLY_WIN = 0xFFFF9AA6;
     private static final int ENEMY_WIN = 0xFF9BB6FF;
 
-    // ==================== 基准尺寸（可被配置缩放） ====================
+    // ==================== 基准尺寸 ====================
     private static final int MAX_PANEL_WIDTH = 1020;
     private static final int MIN_PANEL_WIDTH = 300;
     private static final int ROW_COUNT = 5;
@@ -70,6 +55,30 @@ public final class StrinovaScoreboardOverlay {
     }
 
     private StrinovaScoreboardOverlay() {
+    }
+
+    // ==================== 部件样式解析 ====================
+
+    private static StrinovaHudConfig.ScoreboardComponentStyle style(String key) {
+        return StrinovaHudConfig.get().scoreboardComponent(key);
+    }
+
+    private static boolean visible(String key) {
+        return style(key).visible;
+    }
+
+    private static float fontScale(String key) {
+        return style(key).fontScale;
+    }
+
+    private static int textColor(String key, int fallback) {
+        int color = style(key).textColor;
+        return color == 0 ? fallback : color;
+    }
+
+    private static int backgroundColor(String key, int fallback) {
+        int color = style(key).backgroundColor;
+        return color == 0 ? fallback : color;
     }
 
     /** 当前是否应显示自定义计分板（TAB 按住 + 有进行中对局 + HUD 开启）。 */
@@ -113,8 +122,10 @@ public final class StrinovaScoreboardOverlay {
     private static void renderPanel(GuiGraphics graphics, StrinovaHudPainter painter) {
         Layout layout = computeLayout(graphics.guiWidth(), graphics.guiHeight());
 
-        painter.rect(layout.left(), layout.top(), layout.width(), layout.height(), PANEL_BG);
-        painter.border(layout.left(), layout.top(), layout.width(), layout.height(), PANEL_BORDER, 1);
+        painter.rect(layout.left(), layout.top(), layout.width(), layout.height(),
+                backgroundColor("panel", PANEL_BG));
+        painter.border(layout.left(), layout.top(), layout.width(), layout.height(),
+                textColor("panel", PANEL_BORDER), 1);
 
         renderTeamContent(painter, layout, true);
         renderTeamContent(painter, layout, false);
@@ -149,22 +160,25 @@ public final class StrinovaScoreboardOverlay {
     // ==================== 中间回合记录带 ====================
 
     private static void renderMiddleBand(StrinovaHudPainter painter, Layout layout) {
+        if (!visible("rounds")) {
+            return;
+        }
         int left = layout.left();
         int top = layout.middleTop();
         int contentX = left + layout.sidebarWidth();
         int contentW = layout.width() - layout.sidebarWidth() - 1;
         int height = layout.middleHeight();
-        float textScale = layout.textScale();
+        float textScale = layout.textScale() * fontScale("rounds");
 
-        painter.rect(left + 1, top, layout.width() - 2, height - 1, MIDDLE_BG);
+        painter.rect(left + 1, top, layout.width() - 2, height - 1, backgroundColor("rounds", MIDDLE_BG));
         painter.rect(left + 1, top, layout.width() - 2, 1, withAlpha(0xFFFFFF, 0x1E));
         painter.rect(left + 1, top + height - 1, layout.width() - 2, 1, withAlpha(0xFFFFFF, 0x1E));
 
         int rowHeight = Math.max(8, height / 2);
         painter.textScaled(Component.translatable("hud.strinova.match.allies").getString(),
-                left + 3, top + 1, 0.7F * textScale, ALLY_WIN, false);
+                left + 3, top + 1, 0.7F * textScale, textColor("roundAlly", ALLY_WIN), false);
         painter.textScaled(Component.translatable("hud.strinova.match.enemies").getString(),
-                left + 3, top + 1 + rowHeight, 0.7F * textScale, ENEMY_WIN, false);
+                left + 3, top + 1 + rowHeight, 0.7F * textScale, textColor("roundEnemy", ENEMY_WIN), false);
 
         List<StrinovaMatchState.RoundResult> results = StrinovaMatchState.roundResults();
         int maxCells = Math.max(1, (contentW - 6) / ROUND_STEP);
@@ -178,9 +192,11 @@ public final class StrinovaScoreboardOverlay {
             drawEmptyDot(painter, cellX + 3, allyY + 3);
             drawEmptyDot(painter, cellX + 3, enemyY + 3);
             if (result.allyWon()) {
-                drawRoundCell(painter, cellX, allyY, result.reasonKey(), ALLY_WIN, textScale);
+                drawRoundCell(painter, cellX, allyY, result.reasonKey(),
+                        textColor("roundAlly", ALLY_WIN), textScale);
             } else {
-                drawRoundCell(painter, cellX, enemyY, result.reasonKey(), ENEMY_WIN, textScale);
+                drawRoundCell(painter, cellX, enemyY, result.reasonKey(),
+                        textColor("roundEnemy", ENEMY_WIN), textScale);
             }
             cellX += ROUND_STEP;
             drawn++;
@@ -220,12 +236,15 @@ public final class StrinovaScoreboardOverlay {
     // ==================== 左侧竖栏 ====================
 
     private static void renderSidebarBlock(StrinovaHudPainter painter, Layout layout, boolean ally) {
+        if (!visible("sidebar")) {
+            return;
+        }
         int left = layout.left();
         int top = ally ? layout.blockTop() : layout.enemyTop();
         int sidebarWidth = layout.sidebarWidth();
         int headerHeight = layout.headerHeight();
         int blockHeight = layout.blockHeight();
-        float textScale = layout.textScale();
+        float textScale = layout.textScale() * fontScale("sidebar");
         int accent = ally ? TEAM_ALLY : TEAM_ENEMY;
         String teamKey = ally ? StrinovaMatchState.getAlliesTeamKey() : StrinovaMatchState.getEnemiesTeamKey();
         String teamName = teamKey == null || teamKey.isEmpty()
@@ -233,10 +252,10 @@ public final class StrinovaScoreboardOverlay {
                 : Component.translatable(teamKey).getString();
         int score = ally ? StrinovaMatchState.getAlliesScore() : StrinovaMatchState.getEnemiesScore();
 
-        painter.rect(left + 1, top, sidebarWidth - 1, blockHeight - 1, SIDEBAR_BG);
+        painter.rect(left + 1, top, sidebarWidth - 1, blockHeight - 1, backgroundColor("sidebar", SIDEBAR_BG));
         painter.rect(left + 1, top, sidebarWidth - 1, headerHeight, withAlpha(accent, 0xE6));
         painter.textScaled(teamName, left + 3, top + (headerHeight - 9 * 0.8F * textScale) / 2,
-                0.8F * textScale, TEXT, true);
+                0.8F * textScale, textColor("sidebar", TEXT), true);
 
         int areaTop = top + headerHeight;
         int areaHeight = blockHeight - headerHeight - 1;
@@ -247,7 +266,7 @@ public final class StrinovaScoreboardOverlay {
         float scoreScale = 1.1F * textScale;
         float scoreWidth = painter.textWidth(scoreText) * scoreScale;
         painter.textScaled(scoreText, left + (sidebarWidth - scoreWidth) / 2,
-                crestTop + crestSize + 2, scoreScale, TEXT, true);
+                crestTop + crestSize + 2, scoreScale, textColor("sidebar", TEXT), true);
     }
 
     // ==================== 右侧内容区 ====================
@@ -261,30 +280,31 @@ public final class StrinovaScoreboardOverlay {
         int headerHeight = layout.headerHeight();
         int rowHeight = layout.rowHeight();
         float textScale = layout.textScale();
-        float headerScale = BASE_HEADER_TEXT_SCALE * textScale;
-        float valueScale = BASE_VALUE_TEXT_SCALE * textScale;
-        float nameScale = BASE_NAME_TEXT_SCALE * textScale;
         int accent = ally ? TEAM_ALLY : TEAM_ENEMY;
         int[] anchors = columnAnchors(contentW);
 
-        // 列头行（第一列头像+名字不写列头）
-        painter.rect(contentX, top, contentW, headerHeight, HEADER_ROW);
-        int headerY = top + Math.round((headerHeight - 8.1F * textScale) / 2);
-        drawHeader(painter, kdaHeader(), contentX + anchors[1], headerY, headerScale);
-        drawHeader(painter, Component.translatable("hud.strinova.scoreboard.ultimate").getString(),
-                contentX + anchors[2], headerY, headerScale);
-        drawHeader(painter, Component.translatable("hud.strinova.scoreboard.growth").getString(),
-                contentX + anchors[3], headerY, headerScale);
-        drawHeader(painter, Component.translatable("hud.strinova.scoreboard.weapon").getString(),
-                contentX + anchors[4], headerY, headerScale);
-        drawHeader(painter, Component.translatable("hud.strinova.scoreboard.damage_score").getString(),
-                contentX + anchors[5], headerY, headerScale);
-        drawHeader(painter, Component.translatable("hud.strinova.scoreboard.skill_score").getString(),
-                contentX + anchors[6], headerY, headerScale);
-        drawHeader(painter, Component.translatable("hud.strinova.scoreboard.assist_score").getString(),
-                contentX + anchors[7], headerY, headerScale);
-        drawHeaderRight(painter, "PING", contentX + contentW - 4, headerY, headerScale);
-        painter.rect(contentX, top + headerHeight - 1, contentW, 1, withAlpha(accent, 0xB0));
+        // 列头行
+        if (visible("header")) {
+            float headerScale = BASE_HEADER_TEXT_SCALE * textScale * fontScale("header");
+            painter.rect(contentX, top, contentW, headerHeight, backgroundColor("header", HEADER_ROW));
+            int headerY = top + Math.round((headerHeight - 8.1F * headerScale) / 2);
+            int headerColor = textColor("header", TEXT_DIM);
+            drawHeader(painter, kdaHeader(), contentX + anchors[1], headerY, headerScale, headerColor);
+            drawHeader(painter, Component.translatable("hud.strinova.scoreboard.ultimate").getString(),
+                    contentX + anchors[2], headerY, headerScale, headerColor);
+            drawHeader(painter, Component.translatable("hud.strinova.scoreboard.growth").getString(),
+                    contentX + anchors[3], headerY, headerScale, headerColor);
+            drawHeader(painter, Component.translatable("hud.strinova.scoreboard.weapon").getString(),
+                    contentX + anchors[4], headerY, headerScale, headerColor);
+            drawHeader(painter, Component.translatable("hud.strinova.scoreboard.damage_score").getString(),
+                    contentX + anchors[5], headerY, headerScale, headerColor);
+            drawHeader(painter, Component.translatable("hud.strinova.scoreboard.skill_score").getString(),
+                    contentX + anchors[6], headerY, headerScale, headerColor);
+            drawHeader(painter, Component.translatable("hud.strinova.scoreboard.assist_score").getString(),
+                    contentX + anchors[7], headerY, headerScale, headerColor);
+            drawHeaderRight(painter, "PING", contentX + contentW - 4, headerY, headerScale, headerColor);
+            painter.rect(contentX, top + headerHeight - 1, contentW, 1, withAlpha(accent, 0xB0));
+        }
 
         // 玩家行
         int rowsTop = top + headerHeight;
@@ -295,15 +315,8 @@ public final class StrinovaScoreboardOverlay {
             boolean dead = has && entry.status() == StrinovaScoreboardState.Status.DEAD;
             boolean self = has && entry.self();
 
-            int rowBg;
-            if (self) {
-                rowBg = ROW_SELF;
-            } else if (dead) {
-                rowBg = ROW_DEAD;
-            } else {
-                rowBg = (i % 2 == 0) ? ROW_BG : ROW_ALT;
-            }
-            painter.rect(contentX, rowY, contentW, rowHeight, rowBg);
+            int defaultRowBg = self ? ROW_SELF : dead ? ROW_DEAD : ((i % 2 == 0) ? ROW_BG : ROW_ALT);
+            painter.rect(contentX, rowY, contentW, rowHeight, backgroundColor("rows", defaultRowBg));
             if (self) {
                 painter.rect(contentX, rowY, 2, rowHeight, GOLD);
             }
@@ -316,56 +329,77 @@ public final class StrinovaScoreboardOverlay {
             int avatarSize = Math.max(10, Math.min(16, rowHeight - 6));
             int avatarY = rowY + (rowHeight - avatarSize) / 2;
             int avatarX = contentX + anchors[0];
-            int accentColor = agentAccent(entry.agentName(), accent);
-            painter.rect(avatarX, avatarY, avatarSize, avatarSize, 0xFF0D1218);
-            painter.rect(avatarX, avatarY, 2, avatarSize, accentColor);
-            painter.border(avatarX, avatarY, avatarSize, avatarSize, 0x66FFFFFF, 1);
-            String initial = entry.agentName() == null || entry.agentName().isEmpty()
-                    ? "?" : entry.agentName().substring(0, 1);
-            painter.textScaled(initial, avatarX + Math.round((avatarSize - 6.75F * textScale) / 2),
-                    avatarY + Math.round((avatarSize - 6.75F * textScale) / 2), 0.75F * textScale, TEXT, false);
-            if (entry.status() == StrinovaScoreboardState.Status.ALIVE) {
-                painter.rect(avatarX + avatarSize - 4, avatarY + avatarSize - 3, 3, 3, GREEN);
+            int textY = rowY + Math.round((rowHeight - 9.0F * textScale) / 2);
+
+            if (visible("name")) {
+                float nameScale = BASE_NAME_TEXT_SCALE * textScale * fontScale("name");
+                int accentColor = agentAccent(entry.agentName(), accent);
+                painter.rect(avatarX, avatarY, avatarSize, avatarSize, 0xFF0D1218);
+                painter.rect(avatarX, avatarY, 2, avatarSize, accentColor);
+                painter.border(avatarX, avatarY, avatarSize, avatarSize, 0x66FFFFFF, 1);
+                String initial = entry.agentName() == null || entry.agentName().isEmpty()
+                        ? "?" : entry.agentName().substring(0, 1);
+                painter.textScaled(initial, avatarX + Math.round((avatarSize - 6.75F * textScale) / 2),
+                        avatarY + Math.round((avatarSize - 6.75F * textScale) / 2), 0.75F * textScale, TEXT, false);
+                if (entry.status() == StrinovaScoreboardState.Status.ALIVE) {
+                    painter.rect(avatarX + avatarSize - 4, avatarY + avatarSize - 3, 3, 3, GREEN);
+                }
+                painter.textScaled(entry.name() == null ? "" : entry.name(), avatarX + avatarSize + 5,
+                        textY, nameScale, textColor("name", self ? GOLD : dead ? TEXT_DIM : TEXT), false);
             }
 
-            int textY = rowY + Math.round((rowHeight - 9.0F * textScale) / 2);
-            int nameX = avatarX + avatarSize + 5;
-            String name = entry.name() == null ? "" : entry.name();
-            painter.textScaled(name, nameX, textY, nameScale, self ? GOLD : dead ? TEXT_DIM : TEXT, false);
+            drawValue(painter, "kda", entry.kills() + " / " + entry.deaths() + " / " + entry.assists(),
+                    contentX + anchors[1], textY, textScale, TEXT);
+            drawValue(painter, "ultimate", entry.ultimatePoints() + "/" + entry.ultimateMax(),
+                    contentX + anchors[2], textY, textScale, 0xFF8FD8FF);
 
-            painter.textScaled(entry.kills() + " / " + entry.deaths() + " / " + entry.assists(),
-                    contentX + anchors[1], textY, valueScale, TEXT, false);
-            painter.textScaled(entry.ultimatePoints() + "/" + entry.ultimateMax(),
-                    contentX + anchors[2], textY, valueScale, 0xFF8FD8FF, false);
+            if (visible("growth")) {
+                float growthScale = BASE_VALUE_TEXT_SCALE * textScale * fontScale("growth");
+                int growthColor = entry.growthLevel() >= 2 ? 0xFFDEB639 : 0xFF4B77DC;
+                int chipBg = backgroundColor("growth", growthColor);
+                int growthY = rowY + (rowHeight - 10) / 2;
+                painter.rect(contentX + anchors[3], growthY, 10, 10, chipBg);
+                painter.textScaled(String.valueOf(entry.growthLevel()), contentX + anchors[3] + 3,
+                        growthY + 1, 0.6F * growthScale, textColor("growth", 0xFF0A111C), false);
+            }
 
-            int growthColor = entry.growthLevel() >= 2 ? 0xFFDEB639 : 0xFF4B77DC;
-            int growthY = rowY + (rowHeight - 10) / 2;
-            painter.rect(contentX + anchors[3], growthY, 10, 10, growthColor);
-            painter.textScaled(String.valueOf(entry.growthLevel()), contentX + anchors[3] + 3,
-                    growthY + 1, 0.6F * textScale, 0xFF0A111C, false);
+            drawValue(painter, "weapon", entry.weaponName() == null ? "" : entry.weaponName(),
+                    contentX + anchors[4], textY, textScale, TEXT_DIM);
+            drawValue(painter, "damage", String.valueOf(entry.damageScore()),
+                    contentX + anchors[5], textY, textScale, TEXT);
+            drawValue(painter, "skill", String.valueOf(entry.skillScore()),
+                    contentX + anchors[6], textY, textScale, TEXT);
+            drawValue(painter, "assist", String.valueOf(entry.assistScore()),
+                    contentX + anchors[7], textY, textScale, TEXT);
 
-            painter.textScaled(entry.weaponName() == null ? "" : entry.weaponName(),
-                    contentX + anchors[4], textY, valueScale, TEXT_DIM, false);
-            painter.textScaled(String.valueOf(entry.damageScore()), contentX + anchors[5], textY,
-                    valueScale, TEXT, false);
-            painter.textScaled(String.valueOf(entry.skillScore()), contentX + anchors[6], textY,
-                    valueScale, TEXT, false);
-            painter.textScaled(String.valueOf(entry.assistScore()), contentX + anchors[7], textY,
-                    valueScale, TEXT, false);
-            String pingText = String.valueOf(entry.ping());
-            int pingWidth = Math.round(painter.textWidth(pingText) * valueScale);
-            painter.textScaled(pingText, contentX + contentW - 4 - pingWidth, textY, valueScale,
-                    entry.ping() > 100 ? GOLD : TEXT_DIM, false);
+            if (visible("ping")) {
+                float pingScale = BASE_VALUE_TEXT_SCALE * textScale * fontScale("ping");
+                String pingText = String.valueOf(entry.ping());
+                int pingWidth = Math.round(painter.textWidth(pingText) * pingScale);
+                painter.textScaled(pingText, contentX + contentW - 4 - pingWidth, textY, pingScale,
+                        textColor("ping", entry.ping() > 100 ? GOLD : TEXT_DIM), false);
+            }
         }
     }
 
-    private static void drawHeader(StrinovaHudPainter painter, String text, int x, int y, float scale) {
-        painter.textScaled(text, x, y, scale, TEXT_DIM, false);
+    private static void drawValue(StrinovaHudPainter painter, String key, String text, int x, int y,
+                                  float textScale, int fallbackColor) {
+        if (!visible(key)) {
+            return;
+        }
+        float scale = BASE_VALUE_TEXT_SCALE * textScale * fontScale(key);
+        painter.textScaled(text, x, y, scale, textColor(key, fallbackColor), false);
     }
 
-    private static void drawHeaderRight(StrinovaHudPainter painter, String text, int rightX, int y, float scale) {
+    private static void drawHeader(StrinovaHudPainter painter, String text, int x, int y,
+                                   float scale, int color) {
+        painter.textScaled(text, x, y, scale, color, false);
+    }
+
+    private static void drawHeaderRight(StrinovaHudPainter painter, String text, int rightX, int y,
+                                        float scale, int color) {
         int width = Math.round(painter.textWidth(text) * scale);
-        painter.textScaled(text, rightX - width, y, scale, TEXT_DIM, false);
+        painter.textScaled(text, rightX - width, y, scale, color, false);
     }
 
     // ==================== 列位置 ====================

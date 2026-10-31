@@ -55,7 +55,7 @@ public class StrinovaScoreboardEditorScreen extends Screen {
         int row1Y = this.height - 50;
         int row2Y = this.height - 28;
         int row1Count = 6;
-        int row2Count = 5;
+        int row2Count = 6;
         int row1Start = (this.width - (buttonWidth * row1Count + gap * (row1Count - 1))) / 2;
         int row2Start = (this.width - (buttonWidth * row2Count + gap * (row2Count - 1))) / 2;
 
@@ -86,10 +86,13 @@ public class StrinovaScoreboardEditorScreen extends Screen {
         }).bounds(row2Start + buttonWidth + gap, row2Y, buttonWidth, buttonHeight).build());
         addRenderableWidget(Button.builder(Component.literal("重置"), b -> resetToDefaults())
                 .bounds(row2Start + (buttonWidth + gap) * 2, row2Y, buttonWidth, buttonHeight).build());
-        addRenderableWidget(Button.builder(Component.literal("保存"), b -> saveAndClose())
+        addRenderableWidget(Button.builder(Component.literal("样式…"), b -> Minecraft.getInstance().setScreen(
+                        new StrinovaScoreboardStyleScreen(this)))
                 .bounds(row2Start + (buttonWidth + gap) * 3, row2Y, buttonWidth, buttonHeight).build());
-        addRenderableWidget(Button.builder(Component.literal("返回"), b -> restoreAndClose())
+        addRenderableWidget(Button.builder(Component.literal("保存"), b -> saveAndClose())
                 .bounds(row2Start + (buttonWidth + gap) * 4, row2Y, buttonWidth, buttonHeight).build());
+        addRenderableWidget(Button.builder(Component.literal("返回"), b -> restoreAndClose())
+                .bounds(row2Start + (buttonWidth + gap) * 5, row2Y, buttonWidth, buttonHeight).build());
     }
 
     private void captureOriginals() {
