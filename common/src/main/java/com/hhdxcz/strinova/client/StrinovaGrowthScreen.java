@@ -5,6 +5,7 @@ import com.hhdxcz.strinova.client.hud.StrinovaGrowthState;
 import com.hhdxcz.strinova.client.hud.StrinovaHudConfig;
 import com.hhdxcz.strinova.client.hud.StrinovaHudState;
 import com.hhdxcz.strinova.client.hud.StrinovaMatchState;
+import com.hhdxcz.strinova.client.hud.StrinovaWikiData;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -42,10 +43,10 @@ public class StrinovaGrowthScreen extends Screen {
     private static final int COLOR_BORDER = 0x4035D6E8;
     /** 7 类成长各自的强调色（类别标题条与下划线）。 */
     private static final int[] CATEGORY_ACCENTS = {
-            0xFF35D6E8, 0xFFFFD166, 0xFF54E0A0, 0xFF4FA3FF, 0xFF9B6BFF, 0xFFFF9F43, 0xFFFF4FA3
+            0xFF35D6E8, 0xFFFFD166, 0xFF54E0A0, 0xFF4FA3FF, 0xFF9B6BFF, 0xFFFF9F43, 0xFFFF4FA3, 0xFF6ED0FF
     };
 
-    /** 每列最多摆 4 个成长类别（7 类 → 左列 4、右列 3）。 */
+    /** 每列最多摆 4 个成长分支（8 分支 → 左列 4 武器网络、右列 4 技能/防御网络）。 */
     private static final int CATEGORY_ROWS = 4;
     /** 武器槽数量（1 主武器 / 2 副武器 / 3 近战 / 4~5 战术道具）。 */
     private static final int WEAPON_SLOT_COUNT = 5;
@@ -112,6 +113,7 @@ public class StrinovaGrowthScreen extends Screen {
     protected void init() {
         this.clearWidgets();
         this.agent = resolveAgent();
+        StrinovaGrowthState.selectAgent(this.agent == null ? "" : this.agent.id());
         this.computeLayout();
         this.hoveredCategory = -1;
         this.hoveredItem = -1;
@@ -308,6 +310,28 @@ public class StrinovaGrowthScreen extends Screen {
             graphics.fill(roleX, roleY + 13, roleX + roleWidth, roleY + 14, accent);
             graphics.drawCenteredString(this.font, role, centerX, roleY + 3, accent);
         }
+        StrinovaWikiData.Agent wiki = this.wikiAgent();
+        if (wiki != null) {
+            if (wiki.stats() != null && wiki.stats().hp() > 0) {
+                String stats = Component.translatable("config.strinova.growth.stat.hp").getString() + " "
+                        + wiki.stats().hp() + "   "
+                        + Component.translatable("config.strinova.growth.stat.armor").getString() + " "
+                        + wiki.stats().armor() + "   "
+                        + Component.translatable("config.strinova.growth.stat.speed").getString() + " "
+                        + wiki.stats().moveSpeed();
+                graphics.drawCenteredString(this.font, truncate(stats, this.portraitWidth - 8),
+                        centerX, nameY - 26, COLOR_TEXT_DISABLED);
+            }
+            if (wiki.identity() != null && !wiki.identity().isEmpty()) {
+                graphics.drawCenteredString(this.font, truncate(wiki.identity(), this.portraitWidth - 10),
+                        centerX, nameY - 14, COLOR_TEXT_DIM);
+            }
+        }
+    }
+
+    /** 当前角色的 wiki 数据（缺数据时为 null）。 */
+    private StrinovaWikiData.Agent wikiAgent() {
+        return this.agent == null ? null : StrinovaWikiData.byId(this.agent.id());
     }
 
     /** 取角色名的第一个字符（处理代理对），空名时返回问号。 */
@@ -320,11 +344,18 @@ public class StrinovaGrowthScreen extends Screen {
 
     // ==================== 中间成长类别网格 ====================
 
-    /** 渲染 7 类成长：两列排布，每类 2 个升级项；同时更新鼠标悬停的项。 */
+    /** 渲染 8 个成长分支（4 武器 + 主动/被动/护甲/弦化）：两列排布，每类 1~2 个升级项；同时更新鼠标悬停的项。 */
     private void renderCategories(GuiGraphics graphics, int mouseX, int mouseY) {
         this.hoveredCategory = -1;
         this.hoveredItem = -1;
         List<StrinovaGrowthState.Category> categories = StrinovaGrowthState.categories();
+        if (categories.isEmpty()) {
+            String hint = Component.translatable("config.strinova.growth.no_data").getString();
+            graphics.drawCenteredString(this.font, hint,
+                    (this.categoriesLeft + this.categoriesRight) / 2,
+                    (this.categoriesTop + this.categoriesBottom) / 2 - 4, COLOR_TEXT_DISABLED);
+            return;
+        }
         int energy = StrinovaGrowthState.energyPoints();
         for (int i = 0; i < categories.size(); i++) {
             int column = i / CATEGORY_ROWS;
@@ -341,8 +372,15 @@ public class StrinovaGrowthScreen extends Screen {
         int accent = CATEGORY_ACCENTS[categoryIndex % CATEGORY_ACCENTS.length];
         int titleY = blockY + 1;
         graphics.fill(blockX, titleY + 1, blockX + 2, titleY + 8, accent);
-        graphics.drawString(this.font, Component.translatable(category.nameKey()),
+        String kindLabel = kindLabel(category.kind());
+        int kindWidth = kindLabel.isEmpty() ? 0 : this.font.width(kindLabel) + 4;
+        graphics.drawString(this.font, truncate(category.label(), this.categoryColumnWidth - 6 - kindWidth),
                 blockX + 6, titleY, COLOR_TEXT, false);
+        if (!kindLabel.isEmpty()) {
+            graphics.drawString(this.font, kindLabel,
+                    blockX + this.categoryColumnWidth - this.font.width(kindLabel),
+                    titleY, COLOR_TEXT_DISABLED, false);
+        }
         graphics.fill(blockX, titleY + 10, blockX + this.categoryColumnWidth, titleY + 11, accent & 0x55FFFFFF);
 
         List<StrinovaGrowthState.UpgradeItem> items = category.items();
@@ -392,7 +430,7 @@ public class StrinovaGrowthScreen extends Screen {
         int textY = y + Math.max(1, (height - 9) / 2);
         int nameColor = purchased ? COLOR_TEXT : (affordable ? COLOR_TEXT : COLOR_TEXT_DISABLED);
         graphics.drawString(this.font,
-                truncate(Component.translatable(item.nameKey()).getString(), nameWidth),
+                truncate(item.text() == null ? "" : item.text(), nameWidth),
                 x + 6, textY, nameColor, false);
 
         if (purchased) {
@@ -431,6 +469,12 @@ public class StrinovaGrowthScreen extends Screen {
             StrinovaHudState.WeaponSlot slot = i < slots.size() ? slots.get(i) : null;
             boolean selected = slot != null && slot.selected();
             String name = slot == null || slot.name() == null ? "" : slot.name();
+            if (name.isEmpty() && i == 0) {
+                StrinovaWikiData.Agent wiki = this.wikiAgent();
+                if (wiki != null && wiki.weapon() != null) {
+                    name = wiki.weapon().name();
+                }
+            }
             int slotRight = this.innerRight - 4;
             graphics.fill(this.weaponsX, slotY, slotRight, slotY + slotHeight,
                     selected ? 0x66203548 : 0x330B121A);
@@ -552,10 +596,13 @@ public class StrinovaGrowthScreen extends Screen {
                 && mouseY >= this.awakenTop && mouseY < this.awakenTop + this.awakenHeight) {
             this.hoveredAwakening = index;
         }
+        if (this.showAwakenDescription) {
+            drawAwakeningNeeds(graphics, awakening, x + cardWidth - 5, this.awakenTop + 4);
+        }
 
         Component label = Component.translatable("config.strinova.growth.awakening")
                 .append(" " + (index + 1));
-        Component name = Component.translatable(awakening.nameKey());
+        Component name = Component.literal(awakening.name() == null ? "" : awakening.name());
         Component status = Component.translatable(active
                 ? "config.strinova.growth.activated"
                 : "config.strinova.growth.not_activated");
@@ -567,7 +614,7 @@ public class StrinovaGrowthScreen extends Screen {
             int iconY = this.awakenTop + 8;
             drawAwakeningIcon(graphics, iconX, iconY, iconSize, active);
             int textX = iconX + iconSize + 8;
-            int textMax = Math.max(24, x + cardWidth - 8 - textX);
+            int textMax = Math.max(24, x + cardWidth - 8 - textX - 38);
             graphics.drawString(this.font, truncate(label.getString(), textMax),
                     textX, iconY, COLOR_TEXT_DIM, false);
             graphics.drawString(this.font, truncate(name.getString(), textMax),
@@ -577,7 +624,7 @@ public class StrinovaGrowthScreen extends Screen {
             int descTop = iconY + LINE_STEP * 3 + 2;
             int maxLines = Math.max(1,
                     (this.awakenTop + this.awakenHeight - 6 - descTop) / LINE_STEP);
-            drawWrapped(graphics, Component.translatable(awakening.descKey()),
+            drawWrapped(graphics, Component.literal(awakening.desc() == null ? "" : awakening.desc()),
                     x + 8, descTop, cardWidth - 16, maxLines, 0xFFB4C0CC);
         } else {
             int iconSize = clamp(this.awakenHeight - 8, 12, 16);
@@ -596,6 +643,39 @@ public class StrinovaGrowthScreen extends Screen {
                     active ? COLOR_SUCCESS : COLOR_TEXT_DISABLED, false);
             graphics.drawString(this.font, truncate(name.getString(), textMax),
                     textX, lineY + LINE_STEP, nameColor, false);
+        }
+    }
+
+    /** 分支类型小标签（仅主动 / 被动技能分支显示，避免与技能名标题重复）。 */
+    private static String kindLabel(String kind) {
+        return switch (kind == null ? "" : kind) {
+            case "active" -> Component.translatable("config.strinova.growth.kind.active").getString();
+            case "passive" -> Component.translatable("config.strinova.growth.kind.passive").getString();
+            default -> "";
+        };
+    }
+
+    /** 在觉醒卡右上角绘制三色需求（蓝=武器 / 黄=技能 / 绿=防御），满足需求时点亮。 */
+    private static void drawAwakeningNeeds(GuiGraphics graphics, StrinovaGrowthState.Awakening awakening,
+                                           int right, int top) {
+        int[] needs = {awakening.needWeapon(), awakening.needSkill(), awakening.needDefense()};
+        int[] colors = {0xFF4FA3FF, 0xFFFFD166, 0xFF54E0A0};
+        int[] owned = {StrinovaGrowthState.purchasedWeapon(),
+                StrinovaGrowthState.purchasedSkill(),
+                StrinovaGrowthState.purchasedDefense()};
+        int box = 10;
+        int gap = 2;
+        for (int i = 0; i < needs.length; i++) {
+            int x = right - (needs.length - i) * (box + gap) + gap;
+            boolean met = needs[i] > 0 && owned[i] >= needs[i];
+            int color = met ? colors[i] : 0x3356626E;
+            graphics.fill(x, top, x + box, top + box, color);
+            if (needs[i] > 0) {
+                String text = String.valueOf(needs[i]);
+                graphics.drawString(net.minecraft.client.Minecraft.getInstance().font, text,
+                        x + (box - net.minecraft.client.Minecraft.getInstance().font.width(text)) / 2,
+                        top + 1, met ? 0xFF0A111C : 0xFFB4C0CC, false);
+            }
         }
     }
 
@@ -669,7 +749,7 @@ public class StrinovaGrowthScreen extends Screen {
 
     // ==================== 悬停提示 ====================
 
-    /** 悬停成长项显示完整名称/价格/激活状态；小窗口下悬停觉醒卡片补全描述。 */
+    /** 悬停提示：成长项（含属性变化）、觉醒（含三色需求）、左侧立绘（身份/简介/语录）、武器栏（主武器信息）。 */
     private void renderHoverTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
         if (this.hoveredCategory >= 0 && this.hoveredItem >= 0) {
             List<StrinovaGrowthState.Category> categories = StrinovaGrowthState.categories();
@@ -681,27 +761,45 @@ public class StrinovaGrowthScreen extends Screen {
                 }
             }
         }
-        if (!this.showAwakenDescription && this.hoveredAwakening >= 0) {
+        if (this.hoveredAwakening >= 0) {
             List<StrinovaGrowthState.Awakening> awakenings = StrinovaGrowthState.awakenings();
             if (this.hoveredAwakening < awakenings.size()) {
                 this.renderAwakeningTooltip(graphics, awakenings.get(this.hoveredAwakening), mouseX, mouseY);
+                return;
+            }
+        }
+        if (this.showPortrait && mouseX >= this.portraitX && mouseX < this.portraitX + this.portraitWidth
+                && mouseY >= this.portraitY && mouseY < this.portraitY + this.portraitHeight) {
+            this.renderAgentTooltip(graphics, mouseX, mouseY);
+            return;
+        }
+        if (mouseX >= this.weaponsX - 4 && mouseX < this.innerRight
+                && mouseY >= this.weaponsY && mouseY < this.contentBottom) {
+            StrinovaWikiData.Agent wiki = this.wikiAgent();
+            if (wiki != null && wiki.weapon() != null && !isBlank(wiki.weapon().name())) {
+                this.renderWeaponTooltip(graphics, wiki.weapon(), mouseX, mouseY);
             }
         }
     }
 
-    /** 成长项提示框：第一行完整名称，第二行价格（蓝色菱形）或“已激活”。 */
+    /** 成长项提示框：名称 + 价格/已激活 + 自动换行的「属性变化」文案。 */
     private void renderItemTooltip(GuiGraphics graphics, StrinovaGrowthState.UpgradeItem item,
                                    int mouseX, int mouseY) {
-        Component name = Component.translatable(item.nameKey());
-        String price = String.valueOf(item.cost());
+        Component name = Component.literal(item.text() == null ? "" : item.text());
         Component status = Component.translatable("config.strinova.growth.activated");
-        int secondWidth = item.purchased()
-                ? this.font.width(status)
-                : this.font.width(price) + 13;
-        int width = Math.max(this.font.width(name), secondWidth) + 14;
-        int height = LINE_STEP * 2 + 8;
-        int x = clamp(mouseX + 10, 4, this.width - width - 4);
-        int y = clamp(mouseY + 10, 4, this.height - height - 4);
+        String price = String.valueOf(item.cost());
+        List<FormattedCharSequence> changeLines = isBlank(item.change())
+                ? List.of()
+                : this.font.split(Component.literal(item.change()), 200);
+        int width = Math.max(this.font.width(name),
+                item.purchased() ? this.font.width(status) : this.font.width(price) + 13);
+        for (FormattedCharSequence line : changeLines) {
+            width = Math.max(width, this.font.width(line));
+        }
+        width += 14;
+        int height = LINE_STEP * (2 + changeLines.size()) + 8;
+        int x = clamp(mouseX + 10, 4, Math.max(4, this.width - width - 4));
+        int y = clamp(mouseY + 10, 4, Math.max(4, this.height - height - 4));
         graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF2A3542);
         graphics.fill(x, y, x + width, y + height, 0xF00C121A);
         graphics.drawString(this.font, name, x + 7, y + 4, COLOR_TEXT, false);
@@ -713,31 +811,128 @@ public class StrinovaGrowthScreen extends Screen {
                     item.cost() <= StrinovaGrowthState.energyPoints() ? COLOR_DIAMOND : COLOR_TEXT_DISABLED, false);
             drawDiamond(graphics, x + 7 + this.font.width(price) + 7, secondY + 4, 3, COLOR_DIAMOND);
         }
+        int lineY = secondY + LINE_STEP;
+        for (FormattedCharSequence line : changeLines) {
+            graphics.drawString(this.font, line, x + 7, lineY, 0xFFB4C0CC, false);
+            lineY += LINE_STEP;
+        }
     }
 
-    /** 觉醒提示框：名称 + 自动换行描述（小窗口隐藏卡片描述时补全）。 */
+    /** 觉醒提示框：名称 + 三色需求（含当前进度）+ 自动换行描述。 */
     private void renderAwakeningTooltip(GuiGraphics graphics, StrinovaGrowthState.Awakening awakening,
                                         int mouseX, int mouseY) {
-        Component name = Component.translatable(awakening.nameKey());
-        List<FormattedCharSequence> lines = this.font.split(
-                Component.translatable(awakening.descKey()), 190);
-        int textWidth = this.font.width(name);
+        Component name = Component.literal(awakening.name() == null ? "" : awakening.name());
+        Component need = needsLine(awakening);
+        Component current = Component.translatable("config.strinova.growth.selected")
+                .append(Component.literal(" " + StrinovaGrowthState.purchasedWeapon()
+                        + " / " + StrinovaGrowthState.purchasedSkill()
+                        + " / " + StrinovaGrowthState.purchasedDefense()));
+        List<FormattedCharSequence> lines = isBlank(awakening.desc())
+                ? List.of()
+                : this.font.split(Component.literal(awakening.desc()), 200);
+        int width = Math.max(this.font.width(name), Math.max(this.font.width(need), this.font.width(current)));
         for (FormattedCharSequence line : lines) {
-            textWidth = Math.max(textWidth, this.font.width(line));
+            width = Math.max(width, this.font.width(line));
         }
-        int width = textWidth + 14;
-        int height = LINE_STEP * (1 + lines.size()) + 8;
-        int x = clamp(mouseX + 10, 4, this.width - width - 4);
-        int y = clamp(mouseY + 10, 4, this.height - height - 4);
+        width += 14;
+        int height = LINE_STEP * (3 + lines.size()) + 8;
+        int x = clamp(mouseX + 10, 4, Math.max(4, this.width - width - 4));
+        int y = clamp(mouseY + 10, 4, Math.max(4, this.height - height - 4));
         graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF2A3542);
         graphics.fill(x, y, x + width, y + height, 0xF00C121A);
         graphics.drawString(this.font, name, x + 7, y + 4,
                 awakening.active() ? COLOR_GOLD : COLOR_TEXT, false);
+        graphics.drawString(this.font, need, x + 7, y + 4 + LINE_STEP, COLOR_TEXT_DIM, false);
+        graphics.drawString(this.font, current, x + 7, y + 4 + LINE_STEP * 2, COLOR_TEXT_DISABLED, false);
+        int lineY = y + 4 + LINE_STEP * 3;
+        for (FormattedCharSequence line : lines) {
+            graphics.drawString(this.font, line, x + 7, lineY, 0xFFB4C0CC, false);
+            lineY += LINE_STEP;
+        }
+    }
+
+    /** 立绘提示框：身份 + 角色简介 + 个性语录。 */
+    private void renderAgentTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        StrinovaWikiData.Agent wiki = this.wikiAgent();
+        if (wiki == null) {
+            return;
+        }
+        List<FormattedCharSequence> intro = isBlank(wiki.intro())
+                ? List.of()
+                : this.font.split(Component.literal(wiki.intro()), 200);
+        List<FormattedCharSequence> quote = isBlank(wiki.quote())
+                ? List.of()
+                : this.font.split(Component.literal("「" + wiki.quote() + "」"), 200);
+        int width = 0;
+        for (FormattedCharSequence line : intro) {
+            width = Math.max(width, this.font.width(line));
+        }
+        for (FormattedCharSequence line : quote) {
+            width = Math.max(width, this.font.width(line));
+        }
+        int headerWidth = this.font.width((wiki.identity() == null ? "" : wiki.identity()) + " " + wiki.name());
+        width = Math.max(60, Math.max(width, headerWidth)) + 14;
+        int height = LINE_STEP * (1 + intro.size() + quote.size()) + 8;
+        int x = clamp(mouseX + 10, 4, Math.max(4, this.width - width - 4));
+        int y = clamp(mouseY + 10, 4, Math.max(4, this.height - height - 4));
+        graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF2A3542);
+        graphics.fill(x, y, x + width, y + height, 0xF00C121A);
+        graphics.drawString(this.font,
+                (isBlank(wiki.identity()) ? "" : wiki.identity() + " · ") + wiki.name(),
+                x + 7, y + 4, COLOR_TEXT, false);
+        int lineY = y + 4 + LINE_STEP;
+        for (FormattedCharSequence line : intro) {
+            graphics.drawString(this.font, line, x + 7, lineY, 0xFFB4C0CC, false);
+            lineY += LINE_STEP;
+        }
+        for (FormattedCharSequence line : quote) {
+            graphics.drawString(this.font, line, x + 7, lineY, COLOR_TEXT_DIM, false);
+            lineY += LINE_STEP;
+        }
+    }
+
+    /** 武器栏提示框：主武器名称 · 类型 + 自动换行介绍。 */
+    private void renderWeaponTooltip(GuiGraphics graphics, StrinovaWikiData.Weapon weapon,
+                                     int mouseX, int mouseY) {
+        Component title = Component.literal(isBlank(weapon.name()) ? "" : weapon.name())
+                .append(Component.literal(isBlank(weapon.type()) ? "" : " · " + weapon.type()));
+        List<FormattedCharSequence> lines = isBlank(weapon.desc())
+                ? List.of()
+                : this.font.split(Component.literal(weapon.desc()), 200);
+        int width = this.font.width(title);
+        for (FormattedCharSequence line : lines) {
+            width = Math.max(width, this.font.width(line));
+        }
+        width += 14;
+        int height = LINE_STEP * (1 + lines.size()) + 8;
+        int x = clamp(mouseX + 10, 4, Math.max(4, this.width - width - 4));
+        int y = clamp(mouseY + 10, 4, Math.max(4, this.height - height - 4));
+        graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF2A3542);
+        graphics.fill(x, y, x + width, y + height, 0xF00C121A);
+        graphics.drawString(this.font, title, x + 7, y + 4, COLOR_TEXT, false);
         int lineY = y + 4 + LINE_STEP;
         for (FormattedCharSequence line : lines) {
             graphics.drawString(this.font, line, x + 7, lineY, 0xFFB4C0CC, false);
             lineY += LINE_STEP;
         }
+    }
+
+    /** 觉醒三色需求文案：武器 / 技能 / 防御。 */
+    private Component needsLine(StrinovaGrowthState.Awakening awakening) {
+        return Component.translatable("config.strinova.growth.need")
+                .append(Component.literal(" "))
+                .append(Component.translatable("config.strinova.growth.need.weapon"))
+                .append(Component.literal(" " + awakening.needWeapon()))
+                .append(Component.literal(" · "))
+                .append(Component.translatable("config.strinova.growth.need.skill"))
+                .append(Component.literal(" " + awakening.needSkill()))
+                .append(Component.literal(" · "))
+                .append(Component.translatable("config.strinova.growth.need.defense"))
+                .append(Component.literal(" " + awakening.needDefense()));
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isEmpty();
     }
 
     // ==================== 通用绘制工具 ====================

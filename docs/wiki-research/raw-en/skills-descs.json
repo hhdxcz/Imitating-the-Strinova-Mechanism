@@ -1,0 +1,402 @@
+{
+  "Audrey": {
+    "active": {
+      "name": "Guns Blazing",
+      "desc": "Enter Deployment Mode. Continuous firing causes the weapon to Overheat. Toggle between 1.25x and 3x zoom."
+    },
+    "passive": {
+      "name": "Royal Shield",
+      "desc": "Generate a frontal shield when entering Deployment or ADS, with extra shield capacity in Deployment Mode."
+    },
+    "ultimate": {
+      "name": "Bombardment",
+      "desc": "Fire up to 6 grenades, creating a sea of flames that deals ongoing damage to all enemies in range."
+    },
+    "tactical": {
+      "name": "Grenade Turret",
+      "desc": "Deploy a Grenade Turret that automatically fires explosive grenades at enemies in sight."
+    }
+  },
+  "Bai Mo": {
+    "active": {
+      "name": "Blitz Waltz",
+      "desc": "Dash forward and reload your shotgun. Primary weapon hits reduce cooldown."
+    },
+    "passive": {
+      "name": "Nimble Stride",
+      "desc": "Briefly boosts Movement Speed when using an Active Skill, taking weapon or throwable DMG, or dodging bullets through Stringify."
+    },
+    "ultimate": {
+      "name": "Streetfighter",
+      "desc": "Place a Beacon to Respawn instantly if downed or killed. Press the skill key again to return to the Beacon."
+    },
+    "tactical": {
+      "name": "Explosive Graffiti",
+      "desc": "Throw an Explosive Paint Can that slows, stuns, and reduces the Fire Rate of nearby enemies."
+    }
+  },
+  "Celestia": {
+    "active": {
+      "name": "Guardian Star",
+      "desc": "Grants Temporary Armor on a selected teammate and yourself. The skill automatically targets you when there are no teammates in sight."
+    },
+    "passive": {
+      "name": "Cosmic Recovery",
+      "desc": "Continuously restore Armor for yourself and nearby allies."
+    },
+    "ultimate": {
+      "name": "Astral Gate",
+      "desc": "Select a teammate to give both of you Temporary Armor and start charging. Teleport to them when fully charged."
+    },
+    "tactical": {
+      "name": "Starburst",
+      "desc": "Throw a Starflare to create an Armor recovery zone, granting allies Temporary Armor and continuous Armor regeneration inside. This effect isn't interrupted by DMG."
+    }
+  },
+  "Chiyo": {
+    "active": {
+      "name": "Burst of Brilliance",
+      "desc": "Fire an explosive arrow that sticks to surfaces, which can be detonated early or auto-detonates when its duration ends."
+    },
+    "passive": {
+      "name": "Steady Resolve",
+      "desc": "Steadily regain Focus, with recovery slowing briefly after attacks. When full, Focus is consumed to boost DMG briefly."
+    },
+    "ultimate": {
+      "name": "Skyshatter",
+      "desc": "Temporarily reveal enemies near allies and fire a charged wall-piercing explosive arrow at the target. The arrow explodes upon reaching max range or hitting an enemy."
+    }
+  },
+  "Cielle": {
+    "active": {
+      "name": "Mobile Shield",
+      "desc": "Deploys an energy shield to block DMG. Cielle can charge forward while the shield is active. Cielle's armor is restored when the shield takes DMG. The shield will gradually repair after being deactivated. Sniper rifles deal extra DMG to the shield."
+    },
+    "passive": {
+      "name": "Auto Chamber",
+      "desc": "After briefly holstering your weapon, it automatically reloads. Quickly switch to your weapon right after a shield charge or manual detonation."
+    },
+    "ultimate": {
+      "name": "Absolute Defense",
+      "desc": "Reinforces and refreshes the energy shield, increasing shield HP, reducing charge cooldown, and enhancing charge effects."
+    },
+    "tactical": {
+      "name": "Graviton Bind",
+      "desc": "Throw a destructible gravity orb that pulls enemies to its center, deals DMG on landing, and inflicts extra DMG to enemy summons."
+    }
+  },
+  "Eika": {
+    "active": {
+      "name": "Purgatory",
+      "desc": "Summon a Flame Cage. While you and enemies are inside, your Primary Weapon inflicts extra Burn DMG. Enemies crossing the cage walls take Burn DMG, with extra DMG when at full Heat and for Stringified enemies. The cage disperses if empty."
+    },
+    "passive": {
+      "name": "Sol Battery",
+      "desc": "Each shot that hits an enemy builds Heat, increasing your Movement Speed based on how much Heat you have. At Max Heat, DMG against Stringified enemies increases. Using a skill automatically consumes all Heat to enhance its effect."
+    },
+    "ultimate": {
+      "name": "Firestorm",
+      "desc": "Release a Firestorm to force glide enemies and deal Burn DMG. At max Heat, the storm is larger, deals more DMG, and highlights enemies."
+    },
+    "tactical": {
+      "name": "Explosive Fireball",
+      "desc": "Throw a fireball that deals extra DMG to stringified enemies. Consume 100 heat for a DMG boost and slowing effect."
+    }
+  },
+  "Flavia": {
+    "active": {
+      "name": "Phantom Mirage",
+      "desc": "While butterflies follow you, taking HP DMG briefly makes you invincible and summons a Phantom Orb at your location. The orb limits enemy vision and can be destroyed."
+    },
+    "passive": {
+      "name": "Regenesis",
+      "desc": "Taking minor DMG reduces your Active Skill CD. Taking major DMG grants temporary Ultimate Points, valid for the current round."
+    },
+    "ultimate": {
+      "name": "Phantom Flutter",
+      "desc": "Create a Phantom Zone around you. Within it, fatal enemy attacks trigger a brief invincibility state. Enemies outside can only see you when attacked."
+    }
+  },
+  "Fragrans": {
+    "active": {
+      "name": "Aroma Surge",
+      "desc": "Release perfume to create an aroma field, boosting allies' Rate of Fire or Movement Speed. The effect fades over time."
+    },
+    "passive": {
+      "name": "Elixir Aura",
+      "desc": "Release a healing aroma to slowly restore HP to yourself and nearby teammates."
+    },
+    "ultimate": {
+      "name": "Euphoric Aroma",
+      "desc": "Create a potent aroma field, boosting allies' Rate of Fire, Movement Speed, and HP regeneration without interruption. Can't use weapons during release but gains significant DMG reduction."
+    },
+    "tactical": {
+      "name": "Miasma",
+      "desc": "Throw a healing perfume that grants allies in the area a temporary Max HP boost and continuous healing, unaffected by DMG."
+    }
+  },
+  "Fuchsia": {
+    "active": {
+      "name": "Apex Predator",
+      "desc": "Detect nearby enemies; full HP targets appear briefly, while those with less HP remain visible longer, all only visible to you. Detecting them boosts your Movement Speed and increases DMG to those enemies."
+    },
+    "passive": {
+      "name": "Hunter's Feast",
+      "desc": "Generate Energy Crystals by participating in kills or dealing HP DMG with weapons. Absorb them to restore HP and temporarily increase Max HP. Damage-based Crystal generation has a cooldown."
+    },
+    "ultimate": {
+      "name": "Bloodbath",
+      "desc": "Greatly boost your Rate of Fire and Weapon Usability, highlighting enemies within your Active Skill's vision. Absorbing Energy Crystals extends this effect's duration."
+    },
+    "tactical": {
+      "name": "Crimson Rush",
+      "desc": "Consume a small amount of HP for a brief Movement Speed boost, gradually restoring the lost HP after the boost ends."
+    }
+  },
+  "Galatea": {
+    "active": {
+      "name": "Wild Card",
+      "desc": "Throw a card to create a decoy on impact or by pressing the skill button again. Press the interact key to teleport to the decoy."
+    },
+    "passive": {
+      "name": "Deception",
+      "desc": "When leaving a wall, leave a decoy behind. If you take firearm DMG or the decoy takes DMG, the effect enters cooldown. All decoys briefly reveal nearby enemies upon creation, and enemies that attack a decoy will have their position exposed."
+    },
+    "ultimate": {
+      "name": "Mirage",
+      "desc": "Throw cards forward to create multiple teleportation decoys in different positions. While throwing the cards, you become invisible and gain increased Movement Speed."
+    },
+    "tactical": {
+      "name": "Blinding Shadow",
+      "desc": "Summon a decoy that cannot be teleported to. If destroyed, it blinds all nearby enemies."
+    }
+  },
+  "Kanami": {
+    "active": {
+      "name": "Echo Chamber",
+      "desc": "Fire a Sonar Disk to create a detection zone that reveals enemies within its area. On impact, it creates a Sonic Field that briefly reveals enemies inside and deals DMG to summoned units."
+    },
+    "passive": {
+      "name": "Echo Reveal",
+      "desc": "Shots from weapons create a Sonar Zone at their point of impact, damaging and revealing enemies within to you."
+    },
+    "ultimate": {
+      "name": "Showtime",
+      "desc": "Summon a holographic figure to play music, pulling in enemies within range and applying Slow, Aim Disruption, Stun, and Fire Rate Reduction effects."
+    },
+    "tactical": {
+      "name": "Sonic Trap",
+      "desc": "Throw a Mini Speaker to briefly slow enemies entering its range."
+    }
+  },
+  "Kokona": {
+    "active": {
+      "name": "Healing Drone",
+      "desc": "Deploy a Healing Drone for yourself or a teammate to restore Armor and heal all nearby allies."
+    },
+    "passive": {
+      "name": "First Aid",
+      "desc": "Slowly regenerate HP when not taking DMG. When assisting an ally, deploy a support drone to automatically rescue them."
+    },
+    "ultimate": {
+      "name": "Reconstruction",
+      "desc": "Select a teammate: revive them nearby if downed. If alive, temporarily increase their Rate of Fire, Movement Speed, and Weapon Usability, while decreasing DMG received."
+    }
+  },
+  "Lawine": {
+    "active": {
+      "name": "Pulse Blade",
+      "desc": "Throw a Pulse Blade to create a magnetic field that reveals enemies within range. Revealing enemies deals Armor DMG and grants a Movement Speed boost."
+    },
+    "passive": {
+      "name": "Shadow Reveal",
+      "desc": "Greatly increases Movement Speed while aiming. Dealing DMG to enemies with weapons briefly reveals them."
+    },
+    "ultimate": {
+      "name": "Stealth Master",
+      "desc": "Create a Stealth Zone ahead. Entering the zone grants invisibility and greatly increases Movement Speed. Attacking or interacting briefly reveals your position. Teammates inside the zone also gain a Movement Speed boost. Enemies passing through the zone are briefly revealed."
+    },
+    "tactical": {
+      "name": "Shadow Blade",
+      "desc": "Throw a Pulse Blade to deal area DMG, blur scopes, and inflict extra DMG on enemy summons."
+    }
+  },
+  "Leona": {
+    "active": {
+      "name": "Kinetic Barrier",
+      "desc": "Generate square blocks on various surfaces with two angle options. Generating blocks consumes skill points and energy. Blocks can be easily destroyed by Melee Weapons, and a maximum of 16 blocks can exist simultaneously."
+    },
+    "passive": {
+      "name": "Work-Life Balance",
+      "desc": "Continuously restore energy and increase Movement Speed. Armor restores gradually after being stationary for a while."
+    },
+    "ultimate": {
+      "name": "Fortress of Purity",
+      "desc": "Fill the energy bar and restore some Active Skill charges. During the skill duration, existing blocks become permanently transparent, no longer blocking paths or ally bullets."
+    }
+  },
+  "Maddelena": {
+    "active": {
+      "name": "Pigment Bind",
+      "desc": "Fire paint to String-Block, slow, and reveal footprints of enemies in range."
+    },
+    "passive": {
+      "name": "Paint Tracks",
+      "desc": "Primary Weapon hits slow enemies and reveal their tracks."
+    },
+    "ultimate": {
+      "name": "Paint Bubble",
+      "desc": "Fire a giant bubble that String-Blocks and reveals tracks of enemies inside. When it bursts, it slows and makes enemies in the area vulnerable."
+    },
+    "tactical": {
+      "name": "Paint Bucket",
+      "desc": "Launch forward-moving paint bubbles that block enemy bullets and slow, string-block nearby enemies. Bubbles burst when taking maximum DMG."
+    }
+  },
+  "Mara": {
+    "active": {
+      "name": "Soulbound Prison",
+      "desc": "Cast a phantom hand that generates a Soul Orb when it hits an enemy. The Soul Orb damages and binds nearby targets. Bound enemies can break free by destroying the Soul Orb."
+    },
+    "passive": {
+      "name": "Soul Snatcher",
+      "desc": "Dealing DMG to enemies with weapons or skills heals you. Triggering this effect or applying the Death Mark increases your Movement Speed."
+    },
+    "ultimate": {
+      "name": "Grim Reaper",
+      "desc": "Enhances your Passive Skill. Enemies within the marking range are briefly stunned and slowed, revealed to you, and have their minimap continuously obscured. Knocking down a marked target transfers the Death Mark and briefly reveals the remaining targets to you."
+    },
+    "tactical": {
+      "name": "Reaper's Creep",
+      "desc": "Increases Movement Speed and grants additional DMG Reduction and Stealth when Stringified. Become visible when near enemies."
+    }
+  },
+  "Meredith": {
+    "active": {
+      "name": "Sandstorm",
+      "desc": "Launch an Energy Orb to create a Sandstorm at the point of impact, temporarily reducing enemy Movement Speed, Weapon Usability, and HP."
+    },
+    "passive": {
+      "name": "Zeroth Rings",
+      "desc": "While airborne, aiming with your Weapons, Skills, or Tactical Items reduces your descent speed."
+    },
+    "ultimate": {
+      "name": "Sand Burial",
+      "desc": "Summon a Haboob to obscure vision and temporarily drain enemy HP."
+    },
+    "tactical": {
+      "name": "Blinding Sand",
+      "desc": "Launch an Energy Orb to create a sandstorm that blocks vision."
+    }
+  },
+  "Michele": {
+    "active": {
+      "name": "Pawtector",
+      "desc": "Deploy Pawtectors to automatically attack and slow nearby enemies."
+    },
+    "passive": {
+      "name": "Kitty Tracer",
+      "desc": "Briefly reveal enemies when hit by their direct weapon fire. Gradually regenerate Armor while an active Pawtector is present."
+    },
+    "ultimate": {
+      "name": "Mighty Meowblast",
+      "desc": "Deploy a turret to auto-attack nearby enemies."
+    }
+  },
+  "Ming": {
+    "active": {
+      "name": "Sunder Blast",
+      "desc": "Fire an Electric Orb that detonates on contact or at max range, draining Armor and slowing enemies in range. Can manually detonate early."
+    },
+    "passive": {
+      "name": "Aegis Absorb",
+      "desc": "Firearms or Skills that damage enemy Armor restore your own Armor. Firearms deal extra DMG to Summons."
+    },
+    "ultimate": {
+      "name": "Shield Surge",
+      "desc": "Gain Temporary Armor and apply a slow effect with shots. Damage enemy Armor with weapons or skills to extend the skill duration and replenish temporary Armor."
+    },
+    "tactical": {
+      "name": "Shock Orb",
+      "desc": "Fire a Shock Orb that detonates on command or at max range, stunning and reducing Fire Rate for nearby enemies, with a blurred aim effect."
+    }
+  },
+  "Nobunaga": {
+    "active": {
+      "name": "Guardian Eye",
+      "desc": "Deploy a Guardian Eye to boost Rate of Fire, Weapon Usability, and regenerate Armor when in range. Connect Guardian Eyes to enhance these bonuses."
+    },
+    "passive": {
+      "name": "Blinding Shot",
+      "desc": "Charged shots in ADS mode cause enemies to lose weapon accuracy."
+    },
+    "ultimate": {
+      "name": "Pulse Overload",
+      "desc": "Deploy a Pulse Device that periodically emits waves, revealing and silencing hit enemies."
+    }
+  },
+  "Nora": {
+    "active": {
+      "name": "Shadow Pursuit",
+      "desc": "Summon a spirit that flies to the target area, revealing enemies within range. It will lock onto the closest enemy and strike, dealing DMG and blurring their aim."
+    },
+    "passive": {
+      "name": "Void Step",
+      "desc": "Periodically grants an extra third jump."
+    },
+    "ultimate": {
+      "name": "Requiem Hunt",
+      "desc": "Summon numerous shadow clones that pursue enemies within range. When a clone approaches a target, it attacks, dealing DMG and impairing the target's perception."
+    },
+    "tactical": {
+      "name": "Void Suppression",
+      "desc": "Command a Spirit to fire Dark String energy in a targeted direction, penetrating cover. It explodes on impact or manual activation, dealing DMG and slowing nearby enemies. After a brief charge, it detonates again in a more powerful second explosion."
+    }
+  },
+  "Reiichi": {
+    "active": {
+      "name": "Daybreak",
+      "desc": "Cast a vertical or horizontal Light Screen to obscure vision."
+    },
+    "passive": {
+      "name": "Dawn's Insight",
+      "desc": "In ADS mode, periodically scan enemies, revealing them briefly only to you."
+    },
+    "ultimate": {
+      "name": "Sanctified Shield",
+      "desc": "Instantly refresh Active Skill, enhancing the Light Screen to block all enemy bullets."
+    },
+    "tactical": {
+      "name": "Sacred Advancement",
+      "desc": "Release a forward-moving transparent, bulletproof Light Screen."
+    }
+  },
+  "Yugiri": {
+    "active": {
+      "name": "Corrosive Mist",
+      "desc": "Deploy a snail device that temporarily erodes nearby enemies' Max Armor on activation. Up to 3 devices can exist at once."
+    },
+    "passive": {
+      "name": "Toxin Burst",
+      "desc": "Dealing DMG to an enemy's HP with firearms creates a toxic mist that deals continuous DMG and temporarily reduces the Max Armor of the target and nearby enemies."
+    },
+    "ultimate": {
+      "name": "Venomous Formation",
+      "desc": "Summon a sweeping mist that advances forward, temporarily reducing the Max Armor of enemies in its path."
+    }
+  },
+  "Yvette": {
+    "active": {
+      "name": "Teddy Assault",
+      "desc": "Summon Fay to charge at enemies, leaving Ice on collision, causing them to slip and become more vulnerable."
+    },
+    "passive": {
+      "name": "Camouflage",
+      "desc": "Stand still to enter camo stealth, becoming visible only as enemies get closer."
+    },
+    "ultimate": {
+      "name": "Frostfall",
+      "desc": "Summon a Frost Bear to create Polar Zones, causing enemies to Slip, become Vulnerable, and lowering their Rate of Fire and Weapon Usability."
+    }
+  }
+}

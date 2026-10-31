@@ -29,11 +29,11 @@
 - 字体：`StrinovaSystemFontRenderer` 运行时加载文泉驿微米黑（优先 config/strinova-fonts 与系统 wqy），失败回退；`useYaheiFont` 可关闭；
 - UI 高斯模糊：本模组界面打开时用自定义 post shader（半径 8），`uiBlurEnabled` 可关。
 
-### 3. 选角 / 成长界面
-- `/strinova_client agent` 选角（StrinovaAgentSelectScreen，真实布局：阶段条/队友/24 格/立绘占位/技能武器/锁定）；
-- `B` 键或 `/strinova_client growth` 弦能增幅网络（7 类×2 项购买、5 武器槽、3 觉醒）；
-- 角色数据：`StrinovaAgentRoster`（24 人、定位、阵营、主题色）；
-- 客户端配置：`config/strinova-client.json`（HUD、布局、计分板、字体开关）。
+### 3. 选角 / 成长界面（已接 wiki 真实文本）
+- `/strinova_client agent` 选角（StrinovaAgentSelectScreen）：阶段条 / 5 名队友 / 24 格头像 / 中央立绘+角色简介+语录 / 右侧定位·阵营 chip、身份、**4 个技能卡（Q 主动 / P 被动 / X 终极 / E 战术，可点选切换下方名称+描述）**、武器/外观页签、**5 行武器（第 1 行为角色真实主武器名·类型，悬停显示武器介绍）**、锁定角色；
+- `B` 键或 `/strinova_client growth` 弦能增幅网络（StrinovaGrowthScreen）：按当前角色 **8 个分支**（左列 4 武器网络 / 右列 主动技能 / 被动技能 / 护甲 / 弦化），每分支 1~2 项（150/250 能量点），悬停显示 wiki「属性变化」文案；底部 3 个**角色专属觉醒**（名称/描述/三色需求点，按已购数量点亮）；左侧立绘显示生命/护甲/移速/身份；
+- 数据层：`StrinovaWikiData` 懒加载 `assets/strinova/data/wiki_zh.json`（主数据）+ `wiki_en.json`（英文文本覆盖），按游戏语言合并、缺字段回退；数据不可用时界面回退占位文案，不崩溃；
+- 角色 id/定位/阵营/主题色仍以 `StrinovaAgentRoster` 为权威；客户端配置 `config/strinova-client.json`。
 
 ### 4. 对局/战斗数据层（M1）
 - 服务端 `StrinovaCombatManager`（护甲 80、KDA、绝招、击杀事件）、`StrinovaMatchManager`（分队/比分/回合/90s/回合记录）；
@@ -41,13 +41,21 @@
 - 命令：`/strinova match start|stop|status`（OP 2）；
 - 平台钩子：伤害吸收（先纸片减伤）、死亡去重（Tag）、登录/登出/重生、server tick 广播。
 
+### 5. wiki 文本数据层（本次新增）
+- 契约：`docs/wiki-research/wiki-data-schema.md`；
+- 数据：`common/src/main/resources/assets/strinova/data/wiki_zh.json`（24 角色 × 8 分支 × 1~2 项 = 192 组 / 365 项，全部带成本与属性变化文案；技能/觉醒/档案/数值齐全）与 `wiki_en.json`（英文文本覆盖层，成本/需求与中文逐项校验一致）；
+- 生成脚本：`tools/wiki-sync.mjs`（biligame 中文全量抓取）、`tools/en-wiki-sync.mjs`（strinova.org 英文离线合并 + validator）；英文原始抓取经 web_fetch 获取后解析为 `docs/wiki-research/raw-en/*.json`；
+- 说明与缺口：`docs/wiki-research/README.md`（含两站数据来源、重新生成步骤、已知缺口）；
+- 界面预览：`tools/ui-preview.mjs` 生成 `docs/ui/growth-real-{zh,en}.png` 与 `select-real-{zh,en}.png`（1600×900，Edge 无头截图）。
+
 ## 已知 TODO / 下一阶段
 
-1. **wiki 文本校对**：用 biligame / strinova.org 核对 24 名超弦体的名字、定位、阵营、技能名，以及增幅网络类别/觉醒文案（用户最近需求）；
-2. 枪械/命中部位系统（TACZ 伤害接入护甲、爆头、弹药 HUD）；
-3. 炸弹/目标点系统（回合记录里的“炸弹爆炸/拆除”目前只有数据 key，未产生）；
-4. 对局 UI 数据：成长等级/输出分/技能分目前是 KDA 派生或占位；
-5. 选角锁定未下发服务端；计分板角色名空白（服务端不知道客户端选角）。
+1. **选角锁定下发服务端**：目前锁定只写客户端配置，计分板角色名仍空白；
+2. **枪械/命中部位系统**：TACZ 伤害接入护甲、爆头、弹药 HUD（`KillEvent.headshot` 仍为 false）；
+3. **炸弹/目标点系统**：回合记录里「炸弹爆炸/拆除」只有数据 key，尚未产生；
+4. **对局 UI 数据**：成长等级/输出分/技能分目前为 KDA 派生或占位；
+5. **英文数据补缺**：8 个老角色（米雪儿·李/信/心夏/伊薇特/芙拉薇娅/忧雾/蕾欧娜/千代）的战术技能英文描述在英文 wiki 模块数据中缺失（运行时回退中文）；英文无逐项「属性变化」明细（悬停文案沿用中文）；
+6. **数据校验自动化**：把 `node tools/en-wiki-sync.mjs` 与中文 validator 挂到 CI，防止 wiki 更新后数据漂移。
 
 ## 约定
 

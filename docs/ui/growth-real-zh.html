@@ -1,0 +1,324 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8"><style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1600px; height: 900px; overflow: hidden; }
+body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; color: #EAF2FA; background: #05080D;
+  -webkit-font-smoothing: antialiased; }
+.screen { position: relative; width: 1600px; height: 900px;
+  background: linear-gradient(180deg, #0A1018 0%, #141D2B 100%); }
+.source { position: absolute; left: 16px; bottom: 2px; font-size: 10px; color: #8fa0b1; letter-spacing: .3px;
+    background: rgba(5,8,13,.9); border-left: 2px solid rgba(53,214,232,.55); padding: 2px 8px; z-index: 20; }
+
+  .head { position:absolute; left:16px; right:16px; top:14px; height:56px; background: linear-gradient(180deg, rgba(22,31,44,.98), rgba(16,24,35,.96));
+    border-top: 2px solid #FF4FA3; border-bottom: 1px solid rgba(53,214,232,.25);
+    display:flex; align-items:center; padding:0 18px; gap:24px; }
+  .head .title { font-size:21px; font-weight:700; letter-spacing:.5px; }
+  .head .title em { font-style:normal; color:#FF4FA3; }
+  .head .points { margin-left:auto; margin-right:auto; font-size:15px; color:#FFD166; }
+  .head .points b { font-size:20px; margin-left:6px; }
+  .head .ready { font-size:14px; color:#35D6E8; }
+  .head .close { width:34px; height:34px; border:1px solid #40546a; color:#9AA8B8;
+    display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .main { position:absolute; left:16px; right:16px; top:84px; bottom:214px; display:flex; gap:16px; }
+  .portrait { width:262px; flex:none; position:relative; overflow:hidden;
+    background:linear-gradient(160deg, #FF4FA355 0%, #101a26 55%, #0A1018 100%);
+    border:1px solid #FF4FA344; }
+  .portrait .giant { position:absolute; left:50%; top:44%; transform:translate(-50%,-50%);
+    font-size:220px; font-weight:800; color:#FF4FA388; line-height:1; }
+  .portrait .edge { position:absolute; left:0; right:0; top:0; height:3px; background:#FF4FA3; }
+  .portrait .pname { position:absolute; left:0; right:0; bottom:92px; text-align:center;
+    font-size:24px; font-weight:700; letter-spacing:1px; }
+  .portrait .role { position:absolute; left:50%; transform:translateX(-50%); bottom:60px;
+    padding:2px 12px; font-size:13px; color:#0A111C; background:#FF4FA3; font-weight:700; }
+  .portrait .identity { position:absolute; left:8px; right:8px; bottom:40px; text-align:center;
+    font-size:12px; color:#9AA8B8; }
+  .portrait .stats { position:absolute; left:6px; right:6px; bottom:14px; text-align:center;
+    font-size:12px; color:#7f8c9a; letter-spacing:.4px; }
+  .network { flex:1; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(4,1fr); grid-auto-flow:column; gap:12px 14px; }
+  .nblock { background:rgba(16,24,35,.78); border:1px solid rgba(53,214,232,.16); padding:8px 10px 8px; }
+  .nhead { display:flex; align-items:center; gap:7px; }
+  .nhead .accent { width:3px; height:14px; display:inline-block; }
+  .nlabel { font-size:15px; font-weight:700; }
+  .nkind { margin-left:auto; font-size:11px; color:#5E6874; }
+  .nline { height:1px; margin:5px 0 6px; }
+  .nitems { display:flex; flex-direction:column; gap:5px; }
+  .nitem { display:flex; align-items:center; height:27px; padding:0 8px;
+    background:linear-gradient(90deg, rgba(255,255,255,.055), rgba(0,0,0,.12)); }
+  .nitem.dim { opacity:.55; }
+  .ntext { font-size:13px; color:#DCE6F0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ncost { margin-left:auto; font-size:13px; color:#4FA3FF; display:flex; align-items:center; gap:5px; }
+  .gem { width:9px; height:9px; background:#4FA3FF; display:inline-block; transform:rotate(45deg); }
+  .weapons { width:176px; flex:none; background:rgba(12,18,26,.9); border-left:1px solid rgba(53,214,232,.2);
+    padding:8px; display:flex; flex-direction:column; gap:8px; }
+  .wslot { flex:1; display:flex; align-items:center; gap:8px; padding:0 8px;
+    background:rgba(255,255,255,.035); border:1px solid transparent; position:relative; }
+  .wslot.active { background:rgba(53,214,232,.14); border-color:rgba(53,214,232,.55); }
+  .wicon { width:26px; height:26px; flex:none; position:relative; }
+  .wicon::before { content:''; position:absolute; inset:6px 2px; background:#FF4FA3; opacity:.85;
+    clip-path:polygon(0 35%, 78% 35%, 78% 45%, 100% 45%, 100% 58%, 72% 58%, 72% 80%, 52% 80%, 52% 58%, 0 58%); }
+  .wslot.grenade .wicon::before { clip-path:polygon(50% 15%, 88% 50%, 50% 85%, 12% 50%); inset:4px; }
+  .wslot.knife .wicon::before { clip-path:polygon(8% 92%, 78% 12%, 92% 26%, 22% 100%); inset:2px; }
+  .wname { font-size:12px; color:#C8D4E0; max-width:96px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wkey { position:absolute; right:6px; bottom:4px; font-size:10px; color:#7f8c9a; }
+  .wtype { font-size:10px; color:#6f7d8b; }
+  .awaken { position:absolute; left:16px; right:16px; bottom:16px; height:186px; display:flex; gap:14px; }
+  .acard { flex:1; background:rgba(16,24,35,.82); border:1px solid rgba(255,209,102,.22); position:relative;
+    padding:12px 14px; }
+  .acard.on { border-color:rgba(255,209,102,.75); box-shadow:inset 0 0 26px rgba(255,209,102,.08); }
+  .acard .no { font-size:12px; color:#9AA8B8; letter-spacing:1px; }
+  .acard .aname { font-size:17px; font-weight:700; color:#FFD166; margin:3px 0 2px; }
+  .acard.off .aname { color:#EAF2FA; }
+  .acard .astatus { position:absolute; right:14px; top:12px; font-size:12px; color:#54E0A0; }
+  .acard.off .astatus { color:#5E6874; }
+  .acard .adesc { font-size:12.5px; line-height:1.55; color:#B4C0CC; margin-top:6px;
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .dots { position:absolute; right:14px; top:36px; display:flex; gap:5px; }
+  .dot { width:20px; height:18px; display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; color:#0A111C; }
+  .dot.met { background:#4FA3FF; } .dot.met.y { background:#FFD166; } .dot.met.g { background:#54E0A0; }
+  .dot.miss { background:rgba(86,98,110,.35); color:#B4C0CC; }
+  .tooltip { position:absolute; z-index:9; width:248px; background:#0C121A; border:1px solid #2A3542;
+    padding:9px 11px; box-shadow:0 6px 26px rgba(0,0,0,.6); }
+  .tooltip .tt-title { font-size:14px; font-weight:700; }
+  .tooltip .tt-cost { font-size:13px; color:#4FA3FF; margin:5px 0 6px; display:flex; align-items:center; gap:6px; }
+  .tooltip .tt-change { font-size:12.5px; line-height:1.6; color:#9FD0E8; border-top:1px solid #22303e; padding-top:6px; }
+  </style></head><body><div class="screen">
+    <div class="head">
+      <div class="title">弦能增幅网络 <em>· 诺诺</em></div>
+      <div class="points">拥有能量点<b>330</b></div>
+      <div class="ready">准备阶段 00:25</div>
+      <div class="close">✕</div>
+    </div>
+    <div class="main">
+      <div class="portrait">
+        <div class="edge"></div>
+        <div class="giant">诺</div>
+        <div class="pname">诺诺</div>
+        <div class="role">先锋</div>
+        <div class="identity">孤光</div>
+        <div class="stats">生命 130　护甲 80　移速 58</div>
+      </div>
+      <div class="network">
+        
+    <div class="nblock">
+      <div class="nhead"><span class="accent" style="background:#FF4FA3"></span>
+        <span class="nlabel">输出</span>
+        
+      </div>
+      <div class="nline" style="background:linear-gradient(90deg, #FF4FA355, transparent)"></div>
+      <div class="nitems">
+        
+          <div class="nitem">
+            <span class="ntext">基础伤害提升</span>
+            <span class="ncost"><i class="gem"></i>150</span>
+          </div>
+          <div class="nitem">
+            <span class="ntext">五连发射击模式</span>
+            <span class="ncost"><i class="gem"></i>150</span>
+          </div>
+      </div>
+    </div>
+    <div class="nblock">
+      <div class="nhead"><span class="accent" style="background:#FF4FA3"></span>
+        <span class="nlabel">暴击</span>
+        
+      </div>
+      <div class="nline" style="background:linear-gradient(90deg, #FF4FA355, transparent)"></div>
+      <div class="nitems">
+        
+          <div class="nitem">
+            <span class="ntext">爆头伤害提升</span>
+            <span class="ncost"><i class="gem"></i>150</span>
+          </div>
+          <div class="nitem">
+            <span class="ntext">弦化伤害提升</span>
+            <span class="ncost"><i class="gem"></i>150</span>
+          </div>
+      </div>
+    </div>
+    <div class="nblock">
+      <div class="nhead"><span class="accent" style="background:#FF4FA3"></span>
+        <span class="nlabel">续航</span>
+        
+      </div>
+      <div class="nline" style="background:linear-gradient(90deg, #FF4FA355, transparent)"></div>
+      <div class="nitems">
+        
+          <div class="nitem">
+            <span class="ntext">载弹数量提升</span>
+            <span class="ncost"><i class="gem"></i>150</span>
+          </div>
+          <div class="nitem">
+            <span class="ntext">换弹速度提升</span>
+            <span class="ncost"><i class="gem"></i>150</span>
+          </div>
+      </div>
+    </div>
+    <div class="nblock">
+      <div class="nhead"><span class="accent" style="background:#FF4FA3"></span>
+        <span class="nlabel">精准</span>
+        
+      </div>
+      <div class="nline" style="background:linear-gradient(90deg, #FF4FA355, transparent)"></div>
+      <div class="nitems">
+        
+          <div class="nitem">
+            <span class="ntext">散射控制提升</span>
+            <span class="ncost"><i class="gem"></i>150</span>
+          </div>
+          <div class="nitem">
+            <span class="ntext">后坐控制提升</span>
+            <span class="ncost"><i class="gem"></i>150</span>
+          </div>
+      </div>
+    </div>
+    <div class="nblock">
+      <div class="nhead"><span class="accent" style="background:#FF4FA3"></span>
+        <span class="nlabel">咒法！驭灵逐影</span>
+        <span class="nkind">主动技能</span>
+      </div>
+      <div class="nline" style="background:linear-gradient(90deg, #FF4FA355, transparent)"></div>
+      <div class="nitems">
+        
+          <div class="nitem">
+            <span class="ntext">冷却时间减少5秒</span>
+            <span class="ncost"><i class="gem"></i>250</span>
+          </div>
+          <div class="nitem">
+            <span class="ntext">伤害提升8点</span>
+            <span class="ncost"><i class="gem"></i>250</span>
+          </div>
+      </div>
+    </div>
+    <div class="nblock">
+      <div class="nhead"><span class="accent" style="background:#FF4FA3"></span>
+        <span class="nlabel">咒法！踏空凌虚</span>
+        <span class="nkind">被动技能</span>
+      </div>
+      <div class="nline" style="background:linear-gradient(90deg, #FF4FA355, transparent)"></div>
+      <div class="nitems">
+        
+          <div class="nitem">
+            <span class="ntext">冷却恢复速率提升50%</span>
+            <span class="ncost"><i class="gem"></i>250</span>
+          </div>
+      </div>
+    </div>
+    <div class="nblock">
+      <div class="nhead"><span class="accent" style="background:#FF4FA3"></span>
+        <span class="nlabel">护甲</span>
+        
+      </div>
+      <div class="nline" style="background:linear-gradient(90deg, #FF4FA355, transparent)"></div>
+      <div class="nitems">
+        
+          <div class="nitem">
+            <span class="ntext">快回轻型护甲</span>
+            <span class="ncost"><i class="gem"></i>250</span>
+          </div>
+          <div class="nitem">
+            <span class="ntext">重型护甲</span>
+            <span class="ncost"><i class="gem"></i>250</span>
+          </div>
+      </div>
+    </div>
+    <div class="nblock">
+      <div class="nhead"><span class="accent" style="background:#FF4FA3"></span>
+        <span class="nlabel">弦化</span>
+        
+      </div>
+      <div class="nline" style="background:linear-gradient(90deg, #FF4FA355, transparent)"></div>
+      <div class="nitems">
+        
+          <div class="nitem">
+            <span class="ntext">弦化状态移速增加15%</span>
+            <span class="ncost"><i class="gem"></i>250</span>
+          </div>
+          <div class="nitem">
+            <span class="ntext">弦化减伤系数提至46%</span>
+            <span class="ncost"><i class="gem"></i>250</span>
+          </div>
+      </div>
+    </div>
+      </div>
+      <div class="weapons">
+        
+          <div class="wslot active">
+            <div class="wicon"></div>
+            <div>
+              <div class="wname">雨晦</div>
+              <div class="wtype">微型冲锋枪</div>
+            </div>
+            <div class="wkey">1</div>
+          </div>
+          <div class="wslot ">
+            <div class="wicon"></div>
+            <div>
+              <div class="wname">副武器</div>
+              <div class="wtype"></div>
+            </div>
+            <div class="wkey">2</div>
+          </div>
+          <div class="wslot knife">
+            <div class="wicon"></div>
+            <div>
+              <div class="wname">近战武器</div>
+              <div class="wtype"></div>
+            </div>
+            <div class="wkey">3</div>
+          </div>
+          <div class="wslot grenade">
+            <div class="wicon"></div>
+            <div>
+              <div class="wname">战术道具</div>
+              <div class="wtype"></div>
+            </div>
+            <div class="wkey">4</div>
+          </div>
+          <div class="wslot grenade">
+            <div class="wicon"></div>
+            <div>
+              <div class="wname">战术道具</div>
+              <div class="wtype"></div>
+            </div>
+            <div class="wkey">5</div>
+          </div>
+      </div>
+    </div>
+    <div class="awaken">
+      
+        <div class="acard on">
+          <div class="no">觉醒 1</div>
+          <div class="aname">暗弦残响</div>
+          <div class="astatus">已激活</div>
+          <div class="dots">
+            <div class="dot met">1</div><div class="dot met g">1</div>
+          </div>
+          <div class="adesc">主动技能召唤的念灵在被摧毁或消失时，会残余部分暗弦能量，靠近拾取后返还主动技能和被动技能冷却</div>
+        </div>
+        <div class="acard off">
+          <div class="no">觉醒 2</div>
+          <div class="aname">弦能余烬</div>
+          <div class="astatus">未激活</div>
+          <div class="dots">
+            <div class="dot met">1</div><div class="dot met y">2</div><div class="dot met g">1</div>
+          </div>
+          <div class="adesc">念灵发射的暗弦飞弹在爆炸后会留下侵蚀区域，对区域中的敌人持续造成伤害和减速</div>
+        </div>
+        <div class="acard off">
+          <div class="no">觉醒 3</div>
+          <div class="aname">全视之眼</div>
+          <div class="astatus">未激活</div>
+          <div class="dots">
+            <div class="dot met">1</div><div class="dot met y">1</div><div class="dot met g">2</div>
+          </div>
+          <div class="adesc">大幅延长念灵的存在时间，在念灵存在期间可以再次激活主动技能接入念灵的操纵，并在操纵期间强化念灵的各项属性；</div>
+        </div>
+    </div>
+    
+    <div class="tooltip" style="left:26px; top:104px">
+      <div class="tt-title">基础伤害提升</div>
+      <div class="tt-cost"><i class="gem"></i>150</div>
+      <div class="tt-change">10米头部伤害：22→23（+1） 20米头部伤害：20→21（+1） 30米头部伤害：15→16（+1） 10米上身伤害：18→19（+1） 20米上身伤害：16→17（+1） 30米上身伤害：12→13（+1） 10米下肢伤害：12→13 20米下肢伤害：11→12（+1） 30米下肢伤害：8→9（+1）</div>
+    </div>
+    <div class="source">数据来源：biligame 卡拉彼丘 wiki · 中文文本</div>
+  </div></body></html>

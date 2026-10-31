@@ -1,0 +1,3574 @@
+{
+  "michele": {
+    "page": "Michele",
+    "name": "Michele",
+    "characterId": 101,
+    "role": "Sentinel",
+    "camp": "Painting Utopia Security",
+    "identity": "Adorable New Investigator",
+    "intro": "One of P.U.S' new investigators. Dedicated to safeguarding \"Utopia.\"",
+    "quote": "Stay sharp, the game's not over yet!",
+    "weapon": {
+      "name": "Inspector",
+      "type": "AR",
+      "desc": "Designed for dominating the battlefield, this assault rifle offers a great balance of accuracy and rate of fire. Equipped with a 1.25x scope."
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Pawtector",
+        "type": 2,
+        "items": [
+          {
+            "text": "+50% DMG and Range",
+            "cost": 250
+          },
+          {
+            "text": "Max +3",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Kitty Tracer",
+        "type": 2,
+        "items": [
+          {
+            "text": "Enemy Exposure Duration +2s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Feline Lock",
+        "desc": "Pawtectors' attacks make enemies continuously visible.",
+        "needWeapon": 1,
+        "needSkill": 0,
+        "needDefense": 1
+      },
+      {
+        "name": "Paw Protector",
+        "desc": "Gain bonus Max Armor while at least one Pawtector is active. When an active Pawtector is destroyed, gain Temporary Armor.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      },
+      {
+        "name": "Whisker Bond",
+        "desc": "Increase your Rate of Fire and Weapon Usability when within 15m of a Pawtector.",
+        "needWeapon": 3,
+        "needSkill": 1,
+        "needDefense": 1
+      }
+    ]
+  },
+  "xin": {
+    "page": "Nobunaga",
+    "name": "Nobunaga",
+    "characterId": 108,
+    "role": "Sentinel",
+    "camp": "Painting Utopia Security",
+    "identity": "Hand of Dawn",
+    "intro": "A P.U.S captain. He has vowed to protect all of Strinova.",
+    "quote": "Justice needs no explanation, only action.",
+    "weapon": {
+      "name": "Judge",
+      "type": "DMR",
+      "desc": "This automatic rifle uses high-powered rounds for superior combat effectiveness, perfect for all-weather operations. Equipped with a 1.5x scope and switchable between semi-automatic and automatic modes."
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Guardian Eye",
+        "type": 2,
+        "items": [
+          {
+            "text": "Rate of Fire and Weapon Usability +50%",
+            "cost": 250
+          },
+          {
+            "text": "Armor Regen +5/s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Blinding Shot",
+        "type": 2,
+        "items": [
+          {
+            "text": "Weakness Duration +2s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Last Stand",
+        "desc": "Inside the device range, survive one fatal hit and recover some HP and armor.",
+        "needWeapon": 1,
+        "needSkill": 0,
+        "needDefense": 1
+      },
+      {
+        "name": "Eye of Justice",
+        "desc": "Enemies entering the device's range are continuously revealed.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      },
+      {
+        "name": "Warp Link",
+        "desc": "You can teleport between devices.",
+        "needWeapon": 3,
+        "needSkill": 1,
+        "needDefense": 1
+      }
+    ]
+  },
+  "xinxia": {
+    "page": "Kokona",
+    "name": "Kokona",
+    "characterId": 124,
+    "role": "Support",
+    "camp": "Painting Utopia Security",
+    "identity": "Sniper Angel",
+    "intro": "One of P.U.S' main operators, and a traveler exploring the very reaches of the world.",
+    "quote": "Life's greatest satisfactions? Clocking out on time and never missing a meal.",
+    "weapon": {
+      "name": "Quasar",
+      "type": "SR",
+      "desc": "This tactical intervention sniper rifle perfectly combines precision, power, and stealth. Once the longest-range model among Earth's sniper rifles. Equipped with a 2.5x scope."
+    },
+    "network": [
+      {
+        "name": "Core",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Rechambering Speed",
+            "cost": 150
+          },
+          {
+            "text": "+ Charging Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Sprint Speed",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Functions",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ ADS Speed",
+            "cost": 150
+          },
+          {
+            "text": "Quick Zoom Scope",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Healing Drone",
+        "type": 2,
+        "items": [
+          {
+            "text": "Armor Regen +2/s",
+            "cost": 250
+          },
+          {
+            "text": "HP Regen +5/s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "First Aid",
+        "type": 2,
+        "items": [
+          {
+            "text": "First Aid HP +50",
+            "cost": 250
+          },
+          {
+            "text": "HP Regen +2/s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Rejuvenation",
+        "desc": "When the Drone begins healing an ally, it instantly restores a large amount of HP.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 0
+      },
+      {
+        "name": "Armor Surge",
+        "desc": "The Drone restores Armor to all nearby allies.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      },
+      {
+        "name": "Guardian",
+        "desc": "The Drone shields its healing target by absorbing incoming DMG.",
+        "needWeapon": 3,
+        "needSkill": 1,
+        "needDefense": 1
+      }
+    ]
+  },
+  "yvette": {
+    "page": "Yvette",
+    "name": "Yvette",
+    "characterId": 131,
+    "role": "Controller",
+    "camp": "Painting Utopia Security",
+    "identity": "Ice Maiden",
+    "intro": "A P.U.S researcher. Best friends with a stuffed bear.",
+    "quote": "Sorry, I'm just not very good at speaking up, it's not that I don't like you...",
+    "weapon": {
+      "name": "Beareas",
+      "type": "SMG",
+      "desc": "A light-weight submachine gun with an unusually high rate of fire and precision compared to most other weapons in its class. Equipped with a 1.25x scope."
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Handling",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Sprint Speed",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Teddy Assault",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -10s",
+            "cost": 250
+          },
+          {
+            "text": "+1 Dash",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Camouflage",
+        "type": 2,
+        "items": [
+          {
+            "text": "Stealth Entry Speed +66%",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Ice Burst",
+        "desc": "Fay explodes upon disappearing, slowing nearby enemies and leaving an icy surface.",
+        "needWeapon": 1,
+        "needSkill": 0,
+        "needDefense": 1
+      },
+      {
+        "name": "Snowball Fight",
+        "desc": "Fay now throws snowballs that create ice and damage enemies on impact.",
+        "needWeapon": 0,
+        "needSkill": 2,
+        "needDefense": 2
+      },
+      {
+        "name": "Sentinel Teddy",
+        "desc": "When uncontrolled, Fay detects enemies in range and forms ice on the spot.",
+        "needWeapon": 2,
+        "needSkill": 2,
+        "needDefense": 0
+      }
+    ]
+  },
+  "flavia": {
+    "page": "Flavia",
+    "name": "Flavia",
+    "characterId": 115,
+    "role": "Assault",
+    "camp": "Painting Utopia Security",
+    "identity": "Phantom Butterfly",
+    "intro": "An aggressive and calculating squad leader.",
+    "quote": "If you can't handle this gentle questioning, who knows what might happen next?",
+    "weapon": {
+      "name": "Solo",
+      "type": "SMG",
+      "desc": "A light-weight submachine gun with an unusually high rate of fire and precision compared to most other weapons in its class. Equipped with a 1.25x scope."
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Phantom Mirage",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -5s",
+            "cost": 250
+          },
+          {
+            "text": "Phantom Orb HP +50%",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Regenesis",
+        "type": 2,
+        "items": [
+          {
+            "text": "- 20% DMG Required to Reduce CD",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Fantasy Rebirth",
+        "desc": "After summoning a Phantom Orb, you regenerate HP over time.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 0
+      },
+      {
+        "name": "Butterfly Veil",
+        "desc": "Modifies the Active Skill to immediately grant invincibility for a short period, summoning a Phantom Orb at your location.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      },
+      {
+        "name": "Butterfly Armor",
+        "desc": "Turn invisible while in the Active Skill's invincible state. Gain Temporary Armor after leaving the invincible state.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      }
+    ]
+  },
+  "youwu": {
+    "page": "Yugiri",
+    "name": "Yugiri",
+    "characterId": 121,
+    "role": "Controller",
+    "camp": "Painting Utopia Security",
+    "identity": "Shackles of Destiny",
+    "intro": "A girl with a tragic past and a troubled fate, under the supervision and care of P.U.S.",
+    "quote": "It costs a lot to send me on assignments.",
+    "weapon": {
+      "name": "Retribution",
+      "type": "AR",
+      "desc": "The standout bullpup rifle, known for its exceptional all-around performance. A classic from old Earth firearms. Equipped with a 1.25x scope."
+    },
+    "network": [
+      {
+        "name": "Core",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Corrosive Mist",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -7s",
+            "cost": 250
+          },
+          {
+            "text": "-20% Energy Cost",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Toxin Burst",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -4s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Contamination",
+        "desc": "Enemies within the Active Skill's toxic mist have reduced Movement Speed.",
+        "needWeapon": 1,
+        "needSkill": 0,
+        "needDefense": 1
+      },
+      {
+        "name": "Toxic Expansion",
+        "desc": "Upon activation, the spherical mist gradually expands over time.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      },
+      {
+        "name": "Toxic Cloak",
+        "desc": "The mist turns opaque, blocking vision. Receive an alert when enemies enter the mist. Allies inside the mist continuously restore Armor, and the effect persists even while taking DMG.",
+        "needWeapon": 3,
+        "needSkill": 1,
+        "needDefense": 1
+      }
+    ]
+  },
+  "leona": {
+    "page": "Leona",
+    "name": "Leona",
+    "characterId": 123,
+    "role": "Sentinel",
+    "camp": "Painting Utopia Security",
+    "identity": "Pillar of Construction",
+    "intro": "The head of P.U.S Engineering, highly meticulous and trustworthy.",
+    "quote": "I've fixed the last 0.2mm error, and the blueprint is complete! Wait, it's already 3 a.m.?",
+    "weapon": {
+      "name": "Calibrator",
+      "type": "LMG",
+      "desc": "Known for its remarkable power and performance, this general-purpose machine gun was a classic sweeper weapon from old Earth's large-scale wars. Equipped with a 1.25x scope."
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "Rapid Fire Mode",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ ADS Speed and Weapon Switch",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Kinetic Barrier",
+        "type": 2,
+        "items": [
+          {
+            "text": "Block HP +150",
+            "cost": 250
+          },
+          {
+            "text": "Cooldown -10s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Work-Life Balance",
+        "type": 2,
+        "items": [
+          {
+            "text": "Movement SPD and Armor Regen +50%",
+            "cost": 250
+          },
+          {
+            "text": "Energy Regen +50%",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Energy Dispersion",
+        "desc": "Allies near blocks slowly regenerate Armor and briefly gain Movement Speed when moving away from them.",
+        "needWeapon": 1,
+        "needSkill": 0,
+        "needDefense": 1
+      },
+      {
+        "name": "Fortified Connection",
+        "desc": "Connected blocks are treated as a single unit with shared HP.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      },
+      {
+        "name": "Prism Blast",
+        "desc": "When blocks are destroyed, they explode, damaging and briefly knocking nearby enemies airborne. This DMG also affects other blocks.",
+        "needWeapon": 3,
+        "needSkill": 1,
+        "needDefense": 1
+      }
+    ]
+  },
+  "chiyo": {
+    "page": "Chiyo",
+    "name": "Chiyo",
+    "characterId": 125,
+    "role": "Duelist",
+    "camp": "Painting Utopia Security",
+    "identity": "Pinpoint Prodigy",
+    "intro": "A graceful heiress with a charming smile and a fierce archer with decisive skill.",
+    "quote": "I'm nothing special, just an ordinary girl.",
+    "weapon": {
+      "name": "Maple Resonance",
+      "type": "DMR",
+      "desc": "This automatic rifle uses high-powered rounds for superior combat effectiveness, perfect for all-weather operations. Equipped with a 1.5x scope."
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Burst of Brilliance",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -5s",
+            "cost": 250
+          },
+          {
+            "text": "Damage +15",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Steady Resolve",
+        "type": 2,
+        "items": [
+          {
+            "text": "CD Recovery Rate +50%",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Withering Pulse",
+        "desc": "Deal enough DMG with your primary weapon and skills to temporarily weaken the target's Armor and healing effects.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 0
+      },
+      {
+        "name": "Splinter Bloom",
+        "desc": "Active Skill explodes, splitting into multiple energy fragments that detonate after a delay.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      },
+      {
+        "name": "Blossoming Bait",
+        "desc": "Active Skill now has reduced CD, reduced DMG, increased base stacks, and significantly extended duration. It can be used during the Preparation Phase, revealing and slowing all targets upon hit.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      }
+    ]
+  },
+  "ming": {
+    "page": "Ming",
+    "name": "Ming",
+    "characterId": 132,
+    "role": "Assault",
+    "camp": "The Scissors",
+    "identity": "Rebel Thunder",
+    "intro": "A member of The Scissors and a rebel opposing P.U.S.",
+    "quote": "Got a problem? Let our fists do the talking.",
+    "weapon": {
+      "name": "Rebelflame",
+      "type": "AR",
+      "desc": "This high-performance, weather-resistant assault rifle delivers powerful firepower and unbeatable value. Equipped with a 1.25x scope."
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Sunder Blast",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -5s",
+            "cost": 250
+          },
+          {
+            "text": "Duration +2s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Aegis Absorb",
+        "type": 2,
+        "items": [
+          {
+            "text": "Armorsteal +50%",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Cyclic Rally",
+        "desc": "Losing all Armor briefly boosts Movement Speed. Re-triggering refreshes the duration.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 0
+      },
+      {
+        "name": "Static Siphon",
+        "desc": "Initial Sunder Blast hits grant Temporary Armor.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      },
+      {
+        "name": "Volt Charger",
+        "desc": "Charge up while moving or in Electro Field. At full charge, your next hit slows enemies and regenerates your Armor without DMG interruption.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      }
+    ]
+  },
+  "lawi": {
+    "page": "Lawine",
+    "name": "Lawine",
+    "characterId": 128,
+    "role": "Vanguard",
+    "camp": "The Scissors",
+    "identity": "The Enforcer",
+    "intro": "A member of The Scissors, a blade cutting through deceit.",
+    "quote": "Someone must uncover the world's truth and harshness.",
+    "weapon": {
+      "name": "Shadow Assault",
+      "type": "AR",
+      "desc": "Short assault rifle with high stability and outstanding accuracy. Equipped with a 1.25x scope."
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Pulse Blade",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -5s",
+            "cost": 250
+          },
+          {
+            "text": "DMG and Movement Speed +50%",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Shadow Reveal",
+        "type": 2,
+        "items": [
+          {
+            "text": "Skill Effect +25%",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Charged Pulse",
+        "desc": "When the Pulse Blade reveals an enemy, it restores your Armor and briefly increases your Armor cap.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 0
+      },
+      {
+        "name": "Binding Pulse",
+        "desc": "When the Pulse Wave hits an enemy, it generates an electromagnetic chain and applies a slow effect. The effect persists briefly after the chain disappears.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      },
+      {
+        "name": "Pulse Echo",
+        "desc": "Enemies revealed by the Pulse Blade are scanned again shortly after being revealed. If they are moving, they are briefly revealed again.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      }
+    ]
+  },
+  "meridith": {
+    "page": "Meredith",
+    "name": "Meredith",
+    "characterId": 133,
+    "role": "Controller",
+    "camp": "The Scissors",
+    "identity": "Homecomer",
+    "intro": "The leader of The Scissors and a scientist pursuing the future of humanity.",
+    "quote": "Go have fun, I still need to solve the results of the last experiment that defy the Planck constant.",
+    "weapon": {
+      "name": "Falcon",
+      "type": "AR",
+      "desc": "The standout bullpup assault rifle, known for its exceptional all-around performance. A classic from old Earth firearms. Equipped with a 1.25x scope."
+    },
+    "network": [
+      {
+        "name": "Core",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Sandstorm",
+        "type": 2,
+        "items": [
+          {
+            "text": "Duration +4s",
+            "cost": 250
+          },
+          {
+            "text": "Cooldown -7s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Zeroth Rings",
+        "type": 2,
+        "items": [
+          {
+            "text": "- Airborne Gravity",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Whirlwind",
+        "desc": "Allies gliding within the sandstorm are lifted upward by a powerful gust.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 0
+      },
+      {
+        "name": "Protective Sandstorm",
+        "desc": "Allies within a Sandstorm gain increased Movement Speed and DMG Reduction. These effects are enhanced while Stringified.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      },
+      {
+        "name": "Desert Veil",
+        "desc": "Enemies within the Sandstorm have their field of view greatly reduced.",
+        "needWeapon": 2,
+        "needSkill": 2,
+        "needDefense": 0
+      }
+    ]
+  },
+  "ling": {
+    "page": "Reiichi",
+    "name": "Reiichi",
+    "characterId": 109,
+    "role": "Controller",
+    "camp": "The Scissors",
+    "identity": "Light in the Dark",
+    "intro": "A member of The Scissors. Bathed in darkness, reaching for the light.",
+    "quote": "If I can lift up the light, I don't mind being the shadow.",
+    "weapon": {
+      "name": "Dawn",
+      "type": "DMR",
+      "desc": "This stable and durable marksman rifle offers excellent control. Its specially weighted rounds enhance long-range accuracy. Equipped with a 2.5x scope."
+    },
+    "network": [
+      {
+        "name": "Core",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ ADS Speed",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "Spread Shot Mode",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Daybreak",
+        "type": 2,
+        "items": [
+          {
+            "text": "Duration +5s",
+            "cost": 250
+          },
+          {
+            "text": "Cooldown -10s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Dawn's Insight",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -1s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Sentry Screen",
+        "desc": "Enemies crossing the Light Screen are temporarily exposed.",
+        "needWeapon": 1,
+        "needSkill": 0,
+        "needDefense": 1
+      },
+      {
+        "name": "Light's Judgment",
+        "desc": "Enemies crossing the Light Screen temporarily lose Max Armor. Allies crossing gain Temporary Armor, triggering once in a short period.",
+        "needWeapon": 0,
+        "needSkill": 2,
+        "needDefense": 1
+      },
+      {
+        "name": "Chosen Ones",
+        "desc": "The Light Screen turns semi-transparent for nearby allies while remaining opaque to enemies.",
+        "needWeapon": 3,
+        "needSkill": 2,
+        "needDefense": 0
+      }
+    ]
+  },
+  "kanami": {
+    "page": "Kanami",
+    "name": "Kanami",
+    "characterId": 137,
+    "role": "Vanguard",
+    "camp": "The Scissors",
+    "identity": "Anima Idol",
+    "intro": "Beloved idol singing the songs of joy.",
+    "quote": "Take a guess—is my next song about \"heartbeat\" or \"miracle\"?",
+    "weapon": {
+      "name": "Finale",
+      "type": "SR",
+      "desc": "Utilizing a short-recoil barrel system, the anti-material sniper rifle delivers astounding power. Equipped with a 2.5x scope."
+    },
+    "network": [
+      {
+        "name": "Core",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Rechambering Speed",
+            "cost": 150
+          },
+          {
+            "text": "+ Charging Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Sprint Speed",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Functions",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ ADS Speed",
+            "cost": 150
+          },
+          {
+            "text": "Quick Zoom Scope",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Echo Chamber",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -5s",
+            "cost": 250
+          },
+          {
+            "text": "Note HP +50%",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Echo Reveal",
+        "type": 2,
+        "items": [
+          {
+            "text": "Duration +1s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Sonic Blast",
+        "desc": "Enemies within the Sonar Zone created by weapon fire are temporarily slowed, suffer reduced Weapon Usability, and are revealed to all allies.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 0
+      },
+      {
+        "name": "Echo Shock",
+        "desc": "Enemies detected by the Sonar Disk get stunned and have reduced Rate of Fire if they remain in range.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      },
+      {
+        "name": "Melodic Boost",
+        "desc": "Allies within the Sonar Disk's range gain increased Movement Speed, Weapon Usability, and Rate of Fire.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      }
+    ]
+  },
+  "aika": {
+    "page": "Eika",
+    "name": "Eika",
+    "characterId": 119,
+    "role": "Duelist",
+    "camp": "The Scissors",
+    "identity": "Vigorous Spark",
+    "intro": "An energetic high school student. Adorned in a mask, she protects her home with the power of fire.",
+    "quote": "Ever imagine a gun in a violin case? That'd be so cool!",
+    "weapon": {
+      "name": "Wildfire",
+      "type": "SG",
+      "desc": "Fully automatic combat shotgun. There's nothing quite like it."
+    },
+    "network": [
+      {
+        "name": "Core",
+        "type": 1,
+        "items": [
+          {
+            "text": "Burst Trigger",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Sprint Speed",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "Reduced Spread while ADS",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Purgatory",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -5s",
+            "cost": 250
+          },
+          {
+            "text": "Duration +3s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Sol Battery",
+        "type": 2,
+        "items": [
+          {
+            "text": "Damage to Heat Conversion +50%",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Pyro Strings",
+        "desc": "Enemies stringified within the Flame Cage take Burn DMG.",
+        "needWeapon": 1,
+        "needSkill": 0,
+        "needDefense": 1
+      },
+      {
+        "name": "Encroaching Cage",
+        "desc": "During Active Skill, the cage radius shrinks until it reaches the minimum size.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      },
+      {
+        "name": "Flame of Life",
+        "desc": "As Heat decreases, it converts to a proportion of HP recovery.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      }
+    ]
+  },
+  "fagrans": {
+    "page": "Fragrans",
+    "name": "Fragrans",
+    "characterId": 120,
+    "role": "Support",
+    "camp": "The Scissors",
+    "identity": "Empathetic Heart",
+    "intro": "A floral expert and master perfumer, she is gentle, charming, and meticulous in life.",
+    "quote": "A scent? Sorry, I was too close. It's... floral.",
+    "weapon": {
+      "name": "Blossom",
+      "type": "AR",
+      "desc": "Relentless firepower to dominate the battlefield, offering an excellent balance of accuracy and firing rate. Equipped with a 1.25x scope."
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Aroma Surge",
+        "type": 2,
+        "items": [
+          {
+            "text": "Area of Effect +50%",
+            "cost": 250
+          },
+          {
+            "text": "Duration +4s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Elixir Aura",
+        "type": 2,
+        "items": [
+          {
+            "text": "Area of Effect +50%",
+            "cost": 250
+          },
+          {
+            "text": "HP Regen +2/s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Rejuvenate",
+        "desc": "Activating the skill instantly grants nearby allies continuous healing.",
+        "needWeapon": 0,
+        "needSkill": 1,
+        "needDefense": 1
+      },
+      {
+        "name": "Composite Aroma",
+        "desc": "Activating the skill grants nearby allies a Movement Speed and Rate of Fire bonus, but with reduced duration.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      },
+      {
+        "name": "Eternal Fragrance",
+        "desc": "The Active Skill effect now persists at a lower level after weakening. Switching perfume type changes the ongoing effect.",
+        "needWeapon": 3,
+        "needSkill": 1,
+        "needDefense": 1
+      }
+    ]
+  },
+  "mala": {
+    "page": "Mara",
+    "name": "Mara",
+    "characterId": 122,
+    "role": "Assault",
+    "camp": "The Scissors",
+    "identity": "Soul Devourer",
+    "intro": "The sole survivor of the Outbreak incident, she lost dear companions and uncovered secrets that profoundly changed her personality.",
+    "quote": "Your souls are mine!",
+    "weapon": {
+      "name": "Night Scythe",
+      "type": "SMG",
+      "desc": "Mara's signature weapon. A streak of crimson at the end of the barrel resembles the scythe of the Grim Reaper, a harbinger of imminent death."
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Soulbound Prison",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -5s",
+            "cost": 250
+          },
+          {
+            "text": "Soul Orb HP +20%",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Soul Snatcher",
+        "type": 2,
+        "items": [
+          {
+            "text": "+50% Healing Rate",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Gravity-Bound Soul",
+        "desc": "Enemies bound by the Active Skill have reduced jump speed and height.",
+        "needWeapon": 1,
+        "needSkill": 0,
+        "needDefense": 1
+      },
+      {
+        "name": "Soul Devourer",
+        "desc": "Hitting enemies with the Active Skill or participating in a kill absorbs their souls, increasing your Movement Speed, Fire Rate, and Weapon Usability. Enemies bound by the Active Skill have their minimap temporarily obscured.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      },
+      {
+        "name": "Soul Form",
+        "desc": "A portion of DMG taken is dealt over time instead. Participating in a knockdown prevents the remaining DMG from being dealt over time. Slowly recover HP after leaving combat.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      }
+    ]
+  },
+  "nono": {
+    "page": "Nora",
+    "name": "Nora",
+    "characterId": 126,
+    "role": "Vanguard",
+    "camp": "The Scissors",
+    "identity": "Solace",
+    "intro": "A specially recruited member of The Scissors, carrying the burden of her family's legacy and pursuing a path toward light.",
+    "quote": "No matter which path I choose, it is always my own decision.",
+    "weapon": {
+      "name": "Rainveil",
+      "type": "SMG",
+      "desc": "A next-generation submachine gun designed for personal defense. Its overwhelming firepower and high operational cost have earned it the nickname \"cash sprinkler.\""
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "Five-Round Burst Mode",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Shadow Pursuit",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -5s",
+            "cost": 250
+          },
+          {
+            "text": "Damage +8",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Void Step",
+        "type": 2,
+        "items": [
+          {
+            "text": "CD Recovery Rate +50%",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Dark String Echo",
+        "desc": "When spirits summoned by the Active Skill are destroyed or disappear, they leave behind residual Dark String energy. Collecting it reduces the cooldown of both Active and Passive Skills.",
+        "needWeapon": 1,
+        "needSkill": 0,
+        "needDefense": 1
+      },
+      {
+        "name": "Residual String Embers",
+        "desc": "Dark String Missiles fired by spirits detonate and create an erosion field that continuously damages and slows enemies inside it.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      },
+      {
+        "name": "Eye of Omniscience",
+        "desc": "Greatly extend the duration of summoned spirits. While they are active, the Active Skill can be reactivated to take direct control of a spirit, enhancing its attributes during the control period.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      }
+    ]
+  },
+  "audrey": {
+    "page": "Audrey",
+    "name": "Audrey",
+    "characterId": 105,
+    "role": "Sentinel",
+    "camp": "Urbino",
+    "identity": "Glorious Defender",
+    "intro": "An Urbino merchant of some renown and the head of the Grove family.",
+    "quote": "Without a doubt, I’m your top choice for a formidable ally.",
+    "weapon": {
+      "name": "Champion",
+      "type": "LMG",
+      "desc": "Known for its remarkable power and performance, this general-purpose machine gun was a classic sweeper weapon from old Earth's large-scale wars. Equipped with a 1.25x scope."
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Functions",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Sprint Speed",
+            "cost": 150
+          },
+          {
+            "text": "+ ADS Speed and Weapon Switch",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Guns Blazing",
+        "type": 2,
+        "items": [
+          {
+            "text": "- Overheat Rate",
+            "cost": 250
+          },
+          {
+            "text": "+ Max Shield",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Royal Shield",
+        "type": 2,
+        "items": [
+          {
+            "text": "+ Max Shield",
+            "cost": 250
+          },
+          {
+            "text": "Shield Recovery +100%",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Field Mobility",
+        "desc": "Allows lateral movement in Deployment Mode.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 1
+      },
+      {
+        "name": "Auto Turret",
+        "desc": "While in Deployment Mode, press and hold the Active Skill button to deploy an Autoturret. If the turret is destroyed, it enters a cooldown and cannot be redeployed for a set period.",
+        "needWeapon": 3,
+        "needSkill": 1,
+        "needDefense": 1
+      },
+      {
+        "name": "Onslaught",
+        "desc": "Rate of Fire gradually increases with continuous shooting. Primary Weapon no longer needs to Reload, but continuous shooting can cause Overheat.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      }
+    ]
+  },
+  "madeleine": {
+    "page": "Maddelena",
+    "name": "Maddelena",
+    "characterId": 107,
+    "role": "Controller",
+    "camp": "Urbino",
+    "identity": "Dreamer",
+    "intro": "A sunny and cheerful artist who always seems to end up in the middle of one trouble or another.",
+    "quote": "Time to head out! I wonder what new adventures await today?",
+    "weapon": {
+      "name": "Chroma",
+      "type": "DMR",
+      "desc": "Balancing power and range perfectly, the marksman rifle excels at suppressing mid-to-long-distance targets. Comes equipped with a 1.5x scope."
+    },
+    "network": [
+      {
+        "name": "Core",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "Burst Trigger",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Sprint Speed",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Pigment Bind",
+        "type": 2,
+        "items": [
+          {
+            "text": "Duration +5s",
+            "cost": 250
+          },
+          {
+            "text": "Max +3",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Paint Tracks",
+        "type": 2,
+        "items": [
+          {
+            "text": "Slow Duration +1s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Wall Whisper",
+        "desc": "Teammates wall-sticking in painted areas will conceal themselves, greatly boost Movement Speed, and slowly heal.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 0
+      },
+      {
+        "name": "Painter's Trail",
+        "desc": "Fires paint that forms a trailing line, creating additional paint zones.",
+        "needWeapon": 0,
+        "needSkill": 2,
+        "needDefense": 2
+      },
+      {
+        "name": "Dyeblast",
+        "desc": "A bubble forms in the painted area to block vision; it explodes on contact, applying a paint debuff to enemies.",
+        "needWeapon": 2,
+        "needSkill": 2,
+        "needDefense": 0
+      }
+    ]
+  },
+  "freesia": {
+    "page": "Fuchsia",
+    "name": "Fuchsia",
+    "characterId": 112,
+    "role": "Duelist",
+    "camp": "Urbino",
+    "identity": "Shark Pup",
+    "intro": "The honed blade of Urbino, and a hardened killer seeking for a home.",
+    "quote": "Don't call me in the morning. Waking up on the wrong side makes me dangerous.",
+    "weapon": {
+      "name": "Sawtooth",
+      "type": "AR",
+      "desc": "Balancing power and stability, this battle rifle is a fine example of Earth's industrial craftsmanship. Equipped with a 1.25x scope."
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Apex Predator",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -5s",
+            "cost": 250
+          },
+          {
+            "text": "Duration +3s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Hunter's Feast",
+        "type": 2,
+        "items": [
+          {
+            "text": "+ Recovery Rate",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Gluttony",
+        "desc": "Crystal absorption range extends to the entire map.",
+        "needWeapon": 1,
+        "needSkill": 0,
+        "needDefense": 1
+      },
+      {
+        "name": "Second Wind",
+        "desc": "While knocked down, Max HP is increased, and you will automatically recover after a short duration.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      },
+      {
+        "name": "Terror Hunter",
+        "desc": "Active skill briefly slows enemies in range.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      }
+    ]
+  },
+  "xinghui": {
+    "page": "Celestia",
+    "name": "Celestia",
+    "characterId": 146,
+    "role": "Support",
+    "camp": "Urbino",
+    "identity": "Guardian Star",
+    "intro": "The founder of the Astral Sanctuary. A gentle girl dedicated to building a peaceful world.",
+    "quote": "Make sure to drop by Astral Sanctuary for a quick check-up.",
+    "weapon": {
+      "name": "Polaris",
+      "type": "AR",
+      "desc": "Built for sustained use with excellent heat dissipation, this assault rifle provides precise accuracy for close-range shots, with a smooth trigger pull and ambidextrous comfort. Equipped with a 1.25x scope and switchable between automatic and burst modes."
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Guardian Star",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -8s",
+            "cost": 250
+          },
+          {
+            "text": "Max +3",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Cosmic Recovery",
+        "type": 2,
+        "items": [
+          {
+            "text": "Regen Speed +100%",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Comet Bracers",
+        "desc": "Active Skill gains Temporary Armor regeneration, immune to DMG interruptions.",
+        "needWeapon": 0,
+        "needSkill": 1,
+        "needDefense": 1
+      },
+      {
+        "name": "Starlight",
+        "desc": "When the Armor from the Active Skill is breached, it releases starlight that blinds enemies.",
+        "needWeapon": 3,
+        "needSkill": 1,
+        "needDefense": 1
+      },
+      {
+        "name": "Astral Armor",
+        "desc": "Active Skill instantly restores some Armor.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      }
+    ]
+  },
+  "baimo": {
+    "page": "Bai Mo",
+    "name": "Bai Mo",
+    "characterId": 110,
+    "role": "Duelist",
+    "camp": "Urbino",
+    "identity": "Unfettered Spirit",
+    "intro": "Though now a high-up of Urbino, there's nothing this street youth values more than freedom.",
+    "quote": "Even the biggest crisis can wait until the party's over!",
+    "weapon": {
+      "name": "Freedom Reign",
+      "type": "SG",
+      "desc": "A highly reliable and durable semi-automatic featuring ghost ring iron sights for improved accuracy. Equipped with a 1.25x scope."
+    },
+    "network": [
+      {
+        "name": "Core",
+        "type": 1,
+        "items": [
+          {
+            "text": "Full Auto Mode",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Sprint Speed",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "Reduced Spread while ADS",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Blitz Waltz",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -4s",
+            "cost": 250
+          },
+          {
+            "text": "2x Auto-Reload Capacity",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Nimble Stride",
+        "type": 2,
+        "items": [
+          {
+            "text": "Duration +1s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Tempo Shift",
+        "desc": "After using an Active Skill, Armor gradually restores without interruption from taking DMG.",
+        "needWeapon": 1,
+        "needSkill": 0,
+        "needDefense": 1
+      },
+      {
+        "name": "Ink Charge",
+        "desc": "Using the Active Skill grants extra DMG reduction and splashes paint at the landing point, briefly obscuring nearby enemies' vision.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      },
+      {
+        "name": "Trickster",
+        "desc": "Briefly enter stealth during Active Skill, leaving a decoy at the starting point.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      }
+    ]
+  },
+  "galatea": {
+    "page": "Galatea",
+    "name": "Galatea",
+    "characterId": 205,
+    "role": "Vanguard",
+    "camp": "Urbino",
+    "identity": "The Indescribable One",
+    "intro": "A renowned magician and a mad artist hiding behind her glamor.",
+    "quote": "This is boring. What should we do next?",
+    "weapon": {
+      "name": "Gambit",
+      "type": "AR",
+      "desc": "This high-performance, weather-resistant assault rifle delivers powerful firepower and unbeatable value. Equipped with a 1.25x scope."
+    },
+    "network": [
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Base Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Critical Hit",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Headshot Damage",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "+ Recoil Handling",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Wild Card",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -5s",
+            "cost": 250
+          },
+          {
+            "text": "Decoy Duration +3s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Deception",
+        "type": 2,
+        "items": [
+          {
+            "text": "Cooldown -5s",
+            "cost": 250
+          },
+          {
+            "text": "Decoy Duration +3s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Illusionary Strike",
+        "desc": "Gain Temporary Armor and briefly boost Weapon Usability upon teleporting.",
+        "needWeapon": 1,
+        "needSkill": 0,
+        "needDefense": 1
+      },
+      {
+        "name": "Snap",
+        "desc": "Teleport to trigger 3 seconds of stealth, increasing Movement Speed and holstering your weapon.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      },
+      {
+        "name": "Castling",
+        "desc": "Leave a decoy at your original location after teleporting.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      }
+    ]
+  },
+  "xi": {
+    "page": "Cielle",
+    "name": "Cielle",
+    "characterId": 130,
+    "role": "Assault",
+    "camp": "Urbino",
+    "identity": "Windborne Drifter",
+    "intro": "A girl with lost memories, currently a Bounty Hunter settled in Urbino.",
+    "quote": "Relax, boss—if the pay's real, so is my loyalty.",
+    "weapon": {
+      "name": "Surfbreak",
+      "type": "SG",
+      "desc": "Lever-action shotgun with high reliability and durability. Deals massive damage at close range. Equipped with a 1.25x scope."
+    },
+    "network": [
+      {
+        "name": "Core",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ ADS Speed and Weapon Switch",
+            "cost": 150
+          },
+          {
+            "text": "+ Base Rate of Fire",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Firing",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Sprint Speed",
+            "cost": 150
+          },
+          {
+            "text": "+ Stringified Damage",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Capacity",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Magazine Capacity",
+            "cost": 150
+          },
+          {
+            "text": "+ Reload Speed",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Accuracy",
+        "type": 1,
+        "items": [
+          {
+            "text": "+ Spread Control",
+            "cost": 150
+          },
+          {
+            "text": "Single-Shot Mode",
+            "cost": 150
+          }
+        ]
+      },
+      {
+        "name": "Mobile Shield",
+        "type": 2,
+        "items": [
+          {
+            "text": "Shield Recharge Rate +20%",
+            "cost": 250
+          },
+          {
+            "text": "Shield to Armor Conversion +50%",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Auto Chamber",
+        "type": 2,
+        "items": [
+          {
+            "text": "Reload Time -0.8s",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Armor",
+        "type": 3,
+        "items": [
+          {
+            "text": "Light Regen Armor",
+            "cost": 250
+          },
+          {
+            "text": "Heavy Armor",
+            "cost": 250
+          }
+        ]
+      },
+      {
+        "name": "Stringification",
+        "type": 3,
+        "items": [
+          {
+            "text": "Stringified Movement SPD +15%",
+            "cost": 250
+          },
+          {
+            "text": "46% Stringified DMG Reduction",
+            "cost": 250
+          }
+        ]
+      }
+    ],
+    "awakenings": [
+      {
+        "name": "Momentum Surge",
+        "desc": "Gain a brief Movement Speed boost after a charge, manual shield detonation, or using a Tactical Skill.",
+        "needWeapon": 1,
+        "needSkill": 0,
+        "needDefense": 1
+      },
+      {
+        "name": "Bulwark Buster",
+        "desc": "While holding the shield, hold right-click to detonate it, dealing DMG to enemies in front. Grants Temporary Armor and restores part of the shield's CD.",
+        "needWeapon": 1,
+        "needSkill": 1,
+        "needDefense": 2
+      },
+      {
+        "name": "Unified Guard",
+        "desc": "While the shield is raised, all incoming DMG is absorbed by the shield, with extra DMG applied to it.",
+        "needWeapon": 1,
+        "needSkill": 2,
+        "needDefense": 1
+      }
+    ]
+  }
+}

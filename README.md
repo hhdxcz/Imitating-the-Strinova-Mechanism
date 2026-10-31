@@ -265,6 +265,18 @@ Imitating the Strinova Mechanism/
 └── forge/           # Forge 平台适配
 ```
 
+### 界面文本数据（wiki）
+
+选角界面与「弦能增幅网络」的角色档案、技能、觉醒、增幅网络分支与属性变化文案来自 wiki，随 jar 打包在
+`common/src/main/resources/assets/strinova/data/wiki_zh.json`（中文主数据）与 `wiki_en.json`（英文文本覆盖层）：
+
+- 中文来源：[biligame 卡拉彼丘 wiki](https://wiki.biligame.com/klbq)
+- 英文来源：[Strinova Wiki](https://strinova.org/wiki)
+- 生成脚本：`tools/wiki-sync.mjs`（中文全量抓取）、`tools/en-wiki-sync.mjs`（英文离线合并 + 校验）；
+- 字段契约、重新生成步骤与已知缺口见 [docs/wiki-research/README.md](docs/wiki-research/README.md)。
+
+运行时由 `StrinovaWikiData` 按游戏语言自动合并，wiki 数据缺失时回退内置占位文案，不影响启动。
+
 ---
 
 
