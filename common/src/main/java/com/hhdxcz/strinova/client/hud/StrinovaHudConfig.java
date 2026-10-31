@@ -65,6 +65,9 @@ public final class StrinovaHudConfig {
     /** 头像左侧留白（拖动「头像前」的列边界调整，0~24 像素）。 */
     public int scoreboardNameLeftPadding = 0;
 
+    /** 左侧竖栏宽度占面板宽度比例（拖动「头像前」边界可左右调整，0.05~0.25）。 */
+    public float scoreboardSidebarWidthRatio = 0.11F;
+
     /** 每个部件独立样式（可见性/字号/文字色/背景色）。 */
     public java.util.LinkedHashMap<String, ScoreboardComponentStyle> scoreboardComponents;
 
@@ -224,6 +227,7 @@ public final class StrinovaHudConfig {
         scoreboardRowHeight = clamp(scoreboardRowHeight, 14, 30);
         scoreboardRoundRowHeight = clamp(scoreboardRoundRowHeight, 0, 24);
         scoreboardNameLeftPadding = clamp(scoreboardNameLeftPadding, 0, 24);
+        scoreboardSidebarWidthRatio = clampf(scoreboardSidebarWidthRatio, 0.05F, 0.25F);
         if (scoreboardComponents == null) {
             scoreboardComponents = defaultScoreboardComponents();
         }
@@ -255,10 +259,11 @@ public final class StrinovaHudConfig {
         return String.format(java.util.Locale.ROOT,
                 "scoreboardWidthRatio=%.3f, scoreboardHeightRatio=%.3f, scoreboardOffsetX=%.1f, "
                         + "scoreboardOffsetY=%.1f, scoreboardTextScale=%.2f, scoreboardRowHeight=%d, "
-                        + "scoreboardRoundRowHeight=%d, nameLeftPadding=%d, columns=[%s]",
+                        + "scoreboardRoundRowHeight=%d, nameLeftPadding=%d, sidebarWidthRatio=%.3f, columns=[%s]",
                 scoreboardWidthRatio, scoreboardHeightRatio, scoreboardOffsetX,
                 scoreboardOffsetY, scoreboardTextScale, scoreboardRowHeight,
-                scoreboardRoundRowHeight, scoreboardNameLeftPadding, columnWeightsText());
+                scoreboardRoundRowHeight, scoreboardNameLeftPadding, scoreboardSidebarWidthRatio,
+                columnWeightsText());
     }
 
     /** 导出计分板全部自定义配置为 JSON（尺寸/位置/字号/行高/列宽/逐部件样式）。 */
@@ -275,6 +280,7 @@ public final class StrinovaHudConfig {
         map.put("rowHeight", scoreboardRowHeight);
         map.put("roundRowHeight", scoreboardRoundRowHeight);
         map.put("nameLeftPadding", scoreboardNameLeftPadding);
+        map.put("sidebarWidthRatio", scoreboardSidebarWidthRatio);
         Map<String, Float> weights = new LinkedHashMap<>();
         for (String key : SCOREBOARD_COLUMN_KEYS) {
             weights.put(key, scoreboardColumnWeight(key));
@@ -318,6 +324,9 @@ public final class StrinovaHudConfig {
             }
             if (object.has("nameLeftPadding")) {
                 scoreboardNameLeftPadding = object.get("nameLeftPadding").getAsInt();
+            }
+            if (object.has("sidebarWidthRatio")) {
+                scoreboardSidebarWidthRatio = object.get("sidebarWidthRatio").getAsFloat();
             }
             if (object.has("columns") && object.get("columns").isJsonObject()) {
                 JsonObject columns = object.getAsJsonObject("columns");

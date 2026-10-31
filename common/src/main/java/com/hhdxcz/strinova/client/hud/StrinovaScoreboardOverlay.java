@@ -169,7 +169,7 @@ public final class StrinovaScoreboardOverlay {
         int panelHeight = Math.max(contentHeight, Math.min(targetHeight, screenHeight - 8));
         int left = (screenWidth - panelWidth) / 2 + Math.round(config.scoreboardOffsetX);
         int top = Math.max(2, (screenHeight - panelHeight) / 2 + Math.round(config.scoreboardOffsetY));
-        int sidebarWidth = Math.max(48, Math.round(panelWidth * 0.11F));
+        int sidebarWidth = Math.max(40, Math.round(panelWidth * config.scoreboardSidebarWidthRatio));
         int blockTop = top + Math.max(0, (panelHeight - contentHeight) / 2);
         int middleTop = blockTop + blockHeight;
         int enemyTop = middleTop + middleHeight;

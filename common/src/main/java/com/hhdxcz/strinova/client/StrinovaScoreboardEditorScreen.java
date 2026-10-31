@@ -39,8 +39,9 @@ public class StrinovaScoreboardEditorScreen extends Screen {
 
     // 类似 Excel 的列宽/行高拖拽状态
     private int resizingColumn = -1;
-    private boolean resizingNamePad;
-    private int resizeStartNamePadding;
+    private boolean resizingSidebar;
+    private float resizeStartSidebarRatio;
+    private int resizePanelWidth;
     private double resizeStartX;
     private float resizeStartLeftWeight;
     private float resizeStartRightWeight;
@@ -196,7 +197,7 @@ public class StrinovaScoreboardEditorScreen extends Screen {
         for (int i = 0; i <= 8; i++) {
             int boundary = contentX + starts[i];
             boolean hover = Math.abs(mouseX - boundary) <= 6;
-            boolean active = i == 0 ? resizingNamePad : resizingColumn == i - 1;
+            boolean active = i == 0 ? resizingSidebar : resizingColumn == i - 1;
             int color = (hover || active) ? 0xFF35D6E8 : 0x33FFFFFF;
             for (int blockTop : blockTops) {
                 int top = blockTop;
@@ -241,11 +242,12 @@ public class StrinovaScoreboardEditorScreen extends Screen {
                     && mouseY <= layout.blockTop() + layout.headerHeight())
                     || (mouseY >= layout.enemyTop() && mouseY <= layout.enemyTop() + layout.headerHeight());
             if (inHeader) {
-                // 头像左侧留白边界（拖动改头像前间距）
+                // 头像左侧边界：左右拖动调整左侧竖栏宽度（竖栏变窄 → 头像列变宽）
                 if (Math.abs(mouseX - (contentX + starts[0])) <= 6.0D) {
-                    resizingNamePad = true;
+                    resizingSidebar = true;
                     resizeStartX = mouseX;
-                    resizeStartNamePadding = config.scoreboardNameLeftPadding;
+                    resizeStartSidebarRatio = config.scoreboardSidebarWidthRatio;
+                    resizePanelWidth = Math.max(1, layout.width());
                     return true;
                 }
                 // 列边界：name|kda …… assist|ping（共 8 条）
@@ -306,9 +308,10 @@ public class StrinovaScoreboardEditorScreen extends Screen {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         StrinovaHudConfig config = StrinovaHudConfig.get();
-        if (resizingNamePad && button == 0) {
-            int newPadding = (int) Math.round(resizeStartNamePadding + (mouseX - resizeStartX));
-            config.scoreboardNameLeftPadding = Math.max(0, Math.min(24, newPadding));
+        if (resizingSidebar && button == 0) {
+            float deltaRatio = (float) ((mouseX - resizeStartX) / Math.max(1, resizePanelWidth));
+            config.scoreboardSidebarWidthRatio = clampf(
+                    resizeStartSidebarRatio + deltaRatio, 0.05F, 0.25F);
             return true;
         }
         if (resizingColumn >= 0 && button == 0) {
@@ -345,7 +348,7 @@ public class StrinovaScoreboardEditorScreen extends Screen {
         if (button == 0) {
             dragging = false;
             resizingColumn = -1;
-            resizingNamePad = false;
+            resizingSidebar = false;
             resizingRow = false;
             resizingRoundRow = false;
         }
