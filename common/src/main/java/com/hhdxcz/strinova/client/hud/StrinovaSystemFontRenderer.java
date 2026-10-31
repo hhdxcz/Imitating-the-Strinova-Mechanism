@@ -28,10 +28,11 @@ import java.util.Map;
 public final class StrinovaSystemFontRenderer {
 
     private static final int ATLAS_SIZE = 512;
-    private static final int CELL = 32;
+    /** 字形单元格与 AWT 渲染字号：尽量接近实际显示像素，减少缩小比例。 */
+    private static final int CELL = 20;
     private static final int COLS = ATLAS_SIZE / CELL;
     private static final int MAX_GLYPHS = COLS * COLS;
-    private static final int FONT_PX = 24;
+    private static final int FONT_PX = 14;
     private static final int TARGET_TEXT_PX = 9;
 
     private static boolean triedInit;
@@ -130,6 +131,7 @@ public final class StrinovaSystemFontRenderer {
             int drawW = Math.max(1, Math.round(CELL * pxPerFontPx));
             int drawH = Math.max(1, Math.round(CELL * pxPerFontPx));
             flushAtlas();
+            // 画到整数像素，避免半像素采样导致的“像素块”感
             graphics.blit(atlasId, Math.round(drawX), Math.round(y), drawW, drawH,
                     cellX, cellY, CELL, CELL, ATLAS_SIZE, ATLAS_SIZE);
             Integer advance = GLYPH_ADVANCE.get(ch);
@@ -188,7 +190,7 @@ public final class StrinovaSystemFontRenderer {
             var textureManager = Minecraft.getInstance().getTextureManager();
             if (textureManager.getTexture(atlasId, null) == null) {
                 atlasTexture = new DynamicTexture(atlasImage);
-                atlasTexture.setFilter(false, false);
+                atlasTexture.setFilter(true, false);
                 textureManager.register(atlasId, atlasTexture);
             }
             atlasTexture.upload();
@@ -222,7 +224,8 @@ public final class StrinovaSystemFontRenderer {
             atlasImage = new NativeImage(ATLAS_SIZE, ATLAS_SIZE, true);
             atlasImage.fillRect(0, 0, ATLAS_SIZE, ATLAS_SIZE, 0);
             atlasTexture = new DynamicTexture(atlasImage);
-            atlasTexture.setFilter(false, false);
+            // 线性过滤：缩小时平滑（之前用最近邻，缩小后就是一块块像素）
+            atlasTexture.setFilter(true, false);
             atlasId = new ResourceLocation(StrinovaMod.MOD_ID, "dynamic_scoreboard_font");
             Minecraft.getInstance().getTextureManager().register(atlasId, atlasTexture);
             ready = true;
