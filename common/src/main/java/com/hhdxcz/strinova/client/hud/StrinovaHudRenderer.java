@@ -92,11 +92,12 @@ public final class StrinovaHudRenderer {
             return;
         }
         syncFromPlayer(minecraft, serverMatch);
-        renderAll(graphics, config);
-        // TAB 计分板（按住 TAB 且存在进行中的对局时覆盖显示；原版玩家列表由 PlayerTabOverlayMixin 隐藏）
+        // TAB 计分板：按住 TAB 时只画计分板，隐藏其它 HUD，避免血甲/技能栏/武器栏压在面板上
         if (StrinovaScoreboardOverlay.isActive(minecraft)) {
             StrinovaScoreboardOverlay.render(graphics, new StrinovaProgrammaticPainter(graphics));
+            return;
         }
+        renderAll(graphics, config);
     }
 
     /** 战斗系统落地前：生命值取 MC 真实血量映射；服务端对局激活时以同步包为准，不再覆盖。 */
