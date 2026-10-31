@@ -62,7 +62,7 @@ public final class StrinovaHudLayout {
     public void reset() {
         placements.clear();
         placements.put(Element.HEALTH_ARMOR, new Placement(Anchor.BOTTOM_LEFT, 12, -56));
-        placements.put(Element.AMMO, new Placement(Anchor.BOTTOM_RIGHT, -10, -40));
+        placements.put(Element.AMMO, new Placement(Anchor.BOTTOM_RIGHT, -8, -20));
         placements.put(Element.SKILLS, new Placement(Anchor.BOTTOM_CENTER, 0, -80));
         placements.put(Element.STATE, new Placement(Anchor.BOTTOM_LEFT, 12, -132));
         placements.put(Element.CROSSHAIR, new Placement(Anchor.CENTER, 0, 0));

@@ -56,10 +56,11 @@ public final class StrinovaKeyBindings {
         ));
         wallKeyName = "key.keyboard.r";
 
-        // B 键：打开弦能增幅网络（成长/加点）界面
+        // J 键：打开弦能增幅网络（成长/加点）界面。
+        // 不使用 B：TACZ 的「切换开火模式」默认键是 G/B，占用 B 会导致 TACZ 枪械无法解除保险/开火。
         growthKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.strinova.growth",
-                GLFW.GLFW_KEY_B,
+                GLFW.GLFW_KEY_J,
                 "key.categories.strinova"
         ));
 

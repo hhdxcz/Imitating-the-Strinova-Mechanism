@@ -648,12 +648,14 @@
   }
 
   /* ============================================================
-     6. 右下：竖排 1~5 武器栏（1 号展开：武器名 + 大号弹药）
+     6. 屏幕右侧：贴边竖排 5 格武器栏 + 当前武器展开卡片
+        真实截图布局：1 在下 / 5 在上，数字键徽标在槽外右侧，
+        槽内白色武器剪影；1 号槽向左展开 230×52 当前武器卡片。
      ============================================================ */
   .hud-weapons{
     position:absolute;
-    right:2.2%;
-    bottom:3.2%;
+    right:.45em;
+    bottom:1.9em;
     z-index:2;
     display:flex;
     flex-direction:column;
@@ -664,141 +666,249 @@
     display:flex;
     align-items:center;
     justify-content:flex-end;
-    gap:.45em;
+    gap:.32em;
   }
-  .w-label{
-    font-size:.54em;
-    letter-spacing:.1em;
-    color:rgba(143,180,198,.85);
-    white-space:nowrap;
-    text-shadow:0 .05em .1em rgba(0,0,0,.8);
+  .w-row.current{
+    gap:.4em;
   }
-  .w-box{
+  /* 34×34 深色半透明武器槽 + 白/灰细边 */
+  .w-slot{
     position:relative;
-    width:1.7em;
-    height:1.7em;
+    width:2.4em;
+    height:2.4em;
     flex:none;
     display:grid;
     place-items:center;
-    background:linear-gradient(160deg, rgba(18,35,52,.85), rgba(5,11,20,.92));
-    box-shadow:inset 0 0 0 1px rgba(53,214,232,.22);
-    clip-path:polygon(.32em 0, 100% 0, calc(100% - .32em) 100%, 0 100%);
+    background:linear-gradient(160deg, rgba(16,28,40,.78), rgba(4,9,16,.86));
+    box-shadow:inset 0 0 0 1px rgba(220,238,248,.34), 0 0 .5em rgba(0,0,0,.45);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - .28em), calc(100% - .28em) 100%, 0 100%);
   }
+  .w-slot.active{
+    background:linear-gradient(160deg, rgba(28,64,84,.9), rgba(6,18,28,.94));
+    box-shadow:inset 0 0 0 1px rgba(234,252,255,.88), 0 0 .8em rgba(53,214,232,.42);
+  }
+  /* 数字键徽标：槽位右侧外挂小方块（白色小字） */
   .w-key{
-    width:.8em;
-    text-align:center;
+    flex:none;
+    display:grid;
+    place-items:center;
+    width:1.15em;
+    height:1.15em;
+    background:rgba(10,18,26,.82);
+    box-shadow:inset 0 0 0 1px rgba(220,238,248,.38);
+  }
+  .w-key b{
     font-family:var(--mono);
-    font-size:.5em;
-    color:rgba(143,180,198,.8);
+    font-size:.56em;
+    font-weight:700;
+    line-height:1;
+    color:#f4fdff;
+    text-shadow:0 .05em .12em rgba(0,0,0,.9);
   }
-  /* 1 号当前武器：高亮槽位 + 横向展开面板 */
-  .w-main{
-    display:flex;
-    align-items:center;
-    gap:.5em;
-    padding:.4em .2em .4em 1em;
-    background:linear-gradient(90deg, rgba(5,11,20,0) 0%, rgba(6,14,23,.7) 26%, rgba(6,14,23,.94) 100%);
-    clip-path:polygon(.9em 0, 100% 0, 100% 100%, 0 100%);
+  .w-row.current .w-key{
+    background:linear-gradient(115deg,#eafcff,var(--cyan));
+    box-shadow:0 0 .5em rgba(53,214,232,.5);
   }
-  .w-main .w-box{
-    width:1.95em;
-    height:1.95em;
-    background:linear-gradient(160deg, rgba(28,64,84,.96), rgba(8,20,30,.97));
-    box-shadow:inset 0 0 0 1px rgba(53,214,232,.9), 0 0 .8em rgba(53,214,232,.5);
+  .w-row.current .w-key b{
+    color:#04121a;
+    font-weight:900;
   }
-  .w-info{
+  /* 未获得 / 空槽灰显 */
+  .w-slot.empty .ico{opacity:.32; filter:grayscale(1);}
+
+  /* 1 号当前武器：向左展开的横向卡片（约 230×52px） */
+  .w-card{
+    position:relative;
+    width:16.3em;
+    height:3.68em;
+    flex:none;
+    background:linear-gradient(180deg, rgba(8,16,26,.84), rgba(4,9,15,.9));
+    box-shadow:inset 0 0 0 1px rgba(220,238,248,.24), 0 .3em 1em rgba(0,0,0,.5);
+    clip-path:polygon(0 0, 100% 0, 100% 100%, .8em 100%, 0 calc(100% - .8em));
+  }
+  /* 卡片左上角：弹匣 / 瞄具指示图标（几何线条，白/青） */
+  .w-ind{
+    position:absolute;
+    left:.55em; top:.38em;
+    width:.64em; height:1.05em;
+    transform:rotate(8deg);
+    box-shadow:inset 0 0 0 1px rgba(234,252,255,.8);
+    border-radius:.05em;
+  }
+  .w-ind::before{
+    content:"";
+    position:absolute;
+    left:.12em; right:.12em; top:.16em;
+    height:.3em;
+    background:rgba(234,252,255,.35);
+  }
+  .w-ind::after{
+    content:"";
+    position:absolute;
+    left:.1em; right:.1em; bottom:.14em;
+    height:1px;
+    background:rgba(53,214,232,.85);
+  }
+  /* 左侧大号白色步枪剪影（枪托 + 机匣 + 瞄具 + 枪管 + 弹匣 + 握把） */
+  .w-rifle{
+    position:absolute;
+    left:1.2em; top:.3em;
+    width:8.2em; height:2.7em;
+  }
+  .w-rifle span{
+    position:absolute;
+    background:linear-gradient(180deg, #f7fdff, #c3d2dc);
+    box-shadow:0 .05em .18em rgba(0,0,0,.55);
+  }
+  .ra-stock{left:0; top:.78em; width:1.55em; height:.72em; clip-path:polygon(0 26%, 100% 0, 100% 100%, 0 74%)}
+  .ra-body{left:1.4em; top:.66em; width:2.85em; height:.86em; clip-path:polygon(0 .06em, 100% 0, 100% 100%, 0 100%)}
+  .ra-sight{left:2.05em; top:.22em; width:.95em; height:.4em; clip-path:polygon(10% 0, 90% 0, 100% 100%, 0 100%)}
+  .ra-barrel{left:4.25em; top:.78em; width:3.5em; height:.18em}
+  .ra-muzzle{left:7.68em; top:.66em; width:.35em; height:.4em; clip-path:polygon(0 0, 100% 18%, 100% 82%, 0 100%)}
+  .ra-fsight{left:6.6em; top:.58em; width:.14em; height:.28em}
+  .ra-mag{left:2.2em; top:1.38em; width:.74em; height:.95em; transform:skewX(-10deg); clip-path:polygon(0 0, 100% 0, 86% 100%, 10% 100%)}
+  .ra-grip{left:3.45em; top:1.4em; width:.5em; height:.6em; transform:skewX(16deg); clip-path:polygon(0 0, 100% 0, 88% 100%, 12% 100%)}
+  /* 左下角武器名 */
+  .w-name{
+    position:absolute;
+    left:.85em; bottom:.42em;
+    font-size:.6em;
+    font-weight:700;
+    letter-spacing:.14em;
+    line-height:1;
+    color:#f4fdff;
+    text-shadow:0 .05em .14em rgba(0,0,0,.9);
+  }
+  /* 右侧竖排大号弹药：白色弹匣 20 / 蓝青备弹 205 */
+  .w-ammo{
+    position:absolute;
+    right:.72em; top:0; bottom:0;
+    width:4.1em;
     display:flex;
     flex-direction:column;
     align-items:flex-end;
-    gap:.12em;
-    padding-bottom:.1em;
-  }
-  .w-name{
-    font-size:.82em;
-    font-weight:700;
-    letter-spacing:.18em;
-    line-height:1;
-    color:#eaf7ff;
-    text-shadow:0 0 .5em rgba(53,214,232,.45);
-  }
-  .w-ammo{
-    display:flex;
-    align-items:baseline;
-    gap:.18em;
+    justify-content:center;
+    gap:.08em;
     font-family:var(--mono);
     line-height:1;
   }
   .w-ammo .mag{
-    font-size:1.9em;
+    font-size:2em;
     font-weight:800;
     color:#f8feff;
-    text-shadow:0 0 .6em rgba(53,214,232,.55), 0 .05em .12em rgba(0,0,0,.9);
-  }
-  .w-ammo .slash{
-    font-size:1.3em;
-    color:rgba(143,180,198,.6);
+    text-shadow:0 0 .55em rgba(255,255,255,.35), 0 .05em .12em rgba(0,0,0,.9);
   }
   .w-ammo .reserve{
-    font-size:1.08em;
-    font-weight:700;
-    color:#a9c9d8;
+    font-size:1.45em;
+    font-weight:800;
+    color:#5fd8ff;
+    text-shadow:0 0 .5em rgba(95,216,255,.55), 0 .05em .12em rgba(0,0,0,.9);
   }
-  /* 程序化武器图标（几何占位，后续换贴图） */
-  .ico{display:block}
+  /* 卡片右侧竖分隔线 + 扳机/弹匣小标记 */
+  .w-divider{
+    position:absolute;
+    right:4.95em; top:.55em; bottom:.55em;
+    width:1px;
+    background:linear-gradient(180deg, rgba(220,238,248,0), rgba(220,238,248,.45), rgba(220,238,248,0));
+  }
+  .w-trigger{
+    position:absolute;
+    right:.28em; bottom:.5em;
+    width:.5em; height:.5em;
+    box-shadow:inset 0 0 0 1px rgba(220,238,248,.35);
+    clip-path:polygon(0 0, 100% 0, 100% 40%, 40% 40%, 40% 100%, 0 100%);
+  }
+  /* 白色武器 / 近战 / 道具剪影图标（槽内，贴图版可整体替换） */
+  .ico{display:block;position:relative}
   .ico-rifle{
-    width:1.3em; height:.5em;
-    background:linear-gradient(90deg, #f0fbff, #9fb9c8);
-    clip-path:polygon(0 35%, 58% 35%, 66% 0, 76% 0, 78% 35%, 100% 35%, 100% 58%, 70% 58%, 64% 100%, 52% 100%, 46% 58%, 0 58%);
+    width:1.95em; height:.7em;
+    background:linear-gradient(180deg, #f7fdff, #c3d2dc);
+    clip-path:polygon(0 38%, 52% 38%, 58% 6%, 66% 6%, 68% 38%, 100% 38%, 100% 60%, 74% 60%, 68% 100%, 56% 100%, 50% 60%, 0 60%);
+    filter:drop-shadow(0 0 .25em rgba(255,255,255,.2));
   }
-  .w-main .ico-rifle{
-    background:linear-gradient(90deg, #eafcff, var(--cyan));
-    filter:drop-shadow(0 0 .3em rgba(53,214,232,.8));
-  }
+  /* 手枪：套筒 + 握把（白/灰剪影） */
   .ico-pistol{
-    width:.82em; height:.58em;
-    background:linear-gradient(160deg, #eafcff, #9fb9c8);
-    clip-path:polygon(0 0, 100% 0, 100% 32%, 58% 32%, 54% 100%, 28% 100%, 32% 32%, 0 32%);
-  }
-  .ico-knife{
-    width:1.15em; height:.52em;
-    background:linear-gradient(90deg, #f2fbff, #8fa3b0);
-    clip-path:polygon(0 100%, 62% 0, 100% 20%, 40% 100%);
-  }
-  .ico-grenade{
     position:relative;
-    width:.74em; height:.8em;
-    border-radius:46%;
-    background:radial-gradient(120% 120% at 34% 28%, #d3e6f1, #5d7484 78%);
+    width:1.15em; height:.32em;
+    top:-.14em;
+    background:linear-gradient(180deg, #f7fdff, #c3d2dc);
+    border-radius:.05em;
+  }
+  .ico-pistol::before{
+    content:"";
+    position:absolute;
+    left:38%; top:.3em;
+    width:.34em; height:.5em;
+    background:linear-gradient(180deg, #eef7fc, #b7c6d0);
+    transform:skewX(-14deg);
+    clip-path:polygon(0 0, 100% 0, 82% 100%, 6% 100%);
+  }
+  /* 长刀：刀刃 + 短柄 */
+  .ico-knife{width:1.5em; height:.95em}
+  .ico-knife::before{
+    content:"";
+    position:absolute;
+    left:0; top:.12em;
+    width:1.08em; height:.5em;
+    background:linear-gradient(90deg, #f7fdff, #c3d2dc);
+    clip-path:polygon(0 100%, 100% 0, 100% 52%, 16% 100%);
+    transform:rotate(-8deg);
+  }
+  .ico-knife::after{
+    content:"";
+    position:absolute;
+    right:0; bottom:.12em;
+    width:.46em; height:.5em;
+    background:linear-gradient(180deg, #eef7fc, #aab9c4);
+    clip-path:polygon(12% 0, 100% 16%, 88% 100%, 0 84%);
+    transform:rotate(-8deg);
+  }
+  /* 减速雷：球体 + 拉环线条 */
+  .ico-grenade{
+    width:.98em; height:1em;
+    border-radius:50%;
+    background:radial-gradient(circle at 36% 30%, #f7fdff, #b7c6d0 72%, #8b9da8);
+    box-shadow:0 0 .35em rgba(255,255,255,.18);
   }
   .ico-grenade::before{
     content:"";
     position:absolute;
-    left:50%; top:-.22em;
+    left:50%; top:-.26em;
     transform:translateX(-50%);
-    width:.24em; height:.28em;
-    background:#9fb6c4;
-    clip-path:polygon(30% 0, 70% 0, 100% 40%, 100% 100%, 0 100%, 0 40%);
+    width:.2em; height:.34em;
+    background:#dfe9f0;
+    clip-path:polygon(28% 0, 72% 0, 100% 100%, 0 100%);
   }
+  .ico-grenade::after{
+    content:"";
+    position:absolute;
+    left:calc(50% + .18em); top:-.26em;
+    width:.34em; height:.3em;
+    border:.09em solid #dfe9f0;
+    border-radius:50%;
+  }
+  /* 治疗雷：白色方块 + 绿色十字（医疗包） */
   .ico-heal{
-    position:relative;
-    width:.74em; height:.8em;
-    border-radius:46%;
+    width:1.18em; height:.98em;
+    border-radius:.1em;
     background-image:
-      linear-gradient(#1d5a38, #1d5a38),
-      linear-gradient(#1d5a38, #1d5a38),
-      radial-gradient(120% 120% at 34% 28%, #d9f7e6, #3f7a5c 76%);
-    background-size:.15em .46em, .46em .15em, 100% 100%;
+      linear-gradient(#4fd98a, #4fd98a),
+      linear-gradient(#4fd98a, #4fd98a),
+      linear-gradient(160deg, #f7fdff, #c3d2dc);
+    background-size:.16em .62em, .62em .16em, 100% 100%;
     background-position:center, center, center;
     background-repeat:no-repeat;
+    box-shadow:0 0 .3em rgba(255,255,255,.15);
   }
   .ico-heal::before{
     content:"";
     position:absolute;
-    left:50%; top:-.22em;
+    left:50%; top:-.2em;
     transform:translateX(-50%);
-    width:.24em; height:.28em;
-    background:#7fae94;
-    clip-path:polygon(30% 0, 70% 0, 100% 40%, 100% 100%, 0 100%, 0 40%);
+    width:.5em; height:.24em;
+    border:.08em solid #dfe9f0;
+    border-bottom:0;
+    border-radius:.16em .16em 0 0;
   }
 
   /* ============================================================
@@ -1061,41 +1171,51 @@
       </div>
 
       <!-- ============================================================
-           右下：竖排 1~5 武器栏（1 号高亮展开：枫鸣 20 / 205）
+           屏幕右侧：贴边竖排 5 格武器栏（1 在下 / 5 在上）
+           数字键徽标在槽外右侧；1 号主武器向左展开当前武器卡片
            ============================================================ -->
       <div class="hud-weapons" aria-label="武器栏">
-        <!-- 5 战术道具：治疗雷 -->
+        <!-- 5 战术道具：治疗雷（白色方块 + 绿色十字医疗包） -->
         <div class="w-row">
-          <span class="w-label">治疗雷</span>
-          <span class="w-box"><i class="ico ico-heal" aria-hidden="true"></i></span>
-          <span class="w-key">5</span>
+          <span class="w-slot"><i class="ico ico-heal" aria-hidden="true"></i></span>
+          <span class="w-key"><b>5</b></span>
         </div>
-        <!-- 4 战术道具：减速雷 -->
+        <!-- 4 战术道具：减速雷（球体 + 拉环线条） -->
         <div class="w-row">
-          <span class="w-label">减速雷</span>
-          <span class="w-box"><i class="ico ico-grenade" aria-hidden="true"></i></span>
-          <span class="w-key">4</span>
+          <span class="w-slot"><i class="ico ico-grenade" aria-hidden="true"></i></span>
+          <span class="w-key"><b>4</b></span>
         </div>
-        <!-- 3 近战：忍锋 -->
+        <!-- 3 近战：忍锋（刀刃 + 短柄） -->
         <div class="w-row">
-          <span class="w-label">忍锋</span>
-          <span class="w-box"><i class="ico ico-knife" aria-hidden="true"></i></span>
-          <span class="w-key">3</span>
+          <span class="w-slot"><i class="ico ico-knife" aria-hidden="true"></i></span>
+          <span class="w-key"><b>3</b></span>
         </div>
-        <!-- 2 副武器：小蜜蜂 -->
+        <!-- 2 副武器：小蜜蜂（套筒 + 握把） -->
         <div class="w-row">
-          <span class="w-label">小蜜蜂</span>
-          <span class="w-box"><i class="ico ico-pistol" aria-hidden="true"></i></span>
-          <span class="w-key">2</span>
+          <span class="w-slot"><i class="ico ico-pistol" aria-hidden="true"></i></span>
+          <span class="w-key"><b>2</b></span>
         </div>
-        <!-- 1 主武器：枫鸣（当前高亮 + 武器名 + 大号弹药） -->
-        <div class="w-main">
-          <div class="w-info">
+        <!-- 1 主武器：枫鸣（当前选中，向左展开当前武器卡片） -->
+        <div class="w-row current">
+          <div class="w-card" aria-label="当前武器：枫鸣，弹匣 20，备弹 205">
+            <span class="w-ind" aria-hidden="true"></span>
+            <span class="w-rifle" aria-hidden="true">
+              <span class="ra-stock"></span>
+              <span class="ra-body"></span>
+              <span class="ra-sight"></span>
+              <span class="ra-barrel"></span>
+              <span class="ra-muzzle"></span>
+              <span class="ra-fsight"></span>
+              <span class="ra-mag"></span>
+              <span class="ra-grip"></span>
+            </span>
             <span class="w-name">枫鸣</span>
-            <span class="w-ammo"><b class="mag">20</b><span class="slash">/</span><span class="reserve">205</span></span>
+            <span class="w-ammo"><b class="mag">20</b><span class="reserve">205</span></span>
+            <span class="w-divider" aria-hidden="true"></span>
+            <span class="w-trigger" aria-hidden="true"></span>
           </div>
-          <span class="w-box"><i class="ico ico-rifle" aria-hidden="true"></i></span>
-          <span class="w-key">1</span>
+          <span class="w-slot active"><i class="ico ico-rifle" aria-hidden="true"></i></span>
+          <span class="w-key"><b>1</b></span>
         </div>
       </div>
 
@@ -1118,14 +1238,14 @@
   <!-- 页面底部说明 -->
   <footer class="page-foot">
     <span class="foot-tag">P0 画面要素</span>
-    <span>顶部双方头像比分面板</span><span class="sep">·</span>
-    <span>左下头像 + 生命 130 / 护甲 80 + 增益</span><span class="sep">·</span>
-    <span>底部 Q / X / C 菱形技能栏</span><span class="sep">·</span>
-    <span>右下竖排 1~5 武器栏（枫鸣 20 / 205）</span><span class="sep">·</span>
+    <span>顶部比分面板</span><span class="sep">·</span>
+    <span>左下血甲 + 增益</span><span class="sep">·</span>
+    <span>Q/X/C 菱形技能</span><span class="sep">·</span>
+    <span>右侧贴边竖排 5 格武器栏 + 当前武器卡片（图标/名称/弹匣/备弹，TACZ 兼容）</span><span class="sep">·</span>
     <span>准星</span><span class="sep">·</span>
     <span>伤害数字</span><span class="sep">·</span>
     <span>击杀播报</span><span class="sep">·</span>
-    <span>配色 <b class="accent-c">#35D6E8</b> / <b class="accent-m">#FF4FA3</b></span>
+    <span>配色 <b class="accent-c">#35D6E8</b>/<b class="accent-m">#FF4FA3</b></span>
   </footer>
 
 </body>
