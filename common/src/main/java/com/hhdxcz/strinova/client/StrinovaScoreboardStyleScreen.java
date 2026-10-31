@@ -345,13 +345,10 @@ public class StrinovaScoreboardStyleScreen extends Screen {
             }
             case 7 -> Minecraft.getInstance().setScreen(parent);
             case 8 -> {
-                StrinovaHudConfig.ScoreboardComponentStyle style = config.scoreboardComponent(selectedKey);
-                style.visible = true;
-                style.fontScale = 1.0F;
-                style.textColor = 0;
-                style.backgroundColor = 0;
+                config.resetScoreboardComponent(selectedKey);
                 if (isColumnKey(selectedKey)) {
-                    config.setScoreboardColumnWeight(selectedKey, 0.10F);
+                    config.setScoreboardColumnWeight(selectedKey,
+                            config.defaultScoreboardColumnWeight(selectedKey));
                 }
             }
             case 10 -> {
@@ -373,13 +370,8 @@ public class StrinovaScoreboardStyleScreen extends Screen {
             case 14 -> config.scoreboardComponent(selectedKey).centerH =
                     !config.scoreboardComponent(selectedKey).centerH;
             case 9 -> {
-                for (String key : StrinovaHudConfig.SCOREBOARD_COMPONENT_KEYS) {
-                    StrinovaHudConfig.ScoreboardComponentStyle style = config.scoreboardComponent(key);
-                    style.visible = true;
-                    style.fontScale = 1.0F;
-                    style.textColor = 0;
-                    style.backgroundColor = 0;
-                }
+                config.resetScoreboardComponentDefaults();
+                config.resetScoreboardColumnDefaults();
             }
             default -> {
             }

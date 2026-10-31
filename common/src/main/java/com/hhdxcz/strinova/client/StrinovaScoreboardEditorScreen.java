@@ -128,10 +128,15 @@ public class StrinovaScoreboardEditorScreen extends Screen {
         StrinovaHudConfig config = StrinovaHudConfig.get();
         config.scoreboardWidthRatio = 0.66F;
         config.scoreboardHeightRatio = 0.515F;
-        config.scoreboardOffsetX = 0.0F;
-        config.scoreboardOffsetY = 0.0F;
+        config.scoreboardOffsetX = -0.5F;
+        config.scoreboardOffsetY = -0.5F;
         config.scoreboardTextScale = 1.0F;
-        config.scoreboardRowHeight = 20;
+        config.scoreboardRowHeight = 18;
+        config.scoreboardRoundRowHeight = 24;
+        config.scoreboardNameLeftPadding = 0;
+        config.scoreboardSidebarWidthRatio = 0.0903F;
+        config.resetScoreboardColumnDefaults();
+        config.resetScoreboardComponentDefaults();
     }
 
     private void saveAndClose() {

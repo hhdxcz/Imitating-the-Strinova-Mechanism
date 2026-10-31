@@ -52,21 +52,21 @@ public final class StrinovaHudConfig {
     /** 面板高度占屏幕比例。 */
     public float scoreboardHeightRatio = 0.515F;
     /** 面板相对屏幕中心的偏移（GUI 像素）。 */
-    public float scoreboardOffsetX = 0.0F;
-    public float scoreboardOffsetY = 0.0F;
+    public float scoreboardOffsetX = -0.5F;
+    public float scoreboardOffsetY = -0.5F;
     /** 计分板文字缩放倍率（1.0 = 默认字号）。 */
     public float scoreboardTextScale = 1.0F;
     /** 数据行高度（GUI 像素）。 */
-    public int scoreboardRowHeight = 20;
+    public int scoreboardRowHeight = 18;
 
     /** 中间回合记录带「我方/敌方」单行高度（0 = 自动跟随数据行高）。 */
-    public int scoreboardRoundRowHeight = 0;
+    public int scoreboardRoundRowHeight = 24;
 
     /** 头像左侧留白（拖动「头像前」的列边界调整，0~24 像素）。 */
     public int scoreboardNameLeftPadding = 0;
 
     /** 左侧竖栏宽度占面板宽度比例（拖动「头像前」边界可左右调整，0.05~0.25）。 */
-    public float scoreboardSidebarWidthRatio = 0.11F;
+    public float scoreboardSidebarWidthRatio = 0.0903F;
 
     /** 每个部件独立样式（可见性/字号/文字色/背景色）。 */
     public java.util.LinkedHashMap<String, ScoreboardComponentStyle> scoreboardComponents;
@@ -100,7 +100,11 @@ public final class StrinovaHudConfig {
 
     private static java.util.LinkedHashMap<String, Float> defaultScoreboardColumnWeights() {
         java.util.LinkedHashMap<String, Float> map = new java.util.LinkedHashMap<>();
-        float[] defaults = {0.20F, 0.12F, 0.10F, 0.12F, 0.12F, 0.09F, 0.09F, 0.09F, 0.07F};
+        // 默认列宽来自用户导出的调好配置（config/strinova-scoreboard.json）
+        float[] defaults = {
+                0.17487265F, 0.12056741F, 0.084535345F, 0.1932312F, 0.07712453F,
+                0.111460865F, 0.07112326F, 0.11013797F, 0.056946784F
+        };
         for (int i = 0; i < SCOREBOARD_COLUMN_KEYS.length; i++) {
             map.put(SCOREBOARD_COLUMN_KEYS[i], defaults[i]);
         }
@@ -166,6 +170,17 @@ public final class StrinovaHudConfig {
         for (String key : SCOREBOARD_COMPONENT_KEYS) {
             map.put(key, new ScoreboardComponentStyle());
         }
+        // 默认样式来自用户导出的调好配置（config/strinova-scoreboard.json）
+        ScoreboardComponentStyle header = map.get("header");
+        header.fontScale = 1.05F;
+        header.centerH = true;
+        for (String key : new String[]{"kda", "ultimate", "weapon", "damage", "skill", "assist", "ping"}) {
+            map.get(key).centerH = true;
+        }
+        map.get("rows").fontScale = 0.85F;
+        ScoreboardComponentStyle rounds = map.get("rounds");
+        rounds.fontScale = 1.25F;
+        rounds.centerH = true;
         return map;
     }
 
@@ -175,6 +190,31 @@ public final class StrinovaHudConfig {
             scoreboardComponents = defaultScoreboardComponents();
         }
         return scoreboardComponents.computeIfAbsent(key, k -> new ScoreboardComponentStyle());
+    }
+
+    /** 把某个部件恢复为内置默认样式。 */
+    public void resetScoreboardComponent(String key) {
+        if (scoreboardComponents == null) {
+            scoreboardComponents = defaultScoreboardComponents();
+        }
+        ScoreboardComponentStyle defaults = defaultScoreboardComponents().get(key);
+        scoreboardComponents.put(key, defaults != null ? defaults : new ScoreboardComponentStyle());
+    }
+
+    /** 把所有部件恢复为内置默认样式。 */
+    public void resetScoreboardComponentDefaults() {
+        scoreboardComponents = defaultScoreboardComponents();
+    }
+
+    /** 把所有列宽恢复为内置默认权重。 */
+    public void resetScoreboardColumnDefaults() {
+        scoreboardColumnWeights = defaultScoreboardColumnWeights();
+    }
+
+    /** 某列的内置默认权重。 */
+    public float defaultScoreboardColumnWeight(String key) {
+        java.util.LinkedHashMap<String, Float> defaults = defaultScoreboardColumnWeights();
+        return defaults.getOrDefault(key, 0.08F);
     }
 
     private StrinovaHudConfig() {
