@@ -243,19 +243,19 @@ public class StrinovaScoreboardStyleScreen extends Screen {
     private int[] columnRect(int contentX, int contentW, int rowsTop, int rowsHeight) {
         String[] keys = StrinovaHudConfig.SCOREBOARD_COLUMN_KEYS;
         int[] anchors = StrinovaScoreboardOverlay.columnAnchors(contentW);
+        // anchors 只有 8 个（name..assist 的起点），这里补出 PING 的起点，避免访问 anchors[8] 越界
+        int pingStart = Math.max(anchors[anchors.length - 1] + 8,
+                contentW - Math.max(28, contentW / 10));
+        int[] starts = new int[keys.length];
+        for (int i = 0; i < keys.length; i++) {
+            starts[i] = i < anchors.length ? anchors[i] : pingStart;
+        }
         for (int i = 0; i < keys.length; i++) {
             if (!keys[i].equals(selectedKey)) {
                 continue;
             }
-            int start;
-            int end;
-            if (i >= 8) {
-                start = contentW - Math.max(28, contentW / 10);
-                end = contentW;
-            } else {
-                start = anchors[i];
-                end = anchors[i + 1];
-            }
+            int start = starts[i];
+            int end = (i + 1 < starts.length) ? starts[i + 1] : contentW;
             return new int[]{contentX + start, rowsTop, Math.max(4, end - start), rowsHeight};
         }
         return null;
