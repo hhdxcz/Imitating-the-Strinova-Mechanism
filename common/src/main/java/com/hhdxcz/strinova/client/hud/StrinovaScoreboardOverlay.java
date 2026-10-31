@@ -425,7 +425,14 @@ public final class StrinovaScoreboardOverlay {
 
             if (visible("growth")) {
                 float growthScale = BASE_VALUE_TEXT_SCALE * rowScale * fontScale("growth");
-                int growthColor = entry.growthLevel() >= 2 ? 0xFFDEB639 : 0xFF4B77DC;
+                // 本地玩家的成长等级取客户端实时加点状态（服务端不下发成长进度）
+                int growthLevel = entry.growthLevel();
+                boolean awakened = false;
+                if (entry.self() && StrinovaGrowthState.hasData()) {
+                    growthLevel = StrinovaGrowthState.growthLevel();
+                    awakened = StrinovaGrowthState.hasActiveAwakening();
+                }
+                int growthColor = (growthLevel >= 2 || awakened) ? 0xFFDEB639 : 0xFF4B77DC;
                 int chipBg = backgroundColor("growth", growthColor);
                 int chipSize = Math.max(8, Math.round(10 * Math.min(2.0F, fontScale("growth"))));
                 int chipY = rowY + (rowHeight - chipSize) / 2;
@@ -435,7 +442,7 @@ public final class StrinovaScoreboardOverlay {
                     chipX = contentX + starts[3] + Math.max(0, (end - starts[3] - chipSize) / 2);
                 }
                 painter.rect(chipX, chipY, chipSize, chipSize, chipBg);
-                String levelText = String.valueOf(entry.growthLevel());
+                String levelText = String.valueOf(growthLevel);
                 float levelScale = 0.75F * growthScale;
                 int levelWidth = Math.round(painter.textWidth(levelText) * levelScale);
                 painter.textScaled(levelText, chipX + Math.max(1, (chipSize - levelWidth) / 2),

@@ -19,7 +19,8 @@ import java.util.Locale;
  * 「弦能增幅网络」界面可视化自定义编辑器（与 TAB 计分板编辑器同一套交互习惯）。
  *
  * <ul>
- *   <li>中区按真实比例绘制界面示意图：标题条 / 左立绘 / 中间 2×4 增幅网络 / 右武器栏 / 底部觉醒；</li>
+ *   <li>中区按真实比例绘制界面示意图：标题条 / 满高左立绘 / 中间 2×4 增幅网络 + 底部 3 觉醒卡 /
+ *       右侧武器栏（1/2/3 整列宽 + 4/5 底部并排），并示意分类标题刷新图标、锁定灰显、武器切换图标；</li>
  *   <li>三条可拖拽边界（青色高亮）：立绘右边界 → {@code portraitWidthRatio}、
  *       武器栏左边界 → {@code weaponsWidthRatio}、觉醒区上边界 → {@code awakenHeightRatio}；</li>
  *   <li>底部按钮：6 个显隐开关 + 不透明度 / 列间距 / 行间距微调 + 4 个颜色循环按钮
@@ -596,11 +597,22 @@ public class StrinovaGrowthEditScreen extends Screen {
             int blockW = this.mapX(blockX + l.categoryColumnWidth) - this.mapX(blockX);
             int blockH = this.mapY(blockY + l.categoryBlockHeight) - this.mapY(blockY);
             int accent = PREVIEW_ACCENTS[i % PREVIEW_ACCENTS.length];
+            // mock：第 0 类视为「本类已选」，其未选项灰显、刷新图标可用；其余类刷新图标半透明
+            boolean mockLocked = i == 0;
             this.fillVirtual(graphics, blockX, blockY + 2, blockX + 10, blockY + 10, accent);
             if (blockW >= 26 && blockH >= 10) {
                 String label = i < groups.size() ? groups.get(i).label() : CATEGORY_FALLBACK_LABELS[i];
-                graphics.drawString(this.font, this.truncate(label, blockW - 18),
+                // 标题文字给右上角刷新图标让位
+                graphics.drawString(this.font, this.truncate(label, Math.max(10, blockW - 38)),
                         this.mapX(blockX) + 14, this.mapY(blockY) + 1, COLOR_TEXT, false);
+            }
+            // 分类标题右上角刷新图标（绿色斜四边形 + 白色圆形箭头）
+            if (blockW >= 24 && blockH >= 12) {
+                int iconX = this.mapX(blockX + l.categoryColumnWidth - 20);
+                int iconY = this.mapY(blockY);
+                int iconW = Math.max(8, this.mapX(blockX + l.categoryColumnWidth) - iconX);
+                int iconH = Math.max(6, this.mapY(blockY + 14) - iconY);
+                this.drawMiniRefreshIcon(graphics, iconX, iconY, iconW, iconH, mockLocked);
             }
             int itemCount = i < groups.size() ? Math.min(2, groups.get(i).items().size()) : 2;
             int itemsBlockHeight = l.itemRowHeight * itemCount
@@ -610,7 +622,7 @@ public class StrinovaGrowthEditScreen extends Screen {
             for (int j = 0; j < itemCount; j++) {
                 int itemY = itemsTop + j * (l.itemRowHeight + l.itemRowGap);
                 this.fillVirtual(graphics, blockX, itemY, blockX + l.categoryColumnWidth,
-                        itemY + l.itemRowHeight, withOpacity(0x1CFFFFFF, l.opacity));
+                        itemY + l.itemRowHeight, withOpacity(mockLocked ? 0x14000000 : 0x1CFFFFFF, l.opacity));
                 int itemH = this.mapY(itemY + l.itemRowHeight) - this.mapY(itemY);
                 if (itemH < 2 || blockW < 18) {
                     continue;
@@ -619,68 +631,77 @@ public class StrinovaGrowthEditScreen extends Screen {
                 int barBottom = itemY + Math.max(2, l.itemRowHeight / 2 + 1);
                 this.fillVirtual(graphics, blockX + 3, barTop,
                         blockX + Math.max(8, l.categoryColumnWidth * 3 / 5), barBottom,
-                        withOpacity(itemTextOverride, 0.7F));
+                        mockLocked ? 0xFF46525E : withOpacity(itemTextOverride, 0.7F));
                 this.fillVirtual(graphics, blockX + l.categoryColumnWidth - 10,
                         itemY + Math.max(1, l.itemRowHeight / 2 - 2),
                         blockX + l.categoryColumnWidth - 6,
-                        itemY + Math.max(2, l.itemRowHeight / 2 + 2), priceDotColor);
+                        itemY + Math.max(2, l.itemRowHeight / 2 + 2),
+                        mockLocked ? 0xFF46525E : priceDotColor);
             }
         }
     }
 
     private void drawWeaponsPreview(GuiGraphics graphics, StrinovaGrowthUi ui) {
         PreviewLayout l = this.preview;
-        this.fillVirtual(graphics, l.weaponsX - 4, l.weaponsY, l.innerRight, l.contentBottom,
+        this.fillVirtual(graphics, l.weaponsX - 4, l.weaponsY, l.innerRight, l.weaponsBottom,
                 withOpacity(0x88101824, ui.opacity));
-        this.fillVirtual(graphics, l.weaponsX - 4, l.weaponsY, l.weaponsX - 3, l.contentBottom, 0x4035D6E8);
+        this.fillVirtual(graphics, l.weaponsX - 4, l.weaponsY, l.weaponsX - 3, l.weaponsBottom, 0x4035D6E8);
+        int cardLeft = l.weaponsX;
+        int cardWidth = Math.max(8, l.innerRight - 4 - cardLeft);
         int slotGap = 3;
-        int available = l.contentBottom - l.weaponsY - 8 - (WEAPON_SLOT_COUNT - 1) * slotGap;
-        int slotHeight = clamp(available / WEAPON_SLOT_COUNT, 18, 48);
-        int totalHeight = WEAPON_SLOT_COUNT * slotHeight + (WEAPON_SLOT_COUNT - 1) * slotGap;
-        int startY = l.weaponsY + 4
-                + Math.max(0, (l.contentBottom - l.weaponsY - 8 - totalHeight) / 2);
-        for (int i = 0; i < WEAPON_SLOT_COUNT; i++) {
-            int slotY = startY + i * (slotHeight + slotGap);
-            boolean selected = i == 0;
-            this.fillVirtual(graphics, l.weaponsX, slotY, l.innerRight - 4, slotY + slotHeight,
-                    selected ? 0x66203548 : 0x2A0B121A);
-            this.fillVirtual(graphics, l.weaponsX, slotY, l.innerRight - 4, slotY + 1,
-                    selected ? COLOR_CYAN : 0x22FFFFFF);
-            int slotW = this.mapX(l.innerRight - 4) - this.mapX(l.weaponsX);
-            int slotH = this.mapY(slotY + slotHeight) - this.mapY(slotY);
-            if (slotH >= 9 && slotW >= 14) {
-                graphics.drawString(this.font, String.valueOf(i + 1),
-                        this.mapX(l.weaponsX) + 3, this.mapY(slotY) + 2,
-                        selected ? COLOR_CYAN : COLOR_TEXT_DIM, false);
-            }
-            if (slotH >= 9 && slotW >= 46) {
-                graphics.drawString(this.font, this.truncate(WEAPON_SLOT_LABELS[i], slotW - 20),
-                        this.mapX(l.weaponsX) + 13, this.mapY(slotY) + 2,
-                        COLOR_TEXT_DISABLED, false);
-            }
-            // 武器图标示意：居中的几何色块 / 菱形
-            if (slotH >= 14 && slotW >= 20) {
-                int iconSize = Math.min(Math.min(slotW - 26, slotH - 14), 18);
-                if (iconSize >= 6) {
-                    int iconX = this.mapX(l.weaponsX) + (slotW - iconSize) / 2;
-                    int iconY = this.mapY(slotY) + 10 + Math.max(0, (slotH - 12 - iconSize) / 2);
-                    this.drawWeaponPlaceholder(graphics, i, iconX, iconY, iconSize,
-                            selected ? COLOR_CYAN : 0xFFC8D4E0);
-                }
-            }
+        int top = l.weaponsY + 4;
+        int bottom = l.weaponsBottom - 4;
+        int rowHeight = Math.max(12, (bottom - top - slotGap * 3) / 4);
+        // 1 / 2 / 3：整列宽、四行等高
+        for (int i = 0; i < 3; i++) {
+            int slotY = top + i * (rowHeight + slotGap);
+            this.drawWeaponCardPreview(graphics, i, cardLeft, slotY, cardWidth, rowHeight);
         }
+        // 4 / 5：底部一行并排各半宽
+        int rowY = top + 3 * (rowHeight + slotGap);
+        int halfWidth = Math.max(8, (cardWidth - slotGap) / 2);
+        this.drawWeaponCardPreview(graphics, 3, cardLeft, rowY, halfWidth, rowHeight);
+        this.drawWeaponCardPreview(graphics, 4, cardLeft + halfWidth + slotGap, rowY, halfWidth, rowHeight);
+    }
+
+    /** 单张武器卡示意：序号 + 槽位类型、几何图标、右下角黄色「切换」双向箭头。 */
+    private void drawWeaponCardPreview(GuiGraphics graphics, int index, int x, int y, int width, int height) {
+        boolean selected = index == 0;
+        this.fillVirtual(graphics, x, y, x + width, y + height,
+                selected ? 0x66203548 : 0x2A0B121A);
+        this.fillVirtual(graphics, x, y, x + width, y + 1, selected ? COLOR_CYAN : 0x22FFFFFF);
+        int cardW = this.mapX(x + width) - this.mapX(x);
+        int cardH = this.mapY(y + height) - this.mapY(y);
+        if (cardH >= 9 && cardW >= 16) {
+            graphics.drawString(this.font, String.valueOf(index + 1),
+                    this.mapX(x) + 3, this.mapY(y) + 2,
+                    selected ? COLOR_CYAN : COLOR_TEXT_DIM, false);
+        }
+        if (cardH >= 9 && cardW >= 46) {
+            graphics.drawString(this.font, this.truncate(WEAPON_SLOT_LABELS[index], cardW - 18),
+                    this.mapX(x) + 13, this.mapY(y) + 2, COLOR_TEXT_DISABLED, false);
+        }
+        if (cardH >= 16 && cardW >= 22) {
+            int iconSize = Math.max(6, Math.min(Math.min(cardW - 22, cardH - 14), 18));
+            int iconX = this.mapX(x) + (cardW - iconSize) / 2;
+            int iconY = this.mapY(y) + 10 + Math.max(0, (cardH - 12 - iconSize) / 2);
+            this.drawWeaponPlaceholder(graphics, index, iconX, iconY, iconSize,
+                    selected ? COLOR_CYAN : 0xFFC8D4E0);
+        }
+        // 右下角黄色「切换 / 更换」双向箭头（装饰）
+        this.drawMiniSwitchIcon(graphics, this.mapX(x + width) - 3, this.mapY(y + height) - 2);
     }
 
     private void drawAwakeningsPreview(GuiGraphics graphics, StrinovaGrowthUi ui) {
         PreviewLayout l = this.preview;
         int cardGap = l.gap;
-        int cardWidth = (l.innerRight - l.innerLeft - 2 * cardGap) / 3;
+        int cardWidth = Math.max(8, (l.awakenWidth - 2 * cardGap) / 3);
         // 觉醒名称色 / 顶条：自定义 awakenNameColor 非 0 时同步示意
         int activeNameColor = ui.awakenNameColor != 0 ? ui.awakenNameColor : COLOR_GOLD;
         int inactiveNameColor = ui.awakenNameColor != 0
                 ? ((ui.awakenNameColor & 0x00FFFFFF) | 0xCC000000) : COLOR_TEXT_DIM;
         for (int i = 0; i < 3; i++) {
-            int x = l.innerLeft + i * (cardWidth + cardGap);
+            int x = l.awakenLeft + i * (cardWidth + cardGap);
             this.fillVirtual(graphics, x, l.awakenTop, x + cardWidth, l.awakenTop + l.awakenHeight,
                     withOpacity(0xCC101823, ui.opacity));
             this.fillVirtual(graphics, x, l.awakenTop, x + cardWidth, l.awakenTop + 2,
@@ -717,7 +738,7 @@ public class StrinovaGrowthEditScreen extends Screen {
         }
         if (l.showAwakenings) {
             this.drawHorizontalBoundary(graphics, this.mapY(l.awakenTop),
-                    this.mapX(l.innerLeft), this.mapX(l.innerRight),
+                    this.mapX(l.awakenLeft), this.mapX(l.awakenRight),
                     this.isBoundaryActive(DRAG_AWAKENINGS));
         }
     }
@@ -761,8 +782,9 @@ public class StrinovaGrowthEditScreen extends Screen {
             this.drawHiddenBadge(graphics, "武器 已隐藏", this.mapX(l.innerRight) - 34, contentCenterY);
         }
         if (!l.showAwakenings) {
-            this.drawHiddenBadge(graphics, "觉醒 已隐藏", this.mapX(this.width / 2),
-                    this.mapY(this.height - l.margin - 10));
+            this.drawHiddenBadge(graphics, "觉醒 已隐藏",
+                    this.mapX((l.awakenLeft + l.awakenRight) / 2),
+                    this.mapY(l.contentBottom - 14));
         }
     }
 
@@ -774,6 +796,49 @@ public class StrinovaGrowthEditScreen extends Screen {
                 Math.max(this.previewTop + 2, this.previewBottom - 10));
         graphics.fill(x, y, x + width, y + 10, 0xBB000000);
         graphics.drawString(this.font, text, x + 4, y + 1, COLOR_HIDDEN, false);
+    }
+
+    /** 示意图里的迷你刷新图标：绿色斜四边形底 + 白色圆形箭头（可用时高亮，否则半透明）。 */
+    private void drawMiniRefreshIcon(GuiGraphics graphics, int x, int y, int width, int height,
+                                     boolean enabled) {
+        int bg = enabled ? 0xFF57C785 : 0x6657C785;
+        int white = enabled ? 0xFFFFFFFF : 0x99FFFFFF;
+        int slant = Math.max(1, width / 6);
+        for (int row = 0; row < height; row++) {
+            int offset = slant - (row * slant) / Math.max(1, height - 1);
+            graphics.fill(x + offset, y + row, x + width, y + row + 1, bg);
+        }
+        int cx = x + width / 2;
+        int cy = y + height / 2;
+        int radius = Math.max(2, height / 2 - 1);
+        for (int dy = -radius; dy <= radius; dy++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                double dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < radius - 1.0D || dist > radius + 0.2D) {
+                    continue;
+                }
+                double angle = Math.toDegrees(Math.atan2(-dy, dx));
+                if (angle > 25.0D && angle < 70.0D) {
+                    continue;
+                }
+                graphics.fill(cx + dx, cy + dy, cx + dx + 1, cy + dy + 1, white);
+            }
+        }
+        // 缺口处箭头三角
+        int ax = cx + radius - 1;
+        int ay = cy - radius;
+        graphics.fill(ax, ay, ax + 2, ay + 1, white);
+        graphics.fill(ax, ay, ax + 1, ay + 2, white);
+    }
+
+    /** 示意图里的迷你黄色「切换 / 更换」双向箭头（装饰）。 */
+    private void drawMiniSwitchIcon(GuiGraphics graphics, int right, int bottom) {
+        int left = right - 7;
+        int top = bottom - 3;
+        graphics.fill(left - 1, top - 1, right + 1, bottom + 1, 0x66000000);
+        graphics.fill(left + 1, top + 1, right - 1, top + 2, COLOR_GOLD);
+        graphics.fill(left, top, left + 2, top + 3, COLOR_GOLD);
+        graphics.fill(right - 2, top, right, top + 3, COLOR_GOLD);
     }
 
     // ==================== 坐标映射（示意图 = 真实界面尺寸等比缩小） ====================
@@ -840,7 +905,7 @@ public class StrinovaGrowthEditScreen extends Screen {
         if (l.showAwakenings) {
             int boundaryY = this.mapY(l.awakenTop);
             if (Math.abs(mouseY - boundaryY) <= 5.0D
-                    && mouseX >= this.mapX(l.innerLeft) && mouseX <= this.mapX(l.innerRight)) {
+                    && mouseX >= this.mapX(l.awakenLeft) && mouseX <= this.mapX(l.awakenRight)) {
                 return DRAG_AWAKENINGS;
             }
         }
@@ -1060,6 +1125,7 @@ public class StrinovaGrowthEditScreen extends Screen {
         boolean showWeapons;
         int weaponsX;
         int weaponsY;
+        int weaponsBottom;
         int weaponsWidth;
         boolean compactWeapons;
 
@@ -1076,6 +1142,9 @@ public class StrinovaGrowthEditScreen extends Screen {
         int itemRowGap;
 
         boolean showAwakenings;
+        int awakenLeft;
+        int awakenRight;
+        int awakenWidth;
         int awakenTop;
         int awakenHeight;
         boolean showAwakenDescription;
@@ -1100,22 +1169,8 @@ public class StrinovaGrowthEditScreen extends Screen {
             l.headerHeight = l.showHeader ? (height >= 300 ? 28 : 22) : 0;
             l.controlHeight = Math.max(l.headerHeight, l.closeButtonSize);
             l.contentTop = l.headerTop + l.controlHeight + l.gap;
-
-            int gridMinHeight = CATEGORY_ROWS * 18 + (CATEGORY_ROWS - 1) * 2;
-            int awakenMax = Math.max(34,
-                    height - l.contentTop - margin - gridMinHeight - l.gap * 2);
-            l.showAwakenings = ui.showAwakenings && width >= 260 && height >= 220;
-            if (l.showAwakenings) {
-                l.awakenHeight = clamp(Math.round(height * ui.awakenHeightRatio),
-                        34, Math.max(34, Math.min(awakenMax, height / 2)));
-                l.showAwakenDescription = l.awakenHeight >= 56 && width >= 520;
-            } else {
-                l.awakenHeight = 0;
-                l.showAwakenDescription = false;
-            }
-            l.awakenTop = l.showAwakenings ? height - margin - l.awakenHeight : height - margin;
-            l.contentBottom = Math.max(l.contentTop + 8,
-                    l.showAwakenings ? l.awakenTop - l.gap : height - margin);
+            // 内容区一直延伸到底部（立绘 / 武器栏满高）
+            l.contentBottom = height - margin;
 
             int available = l.innerRight - l.innerLeft;
             int portraitRaw = Math.round(width * ui.portraitWidthRatio);
@@ -1135,10 +1190,11 @@ public class StrinovaGrowthEditScreen extends Screen {
             l.compactWeapons = !l.showWeapons || l.weaponsWidth < 64;
             l.weaponsX = l.showWeapons ? l.innerRight - l.weaponsWidth : l.innerRight;
             l.weaponsY = l.contentTop;
+            l.weaponsBottom = l.contentBottom;
 
             l.categoriesLeft = l.innerLeft + (l.showPortrait ? l.portraitWidth + l.gap : 0);
-            l.categoriesTop = l.contentTop;
             l.categoriesRight = l.showWeapons ? l.weaponsX - l.gap : l.innerRight;
+            l.categoriesTop = l.contentTop;
             l.categoriesBottom = l.contentBottom;
 
             int minGridWidth = 2 * 48 + 6;
@@ -1146,6 +1202,7 @@ public class StrinovaGrowthEditScreen extends Screen {
                 if (l.showPortrait) {
                     l.showPortrait = false;
                     l.portraitWidth = 0;
+                    l.portraitHeight = 0;
                     l.categoriesLeft = l.innerLeft;
                 }
                 if (l.categoriesRight - l.categoriesLeft < minGridWidth && l.showWeapons) {
@@ -1156,6 +1213,29 @@ public class StrinovaGrowthEditScreen extends Screen {
                     l.compactWeapons = true;
                 }
             }
+
+            // 觉醒区：只在立绘右侧的中间列底部
+            int gridMinHeight = CATEGORY_ROWS * 18 + (CATEGORY_ROWS - 1) * 2;
+            int middleWidth = Math.max(0, l.categoriesRight - l.categoriesLeft);
+            int awakenMax = Math.max(34,
+                    l.contentBottom - l.contentTop - gridMinHeight - l.gap * 2);
+            l.showAwakenings = ui.showAwakenings && width >= 260 && height >= 220
+                    && middleWidth >= 120;
+            if (l.showAwakenings) {
+                l.awakenHeight = clamp(Math.round(height * ui.awakenHeightRatio),
+                        34, Math.max(34, Math.min(awakenMax, height / 2)));
+                l.showAwakenDescription = l.awakenHeight >= 56 && middleWidth >= 480;
+            } else {
+                l.awakenHeight = 0;
+                l.showAwakenDescription = false;
+            }
+            l.awakenLeft = l.categoriesLeft;
+            l.awakenRight = l.categoriesRight;
+            l.awakenWidth = middleWidth;
+            l.awakenTop = l.showAwakenings ? l.contentBottom - l.awakenHeight : l.contentBottom;
+            l.categoriesBottom = l.showAwakenings
+                    ? Math.max(l.categoriesTop + 8, l.awakenTop - l.gap)
+                    : l.contentBottom;
 
             l.categoryColumnGap = clamp(Math.round(ui.columnGap), 0, 32);
             int rowGapWanted = clamp(Math.round(ui.rowGap), 0, 32);

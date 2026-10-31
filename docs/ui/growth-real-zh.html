@@ -20,8 +20,8 @@ body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; color: #EAF2FA; b
   .head .ready { margin-left:auto; font-size:15px; color:#C8D4E0; }
   .head .close { width:38px; height:38px; margin-left:22px; display:flex; align-items:center;
     justify-content:center; font-size:23px; color:#EAF2FA; border:1px solid rgba(255,255,255,.28); }
-  .main { position:absolute; left:18px; right:18px; top:80px; bottom:206px; display:flex; gap:16px; }
-  .portrait { width:252px; flex:none; position:relative; overflow:hidden;
+  .main { position:absolute; left:18px; right:18px; top:80px; bottom:14px; display:flex; gap:16px; }
+  .portrait { width:252px; flex:none; height:100%; position:relative; overflow:hidden;
     background:linear-gradient(165deg, #FF4FA366 0%, #0e1621 58%, #080d14 100%);
     border:1px solid rgba(255,255,255,.14); }
   .portrait .giant { position:absolute; left:50%; top:40%; transform:translate(-50%,-50%);
@@ -33,20 +33,30 @@ body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; color: #EAF2FA; b
   .portrait .rolechip i { width:12px; height:12px; background:#FF4FA3; transform:rotate(45deg); display:inline-block; }
   .portrait .stats { position:absolute; left:14px; right:10px; bottom:16px; font-size:12px;
     color:#9AA8B8; letter-spacing:.5px; }
-  .network { flex:1; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(4,1fr);
-    grid-auto-flow:column; gap:10px 22px; }
-  .branch { padding:2px 2px 6px; }
-  .bhead { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+  .centerCol { flex:1; min-width:0; display:flex; flex-direction:column; gap:12px; }
+  .network { flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(4,1fr);
+    grid-auto-flow:column; gap:8px 22px; }
+  .branch { padding:2px 2px 4px; }
+  .bhead { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
   .bicon { width:14px; height:14px; flex:none; display:inline-block; }
   .ico-diamond { transform:rotate(45deg) scale(.82); }
   .ico-circle { border-radius:50%; }
   .ico-shield { clip-path:polygon(50% 0, 100% 18%, 100% 62%, 50% 100%, 0 62%, 0 18%); }
   .ico-triangle { clip-path:polygon(50% 0, 100% 100%, 0 100%); }
   .bhead span { font-size:15px; font-weight:700; letter-spacing:.3px; }
+  .refresh { margin-left:auto; width:23px; height:17px; flex:none; position:relative;
+    background:linear-gradient(135deg, #7FE3A8, #3FA96F);
+    clip-path:polygon(16% 0, 100% 0, 84% 100%, 0 100%); }
+  .refresh.dim { opacity:.55; }
+  .refresh::before { content:''; position:absolute; left:5px; top:5px; width:10px; height:8px;
+    border:2px solid #fff; border-right-color:transparent; border-radius:50%; }
+  .refresh::after { content:''; position:absolute; left:12px; top:2px; border-left:5px solid #fff;
+    border-top:3.5px solid transparent; border-bottom:3.5px solid transparent; transform:rotate(18deg); }
   .bitems { display:flex; flex-direction:column; }
-  .bitem { height:31px; display:flex; align-items:center; padding:0 10px;
+  .bitem { height:30px; display:flex; align-items:center; padding:0 10px;
     border-top:1px solid rgba(255,255,255,.055); background:rgba(0,0,0,.22); }
   .bitem:last-child { border-bottom:1px solid rgba(255,255,255,.055); }
+  .bitem.grayed { opacity:.45; }
   .btext { font-size:13px; color:#D8E2EC; }
   .bprice { margin-left:auto; display:flex; align-items:center; gap:6px; }
   .bprice em { font-style:normal; font-size:14px; font-weight:700; color:#FF8A7A; }
@@ -57,34 +67,42 @@ body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; color: #EAF2FA; b
   .wcard { flex:1; position:relative; background:rgba(255,255,255,.045);
     border:1px solid rgba(255,255,255,.14); padding:5px 7px; }
   .wcard.sel { border-color:rgba(53,214,232,.75); background:rgba(53,214,232,.12); }
+  .wrowlow { display:flex; gap:8px; flex:1; }
+  .wrowlow .wcard { flex:1; }
   .wtop { display:flex; align-items:center; gap:6px; font-size:11px; color:#9AA8B8; }
   .wnum { font-weight:700; color:#C8D4E0; }
-  .wicon { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); width:74px; height:34px; }
+  .wicon { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); width:74px; height:32px; }
   .wicon::before { content:''; position:absolute; inset:0; background:#C8D4E0; opacity:.9; }
   .wicon.rifle::before { clip-path:polygon(0 42%, 78% 42%, 78% 30%, 92% 30%, 92% 55%, 70% 55%, 70% 78%, 46% 78%, 46% 55%, 0 55%); }
   .wicon.pistol::before { clip-path:polygon(4% 34%, 78% 34%, 78% 45%, 96% 45%, 96% 56%, 72% 56%, 72% 82%, 50% 82%, 50% 56%, 4% 56%); }
   .wicon.knife::before { clip-path:polygon(2% 92%, 72% 4%, 90% 22%, 20% 100%); }
   .wicon.grenade::before { clip-path:polygon(50% 12%, 92% 52%, 50% 92%, 8% 52%); }
   .wname { position:absolute; left:7px; bottom:5px; font-size:12px; color:#D8E2EC;
-    max-width:126px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    max-width:112px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .whint { position:absolute; left:5px; right:3px; bottom:4px; font-size:10px; color:#FF6B6B;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .wcard:has(.whint) .wname { display:none; }
-  .awaken { position:absolute; left:18px; right:18px; bottom:14px; height:182px; display:flex; gap:16px; }
-  .acard { flex:1; padding:11px 14px; background:rgba(255,255,255,.045);
+  .whintbar { height:14px; flex:none; display:flex; align-items:center; justify-content:flex-end;
+    font-size:10.5px; color:#FF6B6B; }
+  .swap { position:absolute; right:5px; bottom:4px; width:15px; height:10px; opacity:.9; }
+  .swap::before { content:''; position:absolute; left:0; top:2px; width:11px; height:2px; background:#FFC94A; }
+  .swap::after { content:''; position:absolute; left:0; top:0; border-right:4px solid #FFC94A;
+    border-top:2px solid transparent; border-bottom:2px solid transparent; transform:rotate(180deg); }
+  .awaken { height:186px; flex:none; display:flex; gap:12px; }
+  .acard { flex:1; min-width:0; padding:9px 11px; background:rgba(255,255,255,.045);
     border:1px solid rgba(255,255,255,.10); position:relative; }
   .acard.on { border-color:rgba(255,209,102,.7); background:rgba(255,209,102,.07); }
-  .atop { display:flex; align-items:center; gap:8px; font-size:12px; color:#C8D4E0; }
-  .aneed { display:flex; align-items:center; gap:4px; margin-left:2px; }
-  .needneed { width:9px; height:9px; display:inline-block; }
+  .atop { display:flex; align-items:center; gap:6px; font-size:11.5px; color:#C8D4E0; }
+  .aneed { display:flex; align-items:center; gap:3px; }
+  .needneed { width:8px; height:8px; display:inline-block; }
   .needneed.sq { border-radius:1px; }
   .needneed.ci { border-radius:50%; }
   .needneed.tri { clip-path:polygon(50% 0, 100% 100%, 0 100%); }
-  .astatus { margin-left:auto; font-size:11.5px; color:#7f8c9a; }
+  .astatus { margin-left:auto; font-size:11px; color:#7f8c9a; }
   .acard.on .astatus { color:#54E0A0; }
-  .aname { font-size:16px; font-weight:800; margin:6px 0 5px; color:#EAF2FA; }
+  .aname { font-size:15px; font-weight:800; margin:5px 0 4px; color:#EAF2FA; }
   .acard.on .aname { color:#FFD166; }
-  .adesc { font-size:12.5px; line-height:1.55; color:#B4C0CC;
+  .adesc { font-size:11.5px; line-height:1.5; color:#B4C0CC;
     display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
   .tooltip { position:absolute; left:24px; top:96px; width:250px; background:#0C121A;
     border:1px solid #2A3542; padding:9px 11px; box-shadow:0 6px 26px rgba(0,0,0,.6); z-index:9; }
@@ -105,133 +123,118 @@ body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; color: #EAF2FA; b
         <div class="rolechip"><i></i>先锋</div>
         <div class="stats">生命 130　护甲 80　移速 58</div>
       </div>
-      <div class="network">
+      <div class="centerCol">
+        <div class="network">
       <div class="branch">
-        <div class="bhead"><i class="bicon ico-diamond" style="background:#5A9BFF"></i><span>输出</span></div>
-        <div class="bitems">
-          <div class="bitem owned">
-              <span class="btext">基础伤害提升</span>
-              <span class="bowned">已升级</span>
-            </div><div class="bitem">
-              <span class="btext">五连发射击模式</span>
-              <span class="bprice"><em>150</em><i class="gem"></i></span>
-            </div>
+        <div class="bhead">
+          <i class="bicon ico-diamond" style="background:#5A9BFF"></i>
+          <span>输出</span>
+          <i class="refresh"></i>
         </div>
-      </div>
-      <div class="branch">
-        <div class="bhead"><i class="bicon ico-diamond" style="background:#5A9BFF"></i><span>暴击</span></div>
-        <div class="bitems">
-          <div class="bitem">
-              <span class="btext">爆头伤害提升</span>
-              <span class="bprice"><em>150</em><i class="gem"></i></span>
-            </div><div class="bitem">
-              <span class="btext">弦化伤害提升</span>
-              <span class="bprice"><em>150</em><i class="gem"></i></span>
-            </div>
-        </div>
-      </div>
-      <div class="branch">
-        <div class="bhead"><i class="bicon ico-diamond" style="background:#5A9BFF"></i><span>续航</span></div>
-        <div class="bitems">
-          <div class="bitem">
-              <span class="btext">载弹数量提升</span>
-              <span class="bprice"><em>150</em><i class="gem"></i></span>
-            </div><div class="bitem">
-              <span class="btext">换弹速度提升</span>
-              <span class="bprice"><em>150</em><i class="gem"></i></span>
-            </div>
-        </div>
-      </div>
-      <div class="branch">
-        <div class="bhead"><i class="bicon ico-diamond" style="background:#5A9BFF"></i><span>精准</span></div>
-        <div class="bitems">
-          <div class="bitem">
-              <span class="btext">散射控制提升</span>
-              <span class="bprice"><em>150</em><i class="gem"></i></span>
-            </div><div class="bitem">
-              <span class="btext">后坐控制提升</span>
-              <span class="bprice"><em>150</em><i class="gem"></i></span>
-            </div>
-        </div>
-      </div>
-      <div class="branch">
-        <div class="bhead"><i class="bicon ico-circle" style="background:#E8B54D"></i><span>咒法！驭灵逐影</span></div>
-        <div class="bitems">
-          <div class="bitem">
-              <span class="btext">冷却时间减少5秒</span>
-              <span class="bprice"><em>250</em><i class="gem"></i></span>
-            </div><div class="bitem">
-              <span class="btext">伤害提升8点</span>
-              <span class="bprice"><em>250</em><i class="gem"></i></span>
-            </div>
-        </div>
-      </div>
-      <div class="branch">
-        <div class="bhead"><i class="bicon ico-circle" style="background:#E8B54D"></i><span>咒法！踏空凌虚</span></div>
-        <div class="bitems">
-          <div class="bitem">
-              <span class="btext">冷却恢复速率提升50%</span>
-              <span class="bprice"><em>250</em><i class="gem"></i></span>
-            </div>
-        </div>
-      </div>
-      <div class="branch">
-        <div class="bhead"><i class="bicon ico-shield" style="background:#57C785"></i><span>护甲</span></div>
-        <div class="bitems">
-          <div class="bitem">
-              <span class="btext">快回轻型护甲</span>
-              <span class="bprice"><em>250</em><i class="gem"></i></span>
-            </div><div class="bitem">
-              <span class="btext">重型护甲</span>
-              <span class="bprice"><em>250</em><i class="gem"></i></span>
-            </div>
-        </div>
-      </div>
-      <div class="branch">
-        <div class="bhead"><i class="bicon ico-triangle" style="background:#57C785"></i><span>弦化</span></div>
-        <div class="bitems">
-          <div class="bitem">
-              <span class="btext">弦化状态移速增加15%</span>
-              <span class="bprice"><em>250</em><i class="gem"></i></span>
-            </div><div class="bitem">
-              <span class="btext">弦化减伤系数提至46%</span>
-              <span class="bprice"><em>250</em><i class="gem"></i></span>
-            </div>
-        </div>
+        <div class="bitems"><div class="bitem owned">
+        <span class="btext">基础伤害提升</span>
+        <span class="bowned">已升级</span>
+      </div><div class="bitem grayed">
+        <span class="btext">五连发射击模式</span>
+        <span class="bprice"><em>150</em><i class="gem"></i></span>
       </div></div>
-      <div class="weapons">
-      <div class="wcard sel">
-        <div class="wtop"><span class="wnum">1</span><span class="wtype">主武器</span></div>
-        <div class="wicon rifle"></div>
-        <div class="wname">雨晦</div>
-        
       </div>
-      <div class="wcard">
-        <div class="wtop"><span class="wnum">2</span><span class="wtype">副武器</span></div>
-        <div class="wicon pistol"></div>
-        <div class="wname">副武器</div>
-        
-      </div>
-      <div class="wcard">
-        <div class="wtop"><span class="wnum">3</span><span class="wtype">近战武器</span></div>
-        <div class="wicon knife"></div>
-        <div class="wname">近战武器</div>
-        
-      </div>
-      <div class="wcard">
-        <div class="wtop"><span class="wnum">4</span><span class="wtype">战术道具</span></div>
-        <div class="wicon grenade"></div>
-        <div class="wname">战术道具</div>
-        <div class="whint">现在可装备战术技能</div>
-      </div>
-      <div class="wcard">
-        <div class="wtop"><span class="wnum">5</span><span class="wtype">战术道具</span></div>
-        <div class="wicon grenade"></div>
-        <div class="wname">战术道具</div>
-        <div class="whint">现在可装备战术技能</div>
+      <div class="branch">
+        <div class="bhead">
+          <i class="bicon ico-diamond" style="background:#5A9BFF"></i>
+          <span>暴击</span>
+          <i class="refresh dim"></i>
+        </div>
+        <div class="bitems"><div class="bitem">
+        <span class="btext">爆头伤害提升</span>
+        <span class="bprice"><em>150</em><i class="gem"></i></span>
+      </div><div class="bitem">
+        <span class="btext">弦化伤害提升</span>
+        <span class="bprice"><em>150</em><i class="gem"></i></span>
       </div></div>
-    </div>
-    <div class="awaken">
+      </div>
+      <div class="branch">
+        <div class="bhead">
+          <i class="bicon ico-diamond" style="background:#5A9BFF"></i>
+          <span>续航</span>
+          <i class="refresh dim"></i>
+        </div>
+        <div class="bitems"><div class="bitem">
+        <span class="btext">载弹数量提升</span>
+        <span class="bprice"><em>150</em><i class="gem"></i></span>
+      </div><div class="bitem">
+        <span class="btext">换弹速度提升</span>
+        <span class="bprice"><em>150</em><i class="gem"></i></span>
+      </div></div>
+      </div>
+      <div class="branch">
+        <div class="bhead">
+          <i class="bicon ico-diamond" style="background:#5A9BFF"></i>
+          <span>精准</span>
+          <i class="refresh dim"></i>
+        </div>
+        <div class="bitems"><div class="bitem">
+        <span class="btext">散射控制提升</span>
+        <span class="bprice"><em>150</em><i class="gem"></i></span>
+      </div><div class="bitem">
+        <span class="btext">后坐控制提升</span>
+        <span class="bprice"><em>150</em><i class="gem"></i></span>
+      </div></div>
+      </div>
+      <div class="branch">
+        <div class="bhead">
+          <i class="bicon ico-circle" style="background:#E8B54D"></i>
+          <span>咒法！驭灵逐影</span>
+          <i class="refresh dim"></i>
+        </div>
+        <div class="bitems"><div class="bitem">
+        <span class="btext">冷却时间减少5秒</span>
+        <span class="bprice"><em>250</em><i class="gem"></i></span>
+      </div><div class="bitem">
+        <span class="btext">伤害提升8点</span>
+        <span class="bprice"><em>250</em><i class="gem"></i></span>
+      </div></div>
+      </div>
+      <div class="branch">
+        <div class="bhead">
+          <i class="bicon ico-circle" style="background:#E8B54D"></i>
+          <span>咒法！踏空凌虚</span>
+          <i class="refresh dim"></i>
+        </div>
+        <div class="bitems"><div class="bitem">
+        <span class="btext">冷却恢复速率提升50%</span>
+        <span class="bprice"><em>250</em><i class="gem"></i></span>
+      </div></div>
+      </div>
+      <div class="branch">
+        <div class="bhead">
+          <i class="bicon ico-shield" style="background:#57C785"></i>
+          <span>护甲</span>
+          <i class="refresh dim"></i>
+        </div>
+        <div class="bitems"><div class="bitem">
+        <span class="btext">快回轻型护甲</span>
+        <span class="bprice"><em>250</em><i class="gem"></i></span>
+      </div><div class="bitem">
+        <span class="btext">重型护甲</span>
+        <span class="bprice"><em>250</em><i class="gem"></i></span>
+      </div></div>
+      </div>
+      <div class="branch">
+        <div class="bhead">
+          <i class="bicon ico-triangle" style="background:#57C785"></i>
+          <span>弦化</span>
+          <i class="refresh dim"></i>
+        </div>
+        <div class="bitems"><div class="bitem">
+        <span class="btext">弦化状态移速增加15%</span>
+        <span class="bprice"><em>250</em><i class="gem"></i></span>
+      </div><div class="bitem">
+        <span class="btext">弦化减伤系数提至46%</span>
+        <span class="bprice"><em>250</em><i class="gem"></i></span>
+      </div></div>
+      </div></div>
+        <div class="awaken">
     <div class="acard on">
       <div class="atop">
         <span class="alabel">觉醒1：</span>
@@ -259,6 +262,45 @@ body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; color: #EAF2FA; b
       <div class="aname">全视之眼</div>
       <div class="adesc">大幅延长念灵的存在时间，在念灵存在期间可以再次激活主动技能接入念灵的操纵，并在操纵期间强化念灵的各项属性；</div>
     </div></div>
+      </div>
+      <div class="weapons">
+        
+      <div class="wcard  sel">
+        <div class="wtop"><span class="wnum">1</span><span class="wtype">主武器</span></div>
+        <div class="wicon rifle"></div>
+        <div class="wname">雨晦</div>
+        <span class="swap"></span>
+      </div>
+        
+      <div class="wcard ">
+        <div class="wtop"><span class="wnum">2</span><span class="wtype">副武器</span></div>
+        <div class="wicon pistol"></div>
+        <div class="wname">副武器</div>
+        <span class="swap"></span>
+      </div>
+        
+      <div class="wcard ">
+        <div class="wtop"><span class="wnum">3</span><span class="wtype">近战武器</span></div>
+        <div class="wicon knife"></div>
+        <div class="wname">近战武器</div>
+        <span class="swap"></span>
+      </div>
+        <div class="wrowlow">
+      <div class="wcard ">
+        <div class="wtop"><span class="wnum">4</span><span class="wtype">战术道具</span></div>
+        <div class="wicon grenade"></div>
+        <div class="wname">战术道具</div>
+        <span class="swap"></span>
+      </div>
+      <div class="wcard ">
+        <div class="wtop"><span class="wnum">5</span><span class="wtype">战术道具</span></div>
+        <div class="wicon grenade"></div>
+        <div class="wname">战术道具</div>
+        <span class="swap"></span>
+      </div></div>
+        <div class="whintbar">现在可装备战术技能</div>
+      </div>
+    </div>
     
     <div class="tooltip">
       <div class="tt-title">基础伤害提升</div>

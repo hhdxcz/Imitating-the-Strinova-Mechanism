@@ -132,6 +132,10 @@ public final class StrinovaGrowthState {
         if (itemIndex < 0 || itemIndex >= category.items().size()) {
             return false;
         }
+        // 每个分支只能选择一项：已选过（含已购项本身）直接拒绝
+        if (isCategoryLocked(categoryIndex)) {
+            return false;
+        }
         UpgradeItem item = category.items().get(itemIndex);
         if (item.purchased() || energyPoints < item.cost()) {
             return false;
@@ -140,6 +144,65 @@ public final class StrinovaGrowthState {
         energyPoints -= item.cost();
         rebuild();
         return true;
+    }
+
+    /** 该分支是否已经选过一项（每类只能选一项，选择后其余项灰显不可点）。 */
+    public static boolean isCategoryLocked(int categoryIndex) {
+        if (categoryIndex < 0 || categoryIndex >= categories.size()) {
+            return false;
+        }
+        for (UpgradeItem item : categories.get(categoryIndex).items()) {
+            if (item.purchased()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 返还该分支已选项目的能量点，并允许重新选择。
+     * 对应界面中分支标题右上角的「刷新」图标。
+     */
+    public static boolean refundCategory(int categoryIndex) {
+        if (categoryIndex < 0 || categoryIndex >= categories.size()) {
+            return false;
+        }
+        Category category = categories.get(categoryIndex);
+        int refund = 0;
+        boolean any = false;
+        for (int i = 0; i < category.items().size(); i++) {
+            if (purchased.remove(key(category.slot(), i))) {
+                refund += category.items().get(i).cost();
+                any = true;
+            }
+        }
+        if (!any) {
+            return false;
+        }
+        energyPoints = clampEnergy(energyPoints + refund);
+        rebuild();
+        return true;
+    }
+
+    /** 成长等级（TAB 计分板显示）：1 + 已选项目数，最大 9。 */
+    public static int growthLevel() {
+        return Math.min(9, 1 + purchased.size());
+    }
+
+    /** 已激活的觉醒数量。 */
+    public static int activeAwakenings() {
+        int count = 0;
+        for (Awakening awakening : awakenings) {
+            if (awakening.active()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /** 是否已激活任意觉醒（TAB 计分板成长等级高亮用）。 */
+    public static boolean hasActiveAwakening() {
+        return activeAwakenings() > 0;
     }
 
     /** 重置当前角色的能量点与购买状态（能量点恢复为配置值）。 */

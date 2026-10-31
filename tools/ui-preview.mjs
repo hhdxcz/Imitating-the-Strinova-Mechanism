@@ -138,37 +138,48 @@ function headerPattern(accent) {
 function growthHtml(agent, lang) {
   const t = L[lang];
   const accent = ROLE_COLORS[agent.role] || ROLE_EN[agent.role] || '#35D6E8';
-  const weaponCards = t.weaponSlots.map((slot, index) => {
-    const name = index === 0 ? agent.weapon.name : slot;
+
+  // 演示「每类只能选一项」：第一类选了第一项，第二项灰显；其余类未选
+  const lockedSlot = agent.network[0] ? agent.network[0].slot : 1;
+
+  const swapIcon = '<span class="swap"></span>';
+  const weaponCard = (index, extraClass) => {
+    const slotLabel = t.weaponSlots[index];
+    const name = index === 0 ? agent.weapon.name : slotLabel;
     const iconClass = index === 0 ? 'rifle' : index === 1 ? 'pistol' : index === 2 ? 'knife' : 'grenade';
     return `
-      <div class="wcard${index === 0 ? ' sel' : ''}">
-        <div class="wtop"><span class="wnum">${index + 1}</span><span class="wtype">${esc(slot)}</span></div>
+      <div class="wcard ${extraClass || ''}${index === 0 ? ' sel' : ''}">
+        <div class="wtop"><span class="wnum">${index + 1}</span><span class="wtype">${esc(slotLabel)}</span></div>
         <div class="wicon ${iconClass}"></div>
         <div class="wname">${esc(name)}</div>
-        ${index >= 3 ? `<div class="whint">${esc(t.weaponHint)}</div>` : ''}
+        ${swapIcon}
       </div>`;
-  }).join('');
+  };
 
   const branches = agent.network.map((group) => {
     const kind = group.kind;
     const iconClass = kind === 'weapon' ? 'ico-diamond' : (kind === 'active' || kind === 'passive') ? 'ico-circle'
       : kind === 'armor' ? 'ico-shield' : 'ico-triangle';
     const color = kind === 'weapon' ? '#5A9BFF' : (kind === 'active' || kind === 'passive') ? '#E8B54D' : '#57C785';
+    const locked = group.slot === lockedSlot;
+    const items = group.items.map((item, index) => {
+      const owned = locked && index === 0;
+      const grayed = locked && index > 0;
+      return `<div class="bitem${owned ? ' owned' : ''}${grayed ? ' grayed' : ''}">
+        <span class="btext">${esc(item.text)}</span>
+        ${owned
+          ? `<span class="bowned">${esc(t.upgraded)}</span>`
+          : `<span class="bprice"><em>${item.cost}</em><i class="gem"></i></span>`}
+      </div>`;
+    }).join('');
     return `
       <div class="branch">
-        <div class="bhead"><i class="bicon ${iconClass}" style="background:${color}"></i><span>${esc(group.label)}</span></div>
-        <div class="bitems">
-          ${group.items.map((item, index) => {
-            const owned = group.slot === 1 && index === 0;
-            return `<div class="bitem${owned ? ' owned' : ''}">
-              <span class="btext">${esc(item.text)}</span>
-              ${owned
-                ? `<span class="bowned">${esc(t.upgraded)}</span>`
-                : `<span class="bprice"><em>${item.cost}</em><i class="gem"></i></span>`}
-            </div>`;
-          }).join('')}
+        <div class="bhead">
+          <i class="bicon ${iconClass}" style="background:${color}"></i>
+          <span>${esc(group.label)}</span>
+          <i class="refresh${locked ? '' : ' dim'}"></i>
         </div>
+        <div class="bitems">${items}</div>
       </div>`;
   }).join('');
 
@@ -197,7 +208,6 @@ function growthHtml(agent, lang) {
       <div class="adesc">${esc(awakening.desc)}</div>
     </div>`).join('');
 
-  // 示例 tooltip：取第一个有 change 文案的项（中文模式）
   let tip = null;
   if (lang === 'zh') {
     outer:
@@ -227,8 +237,8 @@ function growthHtml(agent, lang) {
   .head .ready { margin-left:auto; font-size:15px; color:#C8D4E0; }
   .head .close { width:38px; height:38px; margin-left:22px; display:flex; align-items:center;
     justify-content:center; font-size:23px; color:#EAF2FA; border:1px solid rgba(255,255,255,.28); }
-  .main { position:absolute; left:18px; right:18px; top:80px; bottom:206px; display:flex; gap:16px; }
-  .portrait { width:252px; flex:none; position:relative; overflow:hidden;
+  .main { position:absolute; left:18px; right:18px; top:80px; bottom:14px; display:flex; gap:16px; }
+  .portrait { width:252px; flex:none; height:100%; position:relative; overflow:hidden;
     background:linear-gradient(165deg, ${accent}66 0%, #0e1621 58%, #080d14 100%);
     border:1px solid rgba(255,255,255,.14); }
   .portrait .giant { position:absolute; left:50%; top:40%; transform:translate(-50%,-50%);
@@ -240,20 +250,30 @@ function growthHtml(agent, lang) {
   .portrait .rolechip i { width:12px; height:12px; background:${accent}; transform:rotate(45deg); display:inline-block; }
   .portrait .stats { position:absolute; left:14px; right:10px; bottom:16px; font-size:12px;
     color:#9AA8B8; letter-spacing:.5px; }
-  .network { flex:1; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(4,1fr);
-    grid-auto-flow:column; gap:10px 22px; }
-  .branch { padding:2px 2px 6px; }
-  .bhead { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+  .centerCol { flex:1; min-width:0; display:flex; flex-direction:column; gap:12px; }
+  .network { flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(4,1fr);
+    grid-auto-flow:column; gap:8px 22px; }
+  .branch { padding:2px 2px 4px; }
+  .bhead { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
   .bicon { width:14px; height:14px; flex:none; display:inline-block; }
   .ico-diamond { transform:rotate(45deg) scale(.82); }
   .ico-circle { border-radius:50%; }
   .ico-shield { clip-path:polygon(50% 0, 100% 18%, 100% 62%, 50% 100%, 0 62%, 0 18%); }
   .ico-triangle { clip-path:polygon(50% 0, 100% 100%, 0 100%); }
   .bhead span { font-size:15px; font-weight:700; letter-spacing:.3px; }
+  .refresh { margin-left:auto; width:23px; height:17px; flex:none; position:relative;
+    background:linear-gradient(135deg, #7FE3A8, #3FA96F);
+    clip-path:polygon(16% 0, 100% 0, 84% 100%, 0 100%); }
+  .refresh.dim { opacity:.55; }
+  .refresh::before { content:''; position:absolute; left:5px; top:5px; width:10px; height:8px;
+    border:2px solid #fff; border-right-color:transparent; border-radius:50%; }
+  .refresh::after { content:''; position:absolute; left:12px; top:2px; border-left:5px solid #fff;
+    border-top:3.5px solid transparent; border-bottom:3.5px solid transparent; transform:rotate(18deg); }
   .bitems { display:flex; flex-direction:column; }
-  .bitem { height:31px; display:flex; align-items:center; padding:0 10px;
+  .bitem { height:30px; display:flex; align-items:center; padding:0 10px;
     border-top:1px solid rgba(255,255,255,.055); background:rgba(0,0,0,.22); }
   .bitem:last-child { border-bottom:1px solid rgba(255,255,255,.055); }
+  .bitem.grayed { opacity:.45; }
   .btext { font-size:13px; color:#D8E2EC; }
   .bprice { margin-left:auto; display:flex; align-items:center; gap:6px; }
   .bprice em { font-style:normal; font-size:14px; font-weight:700; color:#FF8A7A; }
@@ -264,34 +284,42 @@ function growthHtml(agent, lang) {
   .wcard { flex:1; position:relative; background:rgba(255,255,255,.045);
     border:1px solid rgba(255,255,255,.14); padding:5px 7px; }
   .wcard.sel { border-color:rgba(53,214,232,.75); background:rgba(53,214,232,.12); }
+  .wrowlow { display:flex; gap:8px; flex:1; }
+  .wrowlow .wcard { flex:1; }
   .wtop { display:flex; align-items:center; gap:6px; font-size:11px; color:#9AA8B8; }
   .wnum { font-weight:700; color:#C8D4E0; }
-  .wicon { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); width:74px; height:34px; }
+  .wicon { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); width:74px; height:32px; }
   .wicon::before { content:''; position:absolute; inset:0; background:#C8D4E0; opacity:.9; }
   .wicon.rifle::before { clip-path:polygon(0 42%, 78% 42%, 78% 30%, 92% 30%, 92% 55%, 70% 55%, 70% 78%, 46% 78%, 46% 55%, 0 55%); }
   .wicon.pistol::before { clip-path:polygon(4% 34%, 78% 34%, 78% 45%, 96% 45%, 96% 56%, 72% 56%, 72% 82%, 50% 82%, 50% 56%, 4% 56%); }
   .wicon.knife::before { clip-path:polygon(2% 92%, 72% 4%, 90% 22%, 20% 100%); }
   .wicon.grenade::before { clip-path:polygon(50% 12%, 92% 52%, 50% 92%, 8% 52%); }
   .wname { position:absolute; left:7px; bottom:5px; font-size:12px; color:#D8E2EC;
-    max-width:126px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    max-width:112px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .whint { position:absolute; left:5px; right:3px; bottom:4px; font-size:10px; color:#FF6B6B;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .wcard:has(.whint) .wname { display:none; }
-  .awaken { position:absolute; left:18px; right:18px; bottom:14px; height:182px; display:flex; gap:16px; }
-  .acard { flex:1; padding:11px 14px; background:rgba(255,255,255,.045);
+  .whintbar { height:14px; flex:none; display:flex; align-items:center; justify-content:flex-end;
+    font-size:10.5px; color:#FF6B6B; }
+  .swap { position:absolute; right:5px; bottom:4px; width:15px; height:10px; opacity:.9; }
+  .swap::before { content:''; position:absolute; left:0; top:2px; width:11px; height:2px; background:#FFC94A; }
+  .swap::after { content:''; position:absolute; left:0; top:0; border-right:4px solid #FFC94A;
+    border-top:2px solid transparent; border-bottom:2px solid transparent; transform:rotate(180deg); }
+  .awaken { height:186px; flex:none; display:flex; gap:12px; }
+  .acard { flex:1; min-width:0; padding:9px 11px; background:rgba(255,255,255,.045);
     border:1px solid rgba(255,255,255,.10); position:relative; }
   .acard.on { border-color:rgba(255,209,102,.7); background:rgba(255,209,102,.07); }
-  .atop { display:flex; align-items:center; gap:8px; font-size:12px; color:#C8D4E0; }
-  .aneed { display:flex; align-items:center; gap:4px; margin-left:2px; }
-  .needneed { width:9px; height:9px; display:inline-block; }
+  .atop { display:flex; align-items:center; gap:6px; font-size:11.5px; color:#C8D4E0; }
+  .aneed { display:flex; align-items:center; gap:3px; }
+  .needneed { width:8px; height:8px; display:inline-block; }
   .needneed.sq { border-radius:1px; }
   .needneed.ci { border-radius:50%; }
   .needneed.tri { clip-path:polygon(50% 0, 100% 100%, 0 100%); }
-  .astatus { margin-left:auto; font-size:11.5px; color:#7f8c9a; }
+  .astatus { margin-left:auto; font-size:11px; color:#7f8c9a; }
   .acard.on .astatus { color:#54E0A0; }
-  .aname { font-size:16px; font-weight:800; margin:6px 0 5px; color:#EAF2FA; }
+  .aname { font-size:15px; font-weight:800; margin:5px 0 4px; color:#EAF2FA; }
   .acard.on .aname { color:#FFD166; }
-  .adesc { font-size:12.5px; line-height:1.55; color:#B4C0CC;
+  .adesc { font-size:11.5px; line-height:1.5; color:#B4C0CC;
     display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
   .tooltip { position:absolute; left:24px; top:96px; width:250px; background:#0C121A;
     border:1px solid #2A3542; padding:9px 11px; box-shadow:0 6px 26px rgba(0,0,0,.6); z-index:9; }
@@ -312,10 +340,18 @@ function growthHtml(agent, lang) {
         <div class="rolechip"><i></i>${esc(agent.role)}</div>
         <div class="stats">${t.statHp} ${agent.stats.hp}　${t.statArmor} ${agent.stats.armor}　${t.statSpeed} ${agent.stats.moveSpeed}</div>
       </div>
-      <div class="network">${branches}</div>
-      <div class="weapons">${weaponCards}</div>
+      <div class="centerCol">
+        <div class="network">${branches}</div>
+        <div class="awaken">${awakenCards}</div>
+      </div>
+      <div class="weapons">
+        ${weaponCard(0)}
+        ${weaponCard(1)}
+        ${weaponCard(2)}
+        <div class="wrowlow">${weaponCard(3)}${weaponCard(4)}</div>
+        <div class="whintbar">${esc(t.weaponHint)}</div>
+      </div>
     </div>
-    <div class="awaken">${awakenCards}</div>
     ${tipHtml}
     <div class="source">${t.source}</div>
   </div></body></html>`;

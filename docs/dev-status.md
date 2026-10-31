@@ -37,6 +37,7 @@
 - **可视化自定义（与 TAB 计分板同类体验）**：
   - `/strinova_client agent edit`（或界面右上角「自定义」）打开选角界面编辑器：拖拽队友列宽/右侧面板宽/锁定条高，逐区开关（顶部阶段条/队友列/立绘/简介/语录/右侧面板/技能/武器/页签/头像网格/锁定按钮/提示），不透明度，重置/保存/Esc 放弃；配置存 `config/strinova-client.json` 的 `agentSelectUi`，可 `agent export|import|values` 导入导出 JSON（`config/strinova-agent-select-ui.json`）；
   - `/strinova_client growth edit` 打开增幅网络界面编辑器：拖拽立绘宽/武器栏宽/觉醒区高、列/行间距、逐区开关、不透明度、配色覆盖、能量点 -/+（含重置购买）；配置存 `growthUi`，可 `growth export|import|values`（`config/strinova-growth-ui.json`）；
+  - 玩法：**每个分支只能选一项**（选中后同类其余项灰显不可点）；分支标题右上角绿色**刷新图标**可返还该分支点数并重新选择；左侧立绘满高、觉醒区在立绘右侧底部、武器栏 1/2/3 整行 + 4/5 并排（对齐真实截图）；TAB 计分板「成长等级」对本地玩家读取客户端加点进度（1+已选数，激活觉醒时金色），加点/刷新后即时更新；
   - 能量点可设置：命令 `/strinova_client growth points [数值]`（0~9999，存 `StrinovaHudConfig.growthEnergyPoints`，立即生效；重置购买后恢复该值）、`/strinova_client growth reset`（清空购买并恢复）；
 - 角色 id/定位/阵营/主题色仍以 `StrinovaAgentRoster` 为权威；客户端配置 `config/strinova-client.json`。
 
