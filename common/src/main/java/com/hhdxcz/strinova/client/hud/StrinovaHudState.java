@@ -61,6 +61,9 @@ public final class StrinovaHudState {
     private static volatile float armor = 0.0F;
     private static volatile float maxArmor = 80.0F;
     private static volatile List<BuffEntry> buffs = List.of();
+    /** 服务端对局是否激活（真实数据源）；激活时 HUD 不再用 MC 血量/模拟数据覆盖。 */
+    private static volatile boolean serverMatchActive;
+    private static volatile long lastServerSyncMs;
 
     private static volatile String weaponName = "";
     private static volatile FireMode fireMode = FireMode.AUTO;
@@ -242,6 +245,34 @@ public final class StrinovaHudState {
         buffs = entries == null ? List.of() : List.copyOf(entries);
     }
 
+    // ==================== 服务端对局同步状态 ====================
+
+    public static boolean isServerMatchActive() {
+        return serverMatchActive;
+    }
+
+    public static void setServerMatchActive(boolean value) {
+        serverMatchActive = value;
+        if (value) {
+            lastServerSyncMs = now();
+        }
+    }
+
+    public static long lastServerSyncMs() {
+        return lastServerSyncMs;
+    }
+
+    /** 服务端同步包到达时刷新时间戳（HUD 用来判断是否还该显示服务端数据）。 */
+    public static void touchServerSync() {
+        lastServerSyncMs = now();
+    }
+
+    /** 对局结束/断线时清空服务端同步状态。 */
+    public static void clearServerSync() {
+        serverMatchActive = false;
+        lastServerSyncMs = 0L;
+    }
+
     // ==================== 击杀播报 / 伤害反馈 ====================
 
     public static void pushKillFeed(String killer, String weapon, String victim, boolean headshot) {
@@ -330,5 +361,7 @@ public final class StrinovaHudState {
         DAMAGE_INDICATORS.clear();
         hitMarkerMs = 0L;
         hitMarkerKill = false;
+        buffs = List.of();
+        clearServerSync();
     }
 }

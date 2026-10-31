@@ -5,6 +5,7 @@ import com.hhdxcz.strinova.collision.StrinovaCollisionBoxTuning;
 import com.hhdxcz.strinova.config.StrinovaCommonConfig;
 import com.hhdxcz.strinova.gameplay.StrinovaAirJumpRuntime;
 import com.hhdxcz.strinova.gameplay.StrinovaAirJumpSettings;
+import com.hhdxcz.strinova.gameplay.StrinovaMatchManager;
 import com.hhdxcz.strinova.net.StrinovaNetwork;
 import com.hhdxcz.strinova.outline.StrinovaOutlineService;
 import com.hhdxcz.strinova.paper.StrinovaPaperDamageReduction;
@@ -697,6 +698,31 @@ public final class StrinovaServerCommands {
 
         // 注册 /strinova 根命令及其所有子命令
         dispatcher.register(Commands.literal("strinova").then(outline).then(wall).then(paper).then(jump).then(boxPos).then(boxLen)
+                .then(Commands.literal("match")
+                        .requires(src -> src.hasPermission(2))
+                        .then(Commands.literal("start").executes(ctx -> {
+                            var server = ctx.getSource().getServer();
+                            StrinovaMatchManager.start(server);
+                            StrinovaNetwork.forceBroadcastMatchState(server);
+                            ctx.getSource().sendSuccess(() -> Component.literal("对局已开始：在线玩家已分配到我方/敌方，比分 0:0"), true);
+                            return 1;
+                        }))
+                        .then(Commands.literal("stop").executes(ctx -> {
+                            StrinovaMatchManager.stop();
+                            StrinovaNetwork.forceBroadcastMatchState(ctx.getSource().getServer());
+                            ctx.getSource().sendSuccess(() -> Component.literal("对局已结束"), true);
+                            return 1;
+                        }))
+                        .then(Commands.literal("status").executes(ctx -> {
+                            boolean active = StrinovaMatchManager.isActive();
+                            String message = active
+                                    ? "对局进行中：第 " + StrinovaMatchManager.round() + " 回合，比分 "
+                                            + StrinovaMatchManager.alliesScore() + ":" + StrinovaMatchManager.enemiesScore()
+                                            + "，剩余 " + StrinovaMatchManager.secondsLeft() + " 秒"
+                                    : "当前没有进行中的对局（/strinova match start 开始）";
+                            ctx.getSource().sendSuccess(() -> Component.literal(message), false);
+                            return 1;
+                        })))
                 .then(Commands.literal("enable").requires(src -> src.hasPermission(2)).executes(ctx -> {
                     StrinovaMod.setEnabled(true);
                     // 启用状态由服务端权威下发，客户端据此同步门控按键逻辑

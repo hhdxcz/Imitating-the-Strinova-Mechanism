@@ -171,3 +171,36 @@ docs/ui/scoreboard-preview.html / .png                 // 计分板预览
 | 默认布局 | 顶部比分 y=6、击杀播报下移避开比分面板、左下血甲/状态、右下武器栏、底部技能栏同步调整 |
 
 后续接入真实对局系统时，只需用服务端 S2C 填充上述字段，HUD 布局与绘制不用再改。
+
+## 8. M1 已接入真实数据（战斗/对局数据层）
+
+### 8.1 服务端状态
+
+- `gameplay/StrinovaCombatManager`：护甲（80/80，远程伤害吸收 50%，1 MC 伤害=7.5 护甲点；脱战 3 秒后每秒 +1 回甲）、KDA（含 10 秒内伤人助攻）、绝招点（实际伤害每 40 点 +1，上限 7）、受击归属与 `KillEvent` 队列。
+- `gameplay/StrinovaMatchManager`：在线玩家交替分两队、比分 0:0、回合与 90 秒倒计时；计时归零敌方 +1 分并开下一回合；退出时移除队伍。
+
+### 8.2 同步协议
+
+新增 `strinova:s2c_match_state`（500ms 节流 + 变化即时，登录时单独发一次）：
+
+```text
+active: bool
+[modeKey, round, secondsLeft, alliesScore, enemiesScore,
+ alliesTeamKey, enemiesTeamKey]
+killEvents: [killer, weapon, victim, headshot] × N
+players: [uuid, name, ally, kills, deaths, assists,
+          health(0~150), armor(0~80), ultimatePoints, ultimateMax,
+          alive, weaponName, growthLevel, damageScore, skillScore, assistScore, ping] × N
+```
+
+客户端 `StrinovaNetwork` 收到后写入 `StrinovaMatchState` / `StrinovaScoreboardState` / `StrinovaHudState`（自身生命/护甲/绝招）+ 击杀播报；`StrinovaHudState.isServerMatchActive()` 为真时 HUD 优先使用服务端数据（3 秒没收到同步才回退 MC 血量/模拟数据）。
+
+### 8.3 钩子与命令
+
+- 伤害：`PlayerMixin` 的 `hurt` `@ModifyVariable`（先弦化减伤 → 再护甲吸收）；死亡：`die(DamageSource)` HEAD 记录 + 临时 Tag 去重（平台死亡事件仅兜底）。
+- 平台：Fabric `END_SERVER_TICK` / Forge `ServerTickEvent(Phase.END)` 调用两个 Manager tick + `broadcastMatchState`；登录 ensure + 发送快照；登出清理；重生回满护甲并保留 KDA。
+- 命令：`/strinova match start|stop|status`（OP）。
+
+### 8.4 仍为占位（后续接战斗系统时填充）
+
+武器/弹药/技能冷却（暂无枪械系统，HUD 显示未装备/空槽）、角色名（服务端不知道客户端选角）、倒地/救援状态、经济/购买；计分板的输出分/技能分/协作分为 KDA 派生值，`KillEvent.headshot` 暂为 false。

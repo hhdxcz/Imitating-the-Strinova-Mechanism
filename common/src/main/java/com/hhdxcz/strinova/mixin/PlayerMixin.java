@@ -1,6 +1,7 @@
 package com.hhdxcz.strinova.mixin;
 
 import com.hhdxcz.strinova.client.StrinovaCollisionPreviewFlyContext;
+import com.hhdxcz.strinova.gameplay.StrinovaCombatManager;
 import com.hhdxcz.strinova.gameplay.StrinovaDoubleJump;
 import com.hhdxcz.strinova.gameplay.StrinovaAirJumpRuntime;
 import com.hhdxcz.strinova.gameplay.StrinovaFlyRuntime;
@@ -14,6 +15,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Player;
@@ -44,7 +46,7 @@ public abstract class PlayerMixin {
             argsOnly = true,
             index = 2
     )
-    private float strinova$reduceDamageWhenPaper(float amount, DamageSource source) {
+    private float strinova$modifyIncomingDamage(float amount, DamageSource source) {
         if (amount <= 0.0F) {
             return amount;
         }
@@ -55,10 +57,56 @@ public abstract class PlayerMixin {
         if (self.level().isClientSide) {
             return amount;
         }
-        if (!WaPaperState.isPaper(self.getUUID())) {
-            return amount;
+        float result = amount;
+        // 1) 弦化（纸片）减伤：保持原有行为不变
+        if (WaPaperState.isPaper(self.getUUID())) {
+            result = StrinovaPaperDamageReduction.apply(result);
         }
-        return StrinovaPaperDamageReduction.apply(amount);
+        // 2) M1：服务端护甲吸收与受击归属（圣弦体战斗状态）
+        // 叠加顺序：先弦化减伤、再护甲吸收，返回值即最终 MC 伤害；
+        // 护甲换算（1 MC 伤害 = 7.5 护甲点）由 StrinovaCombatManager 内部完成。
+        // 排除：创造/旁观、已死亡、免疫该伤害来源、被盾牌格挡、IN_WALL（本模组已在 HEAD 取消该伤害）。
+        if (self instanceof ServerPlayer serverSelf
+                && source != null
+                && !source.is(DamageTypes.IN_WALL)
+                && !serverSelf.isCreative()
+                && !serverSelf.isSpectator()
+                && !serverSelf.isDeadOrDying()
+                && !serverSelf.isInvulnerableTo(source)
+                && !serverSelf.isDamageSourceBlocked(source)) {
+            Entity attacker = source.getEntity();
+            result = StrinovaCombatManager.handleIncomingDamage(serverSelf, attacker, result);
+        }
+        if (result < 0.0F) {
+            result = 0.0F;
+        }
+        return result;
+    }
+
+    // M1：死亡记录入口。注入 die() 头部：此时 hurt() 已造成致死伤害、且早于平台死亡事件
+    // （Forge LivingDeathEvent / Fabric AFTER_DEATH 都在 die 内部后段触发），保证只记录一次。
+    // 去重方式：给死亡玩家实体打上临时 Tag，平台侧死亡钩子检测到同一 Tag 后跳过；重生/登录时清除该 Tag。
+    @Inject(method = "die(Lnet/minecraft/world/damagesource/DamageSource;)V", at = @At("HEAD"))
+    private void strinova$recordCombatDeath(DamageSource source, CallbackInfo ci) {
+        Object selfObj = this;
+        if (!(selfObj instanceof ServerPlayer self)) {
+            return;
+        }
+        if (self.level().isClientSide) {
+            return;
+        }
+        if (self.isCreative() || self.isSpectator()) {
+            return;
+        }
+        if (!self.isDeadOrDying()) {
+            return;
+        }
+        // Tag 名称必须与 Fabric/Forge 平台入口里的 STRINOVA_DEATH_TAG 常量保持一致
+        if (self.getTags().contains("strinova$death_recorded")) {
+            return;
+        }
+        self.addTag("strinova$death_recorded");
+        StrinovaCombatManager.recordDeath(self, source == null ? null : source.getEntity());
     }
 
     @Inject(method = "isFallFlying()Z", at = @At("RETURN"), cancellable = true)

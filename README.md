@@ -156,6 +156,27 @@ white（白色）<img src="docs/colors/white.png" width="18" height="18" align="
 | `/strinova boxlen fly <x> <y> <z>` | 玩家 | 设置飘飞碰撞箱尺寸增量 |
 | `/strinova boxpos reset` | 玩家 | 恢复默认碰撞箱位置 |
 
+### 对局（M1 数据层）
+
+| 命令 | 权限 | 说明 |
+|------|:---:|------|
+| `/strinova match start` | OP | 开始演示对局：在线玩家交替分到我方/敌方，比分 0:0、回合 1、90 秒倒计时；顶部比分面板与 TAB 计分板切换为真实数据 |
+| `/strinova match stop` | OP | 结束对局，HUD 恢复普通状态 |
+| `/strinova match status` | OP | 查看对局是否进行中、比分、回合与剩余时间 |
+
+> 对局中：护甲 80（远程伤害先扣护甲，脱战 3 秒后每秒回 1 点）、击杀/死亡计入 KDA 与击杀播报、TAB 显示双方 KDA/绝招/分数。
+
+### 战斗 HUD 与客户端界面
+
+| 命令 | 权限 | 说明 |
+|------|:---:|------|
+| `/strinova_client hud` | 玩家 | 战斗 HUD 设置（元素开关 / 准星参数） |
+| `/strinova_client hud editor` | 玩家 | HUD 布局编辑器（拖拽/重置/保存） |
+| `/strinova_client hud mock` | 玩家 | 开/关模拟对局数据（无对局时预览完整 HUD） |
+| `/strinova_client hud test` | 玩家 | 触发演示命中/击杀反馈 |
+| `/strinova_client agent` | 玩家 | 超弦体选角界面 |
+| `/strinova_client growth` 或 `B` 键 | 玩家 | 弦能增幅网络（成长/加点） |
+
 ---
 
 ## 安装

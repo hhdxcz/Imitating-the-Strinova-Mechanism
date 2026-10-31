@@ -1,11 +1,17 @@
 package com.hhdxcz.strinova.net;
 
 import com.hhdxcz.strinova.StrinovaMod;
+import com.hhdxcz.strinova.client.hud.StrinovaHudMockData;
+import com.hhdxcz.strinova.client.hud.StrinovaHudState;
+import com.hhdxcz.strinova.client.hud.StrinovaMatchState;
+import com.hhdxcz.strinova.client.hud.StrinovaScoreboardState;
 import com.hhdxcz.strinova.collision.StrinovaCollisionBoxTuning;
 import com.hhdxcz.strinova.collision.StrinovaCompoundCollision;
 import com.hhdxcz.strinova.gameplay.StrinovaAirJumpClientState;
+import com.hhdxcz.strinova.gameplay.StrinovaCombatManager;
 import com.hhdxcz.strinova.gameplay.StrinovaDoubleJump;
 import com.hhdxcz.strinova.gameplay.StrinovaFlyRuntime;
+import com.hhdxcz.strinova.gameplay.StrinovaMatchManager;
 import com.hhdxcz.strinova.paper.WaPaperState;
 import com.hhdxcz.strinova.paper.StrinovaWallBlacklist;
 import dev.architectury.networking.NetworkManager;
@@ -46,6 +52,11 @@ public final class StrinovaNetwork {
     public static final ResourceLocation S2C_WALL_BLACKLIST_SYNC = new ResourceLocation(StrinovaMod.MOD_ID, "s2c_wall_blacklist_sync");
     public static final ResourceLocation S2C_COLLISION_CONFIG = new ResourceLocation(StrinovaMod.MOD_ID, "s2c_collision_config");
     public static final ResourceLocation S2C_MOD_ENABLED = new ResourceLocation(StrinovaMod.MOD_ID, "s2c_mod_enabled");
+    public static final ResourceLocation S2C_MATCH_STATE = new ResourceLocation(StrinovaMod.MOD_ID, "s2c_match_state");
+
+    // 对局状态广播节流（服务端）：500ms 一次，避免每 tick 发包
+    private static long strinova$lastMatchBroadcastMs;
+    private static boolean strinova$lastMatchBroadcastActive;
 
     // 碰撞配置同步字段上限，防止恶意客户端发送超大包
     private static final int MAX_COLLISION_PARTS = 64;
@@ -481,6 +492,106 @@ public final class StrinovaNetwork {
             boolean enabled = buf.readBoolean();
             context.queue(() -> StrinovaMod.applyRemoteEnabled(enabled));
         });
+
+        // 接收对局状态同步（顶部比分 / TAB 计分板 / 血甲 / 击杀播报的真实数据源）
+        NetworkManager.registerReceiver(NetworkManager.Side.S2C, S2C_MATCH_STATE, (buf, context) -> {
+            // 手动开启模拟数据时忽略服务端对局包，避免 mock 与真实数据互相覆盖
+            if (StrinovaHudMockData.isEnabled()) {
+                return;
+            }
+            boolean active = buf.readBoolean();
+            if (!active) {
+                context.queue(() -> {
+                    StrinovaMatchState.clear();
+                    StrinovaScoreboardState.clear();
+                    StrinovaHudState.setServerMatchActive(false);
+                    StrinovaHudState.clearServerSync();
+                });
+                return;
+            }
+            String modeKey = buf.readUtf(128);
+            int round = buf.readInt();
+            int secondsLeft = buf.readInt();
+            int alliesScore = buf.readInt();
+            int enemiesScore = buf.readInt();
+            String alliesTeamKey = buf.readUtf(128);
+            String enemiesTeamKey = buf.readUtf(128);
+
+            int killCount = Math.min(64, Math.max(0, buf.readVarInt()));
+            List<StrinovaHudState.KillFeedEntry> killEvents = new ArrayList<>(killCount);
+            long now = StrinovaHudState.now();
+            for (int i = 0; i < killCount; i++) {
+                String killer = buf.readUtf(64);
+                String weapon = buf.readUtf(64);
+                String victim = buf.readUtf(64);
+                boolean headshot = buf.readBoolean();
+                killEvents.add(new StrinovaHudState.KillFeedEntry(killer, weapon, victim, headshot, now));
+            }
+
+            int playerCount = Math.min(64, Math.max(0, buf.readVarInt()));
+            List<StrinovaScoreboardState.Entry> entries = new ArrayList<>(playerCount);
+            UUID localId = strinova$clientPlayerId();
+            float selfHealth = -1.0F;
+            float selfArmor = 0.0F;
+            int selfUltimate = 0;
+            int selfUltimateMax = 7;
+            for (int i = 0; i < playerCount; i++) {
+                UUID playerId = buf.readUUID();
+                String name = buf.readUtf(64);
+                boolean ally = buf.readBoolean();
+                int kills = buf.readInt();
+                int deaths = buf.readInt();
+                int assists = buf.readInt();
+                float health = buf.readFloat();
+                float armor = buf.readFloat();
+                int ultimatePoints = buf.readInt();
+                int ultimateMax = buf.readInt();
+                boolean alive = buf.readBoolean();
+                String weaponName = buf.readUtf(64);
+                int growthLevel = buf.readInt();
+                int damageScore = buf.readInt();
+                int skillScore = buf.readInt();
+                int assistScore = buf.readInt();
+                int ping = buf.readInt();
+                boolean self = localId != null && localId.equals(playerId);
+                entries.add(new StrinovaScoreboardState.Entry(name, "", ally, self,
+                        kills, deaths, assists, health, armor,
+                        alive ? StrinovaScoreboardState.Status.ALIVE : StrinovaScoreboardState.Status.DEAD,
+                        ultimatePoints, Math.max(1, ultimateMax), growthLevel, weaponName,
+                        damageScore, skillScore, assistScore, ping));
+                if (self) {
+                    selfHealth = health;
+                    selfArmor = armor;
+                    selfUltimate = ultimatePoints;
+                    selfUltimateMax = Math.max(1, ultimateMax);
+                }
+            }
+
+            float finalSelfHealth = selfHealth;
+            float finalSelfArmor = selfArmor;
+            int finalSelfUltimate = selfUltimate;
+            int finalSelfUltimateMax = selfUltimateMax;
+            context.queue(() -> {
+                StrinovaMatchState.setActive(true);
+                StrinovaMatchState.setModeKey(modeKey);
+                StrinovaMatchState.setRound(round);
+                StrinovaMatchState.setRoundSecondsLeft(secondsLeft);
+                StrinovaMatchState.setScores(alliesScore, enemiesScore);
+                StrinovaMatchState.setAlliesTeamKey(alliesTeamKey);
+                StrinovaMatchState.setEnemiesTeamKey(enemiesTeamKey);
+                StrinovaMatchState.setAlliesAttacking(true);
+                StrinovaScoreboardState.setEntries(entries);
+                StrinovaHudState.setServerMatchActive(true);
+                if (finalSelfHealth >= 0.0F) {
+                    StrinovaHudState.setHealth(finalSelfHealth, 150.0F);
+                    StrinovaHudState.setArmor(finalSelfArmor, 80.0F);
+                    StrinovaHudState.setUltimate(finalSelfUltimate, finalSelfUltimateMax);
+                }
+                for (StrinovaHudState.KillFeedEntry event : killEvents) {
+                    StrinovaHudState.pushKillFeed(event.killer(), event.weapon(), event.victim(), event.headshot());
+                }
+            });
+        });
     }
 
     // 刷新客户端本地玩家的碰撞箱尺寸
@@ -712,6 +823,145 @@ public final class StrinovaNetwork {
         for (ServerPlayer target : server.getPlayerList().getPlayers()) {
             sendModEnabled(target, enabled);
         }
+    }
+
+    // ==================== M1：对局/战斗状态同步 ====================
+
+    /** 服务端：立即强制广播一次对局状态（对局开始/停止时调用，绕过节流）。 */
+    public static void forceBroadcastMatchState(MinecraftServer server) {
+        strinova$lastMatchBroadcastMs = 0L;
+        broadcastMatchState(server);
+    }
+
+    /**
+     * 服务端：广播对局状态（内部 500ms 节流）。
+     * 由平台 server tick 钩子每 tick 调用即可；对局从未激活时不发包，停止时补发一次 inactive。
+     */
+    public static void broadcastMatchState(MinecraftServer server) {
+        if (server == null) {
+            return;
+        }
+        boolean active = StrinovaMatchManager.isActive();
+        long now = System.currentTimeMillis();
+        if (!active && !strinova$lastMatchBroadcastActive) {
+            return;
+        }
+        long interval = active ? 500L : 200L;
+        if (now - strinova$lastMatchBroadcastMs < interval) {
+            return;
+        }
+        strinova$lastMatchBroadcastMs = now;
+        strinova$lastMatchBroadcastActive = active;
+
+        if (!active) {
+            for (ServerPlayer target : server.getPlayerList().getPlayers()) {
+                FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+                buf.writeBoolean(false);
+                NetworkManager.sendToPlayer(target, S2C_MATCH_STATE, buf);
+            }
+            return;
+        }
+
+        List<StrinovaCombatManager.KillEvent> kills = StrinovaCombatManager.drainKillEvents();
+        for (ServerPlayer target : server.getPlayerList().getPlayers()) {
+            sendMatchStateInternal(target, server, kills);
+        }
+    }
+
+    /** 向指定玩家发送一次对局状态（登录时调用）。 */
+    public static void sendMatchState(ServerPlayer target) {
+        if (target == null) {
+            return;
+        }
+        MinecraftServer server = target.getServer();
+        if (server == null) {
+            return;
+        }
+        sendMatchStateInternal(target, server, List.of());
+    }
+
+    private static void sendMatchStateInternal(ServerPlayer target, MinecraftServer server,
+                                               List<StrinovaCombatManager.KillEvent> kills) {
+        if (target == null || server == null) {
+            return;
+        }
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        writeMatchState(buf, server, kills);
+        NetworkManager.sendToPlayer(target, S2C_MATCH_STATE, buf);
+    }
+
+    // 写入对局快照：对局信息 + 击杀事件 + 所有在线玩家战斗数据
+    private static void writeMatchState(FriendlyByteBuf buf, MinecraftServer server,
+                                        List<StrinovaCombatManager.KillEvent> kills) {
+        boolean active = StrinovaMatchManager.isActive();
+        buf.writeBoolean(active);
+        if (!active) {
+            return;
+        }
+        buf.writeUtf(StrinovaMatchState.getModeKey(), 128);
+        buf.writeInt(StrinovaMatchManager.round());
+        buf.writeInt(StrinovaMatchManager.secondsLeft());
+        buf.writeInt(StrinovaMatchManager.alliesScore());
+        buf.writeInt(StrinovaMatchManager.enemiesScore());
+        buf.writeUtf(StrinovaMatchManager.alliesTeamKey(), 128);
+        buf.writeUtf(StrinovaMatchManager.enemiesTeamKey(), 128);
+
+        List<StrinovaCombatManager.KillEvent> safeKills = kills == null ? List.of() : kills;
+        buf.writeVarInt(safeKills.size());
+        for (StrinovaCombatManager.KillEvent event : safeKills) {
+            buf.writeUtf(event.killer() == null ? "" : event.killer(), 64);
+            buf.writeUtf(event.weapon() == null ? "" : event.weapon(), 64);
+            buf.writeUtf(event.victim() == null ? "" : event.victim(), 64);
+            buf.writeBoolean(event.headshot());
+        }
+
+        List<ServerPlayer> players = server.getPlayerList().getPlayers();
+        buf.writeVarInt(players.size());
+        for (ServerPlayer player : players) {
+            UUID playerId = player.getUUID();
+            StrinovaCombatManager.PlayerState state = StrinovaCombatManager.state(playerId);
+            float maxHealth = Math.max(1.0F, player.getMaxHealth());
+            float displayHealth = player.getHealth() / maxHealth * 150.0F;
+            String weaponName = player.getMainHandItem().isEmpty()
+                    ? "近战"
+                    : player.getMainHandItem().getHoverName().getString();
+            buf.writeUUID(playerId);
+            buf.writeUtf(player.getGameProfile().getName(), 64);
+            buf.writeBoolean(StrinovaMatchManager.isAlly(playerId));
+            buf.writeInt(state.kills());
+            buf.writeInt(state.deaths());
+            buf.writeInt(state.assists());
+            buf.writeFloat(displayHealth);
+            buf.writeFloat(state.armor());
+            buf.writeInt(state.ultimatePoints());
+            buf.writeInt(state.ultimateMax());
+            buf.writeBoolean(!player.isDeadOrDying() && player.isAlive());
+            buf.writeUtf(weaponName, 64);
+            buf.writeInt(1);
+            buf.writeInt(state.kills() * 100);
+            buf.writeInt(state.ultimatePoints() * 50);
+            buf.writeInt(state.assists() * 75);
+            buf.writeInt(0);
+        }
+    }
+
+    // 读取客户端本地玩家 UUID（仅客户端调用，反射避免服务端加载客户端类）
+    private static UUID strinova$clientPlayerId() {
+        try {
+            Class<?> mcClass = Class.forName("net.minecraft.client.Minecraft");
+            Object mc = mcClass.getMethod("getInstance").invoke(null);
+            if (mc == null) {
+                return null;
+            }
+            var playerField = mcClass.getDeclaredField("player");
+            playerField.setAccessible(true);
+            Object player = playerField.get(mc);
+            if (player instanceof net.minecraft.world.entity.player.Player p) {
+                return p.getUUID();
+            }
+        } catch (Throwable ignored) {
+        }
+        return null;
     }
 
     // 将指定玩家的完整碰撞配置写入包体（碰撞类型 + 分体部件 + 两套微调参数）

@@ -73,11 +73,17 @@ public final class StrinovaHudRenderer {
         if (!config.hudEnabled) {
             return;
         }
-        StrinovaHudMockData.tick();
-        if (!com.hhdxcz.strinova.StrinovaMod.isEnabled() && !StrinovaHudMockData.isEnabled()) {
+        // 服务端对局数据优先：3 秒内收到过对局同步则不再用模拟数据/MC 血量覆盖
+        boolean serverMatch = StrinovaHudState.isServerMatchActive()
+                && (StrinovaHudState.now() - StrinovaHudState.lastServerSyncMs() < 3000L);
+        if (!serverMatch) {
+            StrinovaHudMockData.tick();
+        }
+        if (!com.hhdxcz.strinova.StrinovaMod.isEnabled()
+                && !StrinovaHudMockData.isEnabled() && !serverMatch) {
             return;
         }
-        syncFromPlayer(minecraft);
+        syncFromPlayer(minecraft, serverMatch);
         renderAll(graphics, config);
         // TAB 计分板（按住 TAB 且存在进行中的对局时覆盖显示；原版玩家列表由 PlayerTabOverlayMixin 隐藏）
         if (StrinovaScoreboardOverlay.isActive(minecraft)) {
@@ -85,15 +91,17 @@ public final class StrinovaHudRenderer {
         }
     }
 
-    /** 战斗系统落地前：生命值取 MC 真实血量映射到 0~150（对齐截图里的 130 生命标度），其余战斗数据由模拟数据或后续 S2C 包提供。 */
-    private static void syncFromPlayer(Minecraft minecraft) {
+    /** 战斗系统落地前：生命值取 MC 真实血量映射；服务端对局激活时以同步包为准，不再覆盖。 */
+    private static void syncFromPlayer(Minecraft minecraft, boolean serverMatch) {
         LocalPlayer player = minecraft.player;
-        if (player == null || StrinovaHudMockData.isEnabled()) {
+        if (player == null) {
             return;
         }
-        float maxHealth = Math.max(1.0F, player.getMaxHealth());
-        StrinovaHudState.setHealth(player.getHealth() / maxHealth * 150.0F, 150.0F);
-        StrinovaHudState.setArmor(0.0F, 80.0F);
+        if (!serverMatch && !StrinovaHudMockData.isEnabled()) {
+            float maxHealth = Math.max(1.0F, player.getMaxHealth());
+            StrinovaHudState.setHealth(player.getHealth() / maxHealth * 150.0F, 150.0F);
+            StrinovaHudState.setArmor(0.0F, 80.0F);
+        }
 
         float spread = 0.0F;
         Vec3 motion = player.getDeltaMovement();
