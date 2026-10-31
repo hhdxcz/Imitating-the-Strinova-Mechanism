@@ -29,10 +29,13 @@ public final class StrinovaGrowthState {
                             int needWeapon, int needSkill, int needDefense, boolean active) {
     }
 
-    private static final int START_ENERGY = 330;
+    /** 配置缺失时的兜底初始能量点（与游戏默认一致）。 */
+    private static final int DEFAULT_ENERGY = 330;
+    /** 能量点上限（防止命令/配置写入异常值）。 */
+    public static final int MAX_ENERGY = 9999;
 
     private static volatile String agentId = "";
-    private static volatile int energyPoints = START_ENERGY;
+    private static volatile int energyPoints = DEFAULT_ENERGY;
     private static volatile List<Category> categories = List.of();
     private static volatile List<Awakening> awakenings = List.of();
     private static volatile int purchasedWeapon;
@@ -97,6 +100,29 @@ public final class StrinovaGrowthState {
         return purchasedDefense;
     }
 
+    /** 配置里的初始能量点（重置购买后恢复到该值）。 */
+    public static int configuredEnergy() {
+        try {
+            return clampEnergy(StrinovaHudConfig.get().growthEnergyPoints);
+        } catch (Throwable ignored) {
+            return DEFAULT_ENERGY;
+        }
+    }
+
+    /** 直接设置当前能量点（不改变已购买状态；界面会立即刷新）。 */
+    public static void setEnergyPoints(int value) {
+        energyPoints = clampEnergy(value);
+    }
+
+    /** 把当前能量点恢复为配置值（用于命令 / 编辑器实时预览）。 */
+    public static void applyConfiguredEnergy() {
+        energyPoints = configuredEnergy();
+    }
+
+    private static int clampEnergy(int value) {
+        return Math.max(0, Math.min(MAX_ENERGY, value));
+    }
+
     /** 购买某个成长项：能量足够且未购买时扣能量并置为已购买。 */
     public static boolean purchase(int categoryIndex, int itemIndex) {
         if (categoryIndex < 0 || categoryIndex >= categories.size()) {
@@ -116,9 +142,9 @@ public final class StrinovaGrowthState {
         return true;
     }
 
-    /** 重置当前角色的能量点与购买状态。 */
+    /** 重置当前角色的能量点与购买状态（能量点恢复为配置值）。 */
     public static void reset() {
-        energyPoints = START_ENERGY;
+        energyPoints = configuredEnergy();
         purchased.clear();
         rebuild();
     }

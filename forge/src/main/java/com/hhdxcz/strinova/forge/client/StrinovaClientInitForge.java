@@ -175,6 +175,35 @@ public final class StrinovaClientInitForge {
                                     ctx.getSource().sendSuccess(() -> Component.literal(
                                             com.hhdxcz.strinova.client.StrinovaUiConfigActions.valuesGrowth()), false);
                                     return 1;
+                                }))
+                        .then(Commands.literal("points")
+                                .executes(ctx -> {
+                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                            "当前能量点：" + com.hhdxcz.strinova.client.hud.StrinovaGrowthState.energyPoints()
+                                                    + "（重置恢复值："
+                                                    + com.hhdxcz.strinova.client.hud.StrinovaHudConfig.get().growthEnergyPoints + "）"), false);
+                                    return 1;
+                                })
+                                .then(Commands.argument("value",
+                                                com.mojang.brigadier.arguments.IntegerArgumentType.integer(0, 9999))
+                                        .executes(ctx -> {
+                                            int value = com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "value");
+                                            com.hhdxcz.strinova.client.hud.StrinovaHudConfig config =
+                                                    com.hhdxcz.strinova.client.hud.StrinovaHudConfig.get();
+                                            config.growthEnergyPoints = value;
+                                            config.save();
+                                            com.hhdxcz.strinova.client.hud.StrinovaGrowthState.setEnergyPoints(value);
+                                            ctx.getSource().sendSuccess(() -> Component.literal(
+                                                    "能量点已设为 " + value + "（已保存到客户端配置）"), false);
+                                            return 1;
+                                        })))
+                        .then(Commands.literal("reset")
+                                .executes(ctx -> {
+                                    com.hhdxcz.strinova.client.hud.StrinovaGrowthState.reset();
+                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                            "已重置购买记录，能量点恢复为 "
+                                                    + com.hhdxcz.strinova.client.hud.StrinovaGrowthState.energyPoints()), false);
+                                    return 1;
                                 })))
                 .then(Commands.literal("scoreboard")
                         .executes(ctx -> {

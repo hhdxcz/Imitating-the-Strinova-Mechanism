@@ -24,12 +24,15 @@ import java.util.Locale;
  *       武器栏左边界 → {@code weaponsWidthRatio}、觉醒区上边界 → {@code awakenHeightRatio}；</li>
  *   <li>底部按钮：6 个显隐开关 + 不透明度 / 列间距 / 行间距微调 + 4 个颜色循环按钮
  *       （主色 / 升级项文字 / 价格 / 觉醒名称，点击按「默认→白→金→青→品红→绿→橙→紫→默认」循环）
- *       + 重置 / 保存 / 返回；</li>
+ *       + 能量点 -100 / +100 / 重置购买 + 重置 / 保存 / 返回；</li>
+ *   <li>能量点：参数行显示当前 {@link StrinovaGrowthState#energyPoints()}；-/+ 写回
+ *       {@code growthEnergyPoints}（0~9999）并调用 {@link StrinovaGrowthState#setEnergyPoints(int)}
+ *       实时生效；「重置购买」调用 {@link StrinovaGrowthState#reset()} 清空已购并恢复配置值；</li>
  *   <li>打开时用 {@link StrinovaHudConfig#growthExportJson()} 记录快照，ESC / 返回时用
  *       {@link StrinovaHudConfig#growthImportJson(String)} 还原；保存写入客户端配置。</li>
  * </ul>
  *
- * <p>常规窗口下按钮排成两行（10 + 9），窄窗口自动换 3~4 行；示意图等比缩放并隐藏次要文字，
+ * <p>常规窗口下按钮自适应排成两行（11+11），窄窗口自动换 3~5 行；示意图等比缩放并隐藏次要文字，
  * 320×240 不崩溃。</p>
  */
 public class StrinovaGrowthEditScreen extends Screen {
@@ -80,7 +83,7 @@ public class StrinovaGrowthEditScreen extends Screen {
     private static final int DRAG_WEAPONS = 2;
     private static final int DRAG_AWAKENINGS = 3;
 
-    private static final int BUTTON_COUNT = 19;
+    private static final int BUTTON_COUNT = 22;
     private static final int BUTTON_HEIGHT = 18;
     private static final int BUTTON_ROW_GAP = 4;
     /** 颜色按钮对应的配置字段：0 主色 / 1 升级项文字 / 2 价格 / 3 觉醒名称。 */
@@ -120,6 +123,10 @@ public class StrinovaGrowthEditScreen extends Screen {
     private double dragStartMouseY;
     private float dragStartRatio;
 
+    /** 底部操作反馈文案（2 秒内显示在参数行下方，如「能量 330」「已重置购买」）。 */
+    private String statusText = "";
+    private long statusExpireAt;
+
     public StrinovaGrowthEditScreen(@Nullable Screen parent) {
         super(Component.literal("弦能增幅网络 · 界面自定义"));
         this.parent = parent;
@@ -137,6 +144,10 @@ public class StrinovaGrowthEditScreen extends Screen {
         this.hoveredBoundary = DRAG_NONE;
         this.clearWidgets();
         this.resolveAgent();
+        // 直接通过命令打开编辑器时成长状态可能尚未初始化：先让当前能量点对齐配置值，便于预览
+        if (!StrinovaGrowthState.hasData()) {
+            StrinovaGrowthState.applyConfiguredEnergy();
+        }
         this.computeChrome();
         this.createButtons();
     }
@@ -152,17 +163,22 @@ public class StrinovaGrowthEditScreen extends Screen {
     private void computeChrome() {
         StrinovaGrowthUi ui = StrinovaHudConfig.get().growthUi;
         int usable = Math.max(60, this.width - 12);
-        // 常规窗口最多 10 列 → 19 个按钮正好两行（10 + 9）；窄窗口自动换 3~4 行
-        int columns = clamp(usable / (52 + BUTTON_ROW_GAP), 3, 10);
-        int rows = (BUTTON_COUNT + columns - 1) / columns;
-        columns = (BUTTON_COUNT + rows - 1) / rows;
-        int widthGuess = clamp((usable - BUTTON_ROW_GAP * (columns - 1)) / columns, 34, 72);
-        if (rows <= 2 && widthGuess < 58) {
-            // 两行时按钮过窄会裁切「升级项：默认」这类长文案 → 退化为三行（更宽的按钮）
-            columns = 9;
-            rows = (BUTTON_COUNT + columns - 1) / columns;
-            columns = (BUTTON_COUNT + rows - 1) / rows;
+        // 按「按钮宽度尽量 >= 58px（长文案「升级项：默认」不裁切）」挑选列数：
+        // 宽屏优先两行（11+11），窄屏自动换 3~5 行；再窄时保底 3 列。
+        int columns = 0;
+        for (int candidate = 11; candidate >= 3; candidate--) {
+            int candidateRows = (BUTTON_COUNT + candidate - 1) / candidate;
+            int balanced = (BUTTON_COUNT + candidateRows - 1) / candidateRows;
+            int width = (usable - BUTTON_ROW_GAP * (balanced - 1)) / balanced;
+            if (width >= 58) {
+                columns = balanced;
+                break;
+            }
         }
+        if (columns == 0) {
+            columns = 3;
+        }
+        int rows = (BUTTON_COUNT + columns - 1) / columns;
         this.buttonColumns = columns;
         this.buttonWidth = clamp((usable - BUTTON_ROW_GAP * (columns - 1)) / columns, 34, 72);
         this.buttonsTop = this.height - 6 - rows * BUTTON_HEIGHT - (rows - 1) * BUTTON_ROW_GAP;
@@ -172,7 +188,7 @@ public class StrinovaGrowthEditScreen extends Screen {
         this.previewBottom = Math.max(this.previewTop + 10, this.buttonsTop - 6);
     }
 
-    /** 创建底部按钮：6 个显隐开关、不透明度 ±、列间距 ±、行间距 ±、4 个颜色循环、重置、保存、返回。 */
+    /** 创建底部按钮：6 个显隐开关、不透明度 ±、列间距 ±、行间距 ±、4 个颜色循环、能量点 -100/+100、重置购买、重置、保存、返回。 */
     private void createButtons() {
         java.util.Arrays.fill(this.toggleButtons, null);
         java.util.Arrays.fill(this.colorButtons, null);
@@ -214,6 +230,7 @@ public class StrinovaGrowthEditScreen extends Screen {
                 "升级项：" + colorName(ui.itemTextColor),
                 "价格：" + colorName(ui.priceColor),
                 "觉醒名：" + colorName(ui.awakenNameColor),
+                "能量 -100", "能量 +100", "重置购买",
                 "重置", "保存", "返回"
         };
     }
@@ -262,12 +279,19 @@ public class StrinovaGrowthEditScreen extends Screen {
             case 13 -> ui.itemTextColor = nextColor(ui.itemTextColor);
             case 14 -> ui.priceColor = nextColor(ui.priceColor);
             case 15 -> ui.awakenNameColor = nextColor(ui.awakenNameColor);
-            case 16 -> ui.reset();
-            case 17 -> {
+            case 16 -> this.adjustEnergy(-100);
+            case 17 -> this.adjustEnergy(100);
+            case 18 -> {
+                // 重置购买：清空已购并把当前能量恢复为配置值（界面立即刷新）
+                StrinovaGrowthState.reset();
+                this.showStatus("已重置购买，能量 " + StrinovaGrowthState.energyPoints());
+            }
+            case 19 -> ui.reset();
+            case 20 -> {
                 this.saveAndClose();
                 return;
             }
-            case 18 -> {
+            case 21 -> {
                 this.restoreAndClose();
                 return;
             }
@@ -278,6 +302,26 @@ public class StrinovaGrowthEditScreen extends Screen {
         ui.sanitize();
         this.refreshDynamicLabels();
         this.computeChrome();
+    }
+
+    /** 显示一条 2 秒的底部操作反馈（如「能量 330」「已重置购买」）。 */
+    private void showStatus(String text) {
+        this.statusText = text;
+        this.statusExpireAt = System.currentTimeMillis() + 2000L;
+    }
+
+    private boolean statusVisible() {
+        return this.statusText != null && !this.statusText.isEmpty()
+                && System.currentTimeMillis() < this.statusExpireAt;
+    }
+
+    /** 能量点 -100 / +100：写回 config.growthEnergyPoints（0~9999）并立即更新当前能量（界面实时刷新）。 */
+    private void adjustEnergy(int delta) {
+        StrinovaHudConfig config = StrinovaHudConfig.get();
+        int value = clamp(config.growthEnergyPoints + delta, 0, StrinovaGrowthState.MAX_ENERGY);
+        config.growthEnergyPoints = value;
+        StrinovaGrowthState.setEnergyPoints(value);
+        this.showStatus("能量 " + value);
     }
 
     /** 显隐开关 / 颜色按钮被点击或重置后刷新按钮文案。 */
@@ -358,18 +402,25 @@ public class StrinovaGrowthEditScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
-    /** 顶部标题 / 参数行 / 操作提示 / 已隐藏汇总（超宽自动截断，窄窗口不越界）。 */
+    /** 顶部标题 / 参数行（含当前能量点）/ 操作提示 / 操作反馈或已隐藏汇总（超宽自动截断）。 */
     private void drawEditorText(GuiGraphics graphics, StrinovaGrowthUi ui) {
         this.drawCenteredText(graphics, "弦能增幅网络 · 界面自定义", 6, COLOR_TITLE, true);
+        // 能量点放在最前，窄窗口截断时也能看到当前值（读运行时状态，-/+ 后立即刷新）
         String info = String.format(Locale.ROOT,
-                "立绘宽 %.1f%%   武器宽 %.1f%%   觉醒高 %.1f%%   不透明度 %.0f%%   列间距 %d   行间距 %d",
+                "能量 %d   立绘宽 %.1f%%   武器宽 %.1f%%   觉醒高 %.1f%%   透明 %.0f%%   列距 %d   行距 %d",
+                StrinovaGrowthState.energyPoints(),
                 ui.portraitWidthRatio * 100.0F, ui.weaponsWidthRatio * 100.0F,
                 ui.awakenHeightRatio * 100.0F, ui.opacity * 100.0F,
                 Math.round(ui.columnGap), Math.round(ui.rowGap));
         this.drawCenteredText(graphics, info, 18, COLOR_INFO, false);
         this.drawCenteredText(graphics,
-                "拖动青色边界调整布局 · 底部按钮切换显隐 / 微调 / 颜色 · ESC 放弃并还原 · 保存写入客户端配置",
+                "拖动青色边界调整布局 · 底部按钮切换显隐 / 微调 / 颜色 / 能量 · ESC 放弃并还原 · 保存写入客户端配置",
                 30, COLOR_INFO, false);
+        if (this.statusVisible()) {
+            // 能量 +/- 与重置购买的 2 秒操作反馈
+            this.drawCenteredText(graphics, this.statusText, 42, COLOR_GOLD, false);
+            return;
+        }
         String hidden = hiddenSummary(ui);
         if (!hidden.isEmpty()) {
             this.drawCenteredText(graphics, hidden, 42, COLOR_HIDDEN, false);

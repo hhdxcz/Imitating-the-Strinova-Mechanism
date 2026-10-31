@@ -51,6 +51,8 @@ public final class StrinovaHudConfig {
     public StrinovaHudLayout layout = new StrinovaHudLayout();
 
     // ==================== 选角界面 / 增幅网络（可视化自定义） ====================
+    /** 「弦能增幅网络」初始能量点（/strinova_client growth points <数值> 修改，重置购买时恢复到该值）。 */
+    public int growthEnergyPoints = 330;
     /** 「弦能增幅网络」布局/显隐/配色（/strinova_client growth edit）。 */
     public StrinovaGrowthUi growthUi = new StrinovaGrowthUi();
     /** 「选角界面」布局/显隐/配色（/strinova_client agent edit）。 */
@@ -301,6 +303,7 @@ public final class StrinovaHudConfig {
             float value = scoreboardColumnWeight(key);
             scoreboardColumnWeights.put(key, Math.max(0.02F, Math.min(0.60F, value)));
         }
+        growthEnergyPoints = clamp(growthEnergyPoints, 0, 9999);
         if (growthUi == null) {
             growthUi = new StrinovaGrowthUi();
         }

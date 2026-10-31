@@ -183,8 +183,11 @@ white（白色）<img src="docs/colors/white.png" width="18" height="18" align="
 | `/strinova_client agent edit` | 玩家 | **选角界面可视化自定义**（拖拽队友列/右侧面板/锁定条，逐区显隐与配色；保存到客户端配置） |
 | `/strinova_client agent export` / `import` / `values` | 玩家 | 导出 / 从剪贴板导入 / 查看选角界面自定义 JSON |
 | `/strinova_client growth` 或 `B` 键 | 玩家 | 弦能增幅网络（成长/加点；手持 TACZ 枪械时 B 让给 TACZ 开火模式，可在配置关闭让位） |
-| `/strinova_client growth edit` | 玩家 | **增幅网络界面可视化自定义**（拖拽立绘/武器栏/觉醒区，逐区显隐与配色） |
+| `/strinova_client growth edit` | 玩家 | **增幅网络界面可视化自定义**（拖拽立绘/武器栏/觉醒区，逐区显隐与配色，含能量点 +/-） |
 | `/strinova_client growth export` / `import` / `values` | 玩家 | 导出 / 从剪贴板导入 / 查看增幅网络界面自定义 JSON |
+| `/strinova_client growth points` | 玩家 | 查看当前能量点与「重置恢复值」 |
+| `/strinova_client growth points <数值>` | 玩家 | **设置初始能量点**（0~9999，保存到 `config/strinova-client.json`，立即生效） |
+| `/strinova_client growth reset` | 玩家 | 重置本局购买记录，能量点恢复为设置值 |
 
 ---
 

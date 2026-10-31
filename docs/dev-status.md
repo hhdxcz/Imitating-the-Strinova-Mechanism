@@ -36,7 +36,8 @@
 - 布局按真实游戏截图对齐（2026-10-31）：成长网络分支带类型图标（蓝菱形武器 / 金圆主动被动 / 绿盾护甲 / 绿三角弦化）、已升级项显示「已升级」、价格暖红+蓝宝石、右侧武器大卡（序号+类型+名称，战术槽提示「现在可装备战术技能」）、觉醒三色需求用「形状重复」表示（数量=需求）；选角界面顶部地图/阶段条+比分、右侧金色角色头衔块（定位图标+角色名）、主武器大卡 + 副武器/近战/战术 2×2 小卡、页签固定在面板底部、锁定按钮居中于头像网格上方；
 - **可视化自定义（与 TAB 计分板同类体验）**：
   - `/strinova_client agent edit`（或界面右上角「自定义」）打开选角界面编辑器：拖拽队友列宽/右侧面板宽/锁定条高，逐区开关（顶部阶段条/队友列/立绘/简介/语录/右侧面板/技能/武器/页签/头像网格/锁定按钮/提示），不透明度，重置/保存/Esc 放弃；配置存 `config/strinova-client.json` 的 `agentSelectUi`，可 `agent export|import|values` 导入导出 JSON（`config/strinova-agent-select-ui.json`）；
-  - `/strinova_client growth edit` 打开增幅网络界面编辑器：拖拽立绘宽/武器栏宽/觉醒区高、列/行间距、逐区开关、不透明度、配色覆盖；配置存 `growthUi`，可 `growth export|import|values`（`config/strinova-growth-ui.json`）；
+  - `/strinova_client growth edit` 打开增幅网络界面编辑器：拖拽立绘宽/武器栏宽/觉醒区高、列/行间距、逐区开关、不透明度、配色覆盖、能量点 -/+（含重置购买）；配置存 `growthUi`，可 `growth export|import|values`（`config/strinova-growth-ui.json`）；
+  - 能量点可设置：命令 `/strinova_client growth points [数值]`（0~9999，存 `StrinovaHudConfig.growthEnergyPoints`，立即生效；重置购买后恢复该值）、`/strinova_client growth reset`（清空购买并恢复）；
 - 角色 id/定位/阵营/主题色仍以 `StrinovaAgentRoster` 为权威；客户端配置 `config/strinova-client.json`。
 
 ### 4. 对局/战斗数据层（M1）
