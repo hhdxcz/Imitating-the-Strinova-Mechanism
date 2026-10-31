@@ -52,10 +52,10 @@ public final class StrinovaScoreboardOverlay {
     private static final int ENEMY_WIN = 0xFF9BB6FF;
 
     // ==================== 尺寸（对齐真实屏占比） ====================
-    /** 真实计分板占屏宽度比例。 */
-    private static final float SCREEN_WIDTH_RATIO = 0.59F;
-    /** 真实计分板占屏高度比例。 */
-    private static final float SCREEN_HEIGHT_RATIO = 0.50F;
+    /** 真实计分板占屏宽度比例（实测原作约 66%）。 */
+    private static final float SCREEN_WIDTH_RATIO = 0.66F;
+    /** 真实计分板占屏高度比例（实测原作约 51.5%）。 */
+    private static final float SCREEN_HEIGHT_RATIO = 0.515F;
     private static final int MAX_PANEL_WIDTH = 1020;
     private static final int MIN_PANEL_WIDTH = 300;
     private static final int HEADER_HEIGHT = 16;
@@ -66,10 +66,10 @@ public final class StrinovaScoreboardOverlay {
     /** 回合记录格子。 */
     private static final int ROUND_CELL = 9;
     private static final int ROUND_STEP = 11;
-    /** 内容文字缩放：真实计分板文字相对面板更小，按 0.7~0.85 缩放。 */
-    private static final float HEADER_TEXT_SCALE = 0.72F;
-    private static final float VALUE_TEXT_SCALE = 0.80F;
-    private static final float NAME_TEXT_SCALE = 0.85F;
+    /** 内容文字缩放：按真实计分板比例，正文/列头略放大一档。 */
+    private static final float HEADER_TEXT_SCALE = 0.78F;
+    private static final float VALUE_TEXT_SCALE = 0.88F;
+    private static final float NAME_TEXT_SCALE = 0.92F;
 
     private StrinovaScoreboardOverlay() {
     }
@@ -202,16 +202,12 @@ public final class StrinovaScoreboardOverlay {
         String teamName = teamKey == null || teamKey.isEmpty()
                 ? Component.translatable(ally ? "hud.strinova.match.allies" : "hud.strinova.match.enemies").getString()
                 : Component.translatable(teamKey).getString();
-        String sideLabel = Component.translatable(
-                ally ? "hud.strinova.match.allies" : "hud.strinova.match.enemies").getString();
         int score = ally ? StrinovaMatchState.getAlliesScore() : StrinovaMatchState.getEnemiesScore();
 
         painter.rect(left + 1, top, sidebarWidth - 1, blockHeight - 1, SIDEBAR_BG);
-        // 表头：队名 + 我方/敌方
+        // 表头：队名（我方/敌方只显示在中间记录带，避免重复）
         painter.rect(left + 1, top, sidebarWidth - 1, HEADER_HEIGHT, withAlpha(accent, 0xE6));
         painter.textScaled(teamName, left + 4, top + 4, 0.8F, TEXT, true);
-        painter.textScaled(sideLabel, left + 4 + Math.round(painter.textWidth(teamName) * 0.8F) + 4,
-                top + 5, 0.62F, 0xE6FFFFFF, false);
 
         // logo + 大比分（在表头下方居中）
         int areaTop = top + HEADER_HEIGHT;
@@ -274,7 +270,6 @@ public final class StrinovaScoreboardOverlay {
             painter.rect(contentX, rowY + ROW_HEIGHT - 1, contentW, 1, GRID_LINE);
 
             if (!has) {
-                painter.textScaled("—", contentX + anchors[0], rowY + 5, 0.7F, withAlpha(TEXT_DIM, 0x66), false);
                 continue;
             }
 
@@ -333,16 +328,16 @@ public final class StrinovaScoreboardOverlay {
     // ==================== 列位置 ====================
 
     private static int[] columnAnchors(int contentW) {
-        // 头像+名字列贴左，其后按真实比例均分：击败/阵亡/助攻、绝招、成长等级、主武器、输出分、技能分、协作分、PING
+        // 按卡拉彼丘实测比例：头像+名字列更长，其后依次 击败/阵亡/助攻、绝招、成长等级、主武器、输出分、技能分、协作分、PING
         return new int[]{
                 4,
-                Math.round(contentW * 0.13F),
-                Math.round(contentW * 0.24F),
+                Math.round(contentW * 0.23F),
                 Math.round(contentW * 0.35F),
                 Math.round(contentW * 0.46F),
-                Math.round(contentW * 0.57F),
-                Math.round(contentW * 0.66F),
-                Math.round(contentW * 0.74F)
+                Math.round(contentW * 0.59F),
+                Math.round(contentW * 0.67F),
+                Math.round(contentW * 0.76F),
+                Math.round(contentW * 0.83F)
         };
     }
 
