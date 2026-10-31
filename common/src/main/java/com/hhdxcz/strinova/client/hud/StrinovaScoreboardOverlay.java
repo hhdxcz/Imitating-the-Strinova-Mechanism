@@ -7,26 +7,26 @@ import net.minecraft.network.chat.Component;
 import java.util.List;
 
 /**
- * TAB 计分板（按目标草图布局）：
+ * TAB 计分板（按目标草图/截图布局）：
  *
  * <pre>
- * 左竖栏                           右内容区
- * ┌────────┬──────────────────────────────────────────────────────────┐
- * │ 剪刀手 │  头像+名字 | 击败/阵亡/助攻 | 绝招 | 成长等级 | 主武器 | 输出分 | 技能分 | 协作分 | PING
- * │(我方)  ├──────────────────────────────────────────────────────────┤
- * │ logo   │  玩家数据行 ×5
- * │ 比分    │
- * │ 我方 灭队│  ← 回合记录（哪方赢下该回合 + 赢法：炸弹爆炸/拆除/灭队/时间耗尽）
- * │ 敌方 爆炸│
- * │ 我方 拆除│
- * ├────────┼──────────────────────────────────────────────────────────┤
- * │ 欧泊   │  列头 + 玩家数据行 ×5
- * │(敌方)  │
+ * 左竖栏            右内容区
+ * ┌────────┬────────────────────────────────────────────────────────┐
+ * │ 剪刀手 │ 头像+名字 | 击败/阵亡/助攻 | 绝招 | 成长等级 | 主武器 | 输出分 | 技能分 | 协作分 | PING
+ * │ logo   ├────────────────────────────────────────────────────────┤
+ * │ 比分   │ 玩家数据行 ×5
+ * ├────────┼────────────────────────────────────────────────────────┤
+ * │ 我方   │ ●爆   ○    ●灭   ○   ...   ← 回合记录：我方赢的回合（上排）带赢法图标
+ * │ 敌方   │ ○    ●拆   ○    ●时  ...   ← 敌方赢的回合（下排）带赢法图标
+ * ├────────┼────────────────────────────────────────────────────────┤
+ * │ 欧泊   │ 列头 + 玩家数据行 ×5
  * │ logo   │
- * └────────┴──────────────────────────────────────────────────────────┘
+ * │ 比分   │
+ * └────────┴────────────────────────────────────────────────────────┘
  * </pre>
  *
- * 面板为不透明填色风格：队伍色表头/竖栏、深色数据行、金色本人行、灰色阵亡行、细网格分隔线。
+ * 「我方/敌方」位于两个阵营区块**中间**的回合记录带里：上排是我方赢下的回合、下排是敌方赢下的回合，
+ * 每回合格子里的图标表示赢法（炸弹爆炸/拆除炸弹/灭队/时间耗尽）。
  */
 public final class StrinovaScoreboardOverlay {
 
@@ -35,6 +35,7 @@ public final class StrinovaScoreboardOverlay {
     private static final int PANEL_BG = 0xF20C1016;
     private static final int PANEL_BORDER = 0x55FFFFFF;
     private static final int SIDEBAR_BG = 0xFF0A0E13;
+    private static final int MIDDLE_BG = 0xFF0A0E13;
     private static final int TEAM_ALLY = 0xFFBF3F4C;
     private static final int TEAM_ENEMY = 0xFF3F6AD8;
     private static final int HEADER_ROW = 0xFF0F141A;
@@ -57,8 +58,11 @@ public final class StrinovaScoreboardOverlay {
     private static final int ROW_HEIGHT = 24;
     private static final int ROW_COUNT = 5;
     private static final int BOTTOM_PAD = 4;
-    private static final int BLOCK_GAP = 6;
-    private static final int HISTORY_ENTRY_HEIGHT = 11;
+    /** 两个阵营区块之间的回合记录带高度。 */
+    private static final int MIDDLE_HEIGHT = 32;
+    /** 回合记录格子尺寸/步长。 */
+    private static final int ROUND_CELL = 10;
+    private static final int ROUND_STEP = 13;
 
     private StrinovaScoreboardOverlay() {
     }
@@ -92,51 +96,101 @@ public final class StrinovaScoreboardOverlay {
 
         int panelWidth = Math.max(420, Math.min(MAX_PANEL_WIDTH, screenWidth - 16));
         int blockHeight = HEADER_HEIGHT + ROW_COUNT * ROW_HEIGHT + BOTTOM_PAD;
-        int panelHeight = blockHeight * 2 + BLOCK_GAP;
+        int panelHeight = blockHeight * 2 + MIDDLE_HEIGHT;
         int panelLeft = (screenWidth - panelWidth) / 2;
         int panelTop = Math.max(6, (screenHeight - panelHeight) / 2);
+        int middleTop = panelTop + blockHeight;
+        int enemyTop = middleTop + MIDDLE_HEIGHT;
 
         painter.rect(panelLeft, panelTop, panelWidth, panelHeight, PANEL_BG);
         painter.border(panelLeft, panelTop, panelWidth, panelHeight, PANEL_BORDER, 1);
 
-        // 右侧两块内容（我方/敌方各 5 行）
+        // 右侧两块内容（我方 / 敌方各 5 行）
         renderTeamContent(painter, panelLeft, panelTop, panelWidth, blockHeight, true);
-        renderTeamContent(painter, panelLeft, panelTop + blockHeight + BLOCK_GAP, panelWidth, blockHeight, false);
-        // 左侧竖栏：队名/我方、logo、比分、回合记录、敌方队名/logo、比分
-        renderSidebar(painter, panelLeft, panelTop, panelWidth, blockHeight);
+        renderTeamContent(painter, panelLeft, enemyTop, panelWidth, blockHeight, false);
+        // 左侧竖栏（两块各自队名/logo/比分）
+        renderSidebarBlock(painter, panelLeft, panelTop, blockHeight, true);
+        renderSidebarBlock(painter, panelLeft, enemyTop, blockHeight, false);
+        // 中间回合记录带（我方/敌方 + 赢法图标）
+        renderMiddleBand(painter, panelLeft, middleTop, panelWidth);
     }
 
-    // ==================== 左侧竖栏 ====================
+    // ==================== 中间回合记录带 ====================
 
-    private static void renderSidebar(StrinovaHudPainter painter, int left, int top,
-                                      int panelWidth, int blockHeight) {
-        int enemyTop = top + blockHeight + BLOCK_GAP;
-        int panelBottom = top + blockHeight * 2 + BLOCK_GAP;
-        int sidebarW = SIDEBAR_WIDTH;
+    private static void renderMiddleBand(StrinovaHudPainter painter, int left, int top, int panelWidth) {
+        int contentX = left + SIDEBAR_WIDTH;
+        int contentW = panelWidth - SIDEBAR_WIDTH - 1;
+        int height = MIDDLE_HEIGHT;
 
-        // 整列底色
-        painter.rect(left + 1, top, sidebarW - 1, panelBottom - top - 1, SIDEBAR_BG);
+        painter.rect(left + 1, top, panelWidth - 2, height - 1, MIDDLE_BG);
+        painter.rect(left + 1, top, panelWidth - 2, 1, withAlpha(0xFFFFFF, 0x1E));
+        painter.rect(left + 1, top + height - 1, panelWidth - 2, 1, withAlpha(0xFFFFFF, 0x1E));
 
-        // 我方表头：队伍名 + 我方
-        drawSidebarHeader(painter, left, top, sidebarW, true);
-        // 我方：徽章 + 比分（表头下方紧凑放置），下面是回合记录
-        int allyContentTop = top + HEADER_HEIGHT;
-        drawSidebarCrest(painter, left, allyContentTop, sidebarW, 54, true);
-        int historyTop = allyContentTop + 58;
-        int historyBottom = enemyTop - 2;
-        renderRoundHistory(painter, left, historyTop, historyBottom, sidebarW);
+        int rowHeight = height / 2;
+        // 左竖栏标签：我方 / 敌方
+        painter.text(Component.translatable("hud.strinova.match.allies").getString(),
+                left + 6, top + 3, ALLY_WIN, true);
+        painter.text(Component.translatable("hud.strinova.match.enemies").getString(),
+                left + 6, top + 3 + rowHeight, ENEMY_WIN, true);
 
-        // 敌方表头：队伍名 + 敌方
-        drawSidebarHeader(painter, left, enemyTop, sidebarW, false);
-        // 敌方：徽章 + 比分（在下半区居中）
-        int enemyContentTop = enemyTop + HEADER_HEIGHT;
-        int enemyContentHeight = panelBottom - enemyContentTop - 1;
-        int crestBlockHeight = 54;
-        int crestTop = enemyContentTop + Math.max(0, (enemyContentHeight - crestBlockHeight) / 2);
-        drawSidebarCrest(painter, left, crestTop, sidebarW, crestBlockHeight, false);
+        // 回合格子：上排我方赢的回合，下排敌方赢的回合
+        List<StrinovaMatchState.RoundResult> results = StrinovaMatchState.roundResults();
+        int maxCells = Math.max(1, (contentW - 8) / ROUND_STEP);
+        int start = Math.max(0, results.size() - maxCells);
+        int cellX = contentX + 4;
+        int drawn = 0;
+        for (int i = start; i < results.size() && drawn < maxCells; i++) {
+            StrinovaMatchState.RoundResult result = results.get(i);
+            int allyY = top + 3;
+            int enemyY = top + 3 + rowHeight;
+            // 双方两排都画空点，赢家那排画带赢法图标的实心格
+            drawEmptyDot(painter, cellX + 4, allyY + 2);
+            drawEmptyDot(painter, cellX + 4, enemyY + 2);
+            if (result.allyWon()) {
+                drawRoundCell(painter, cellX, allyY, result.reasonKey(), ALLY_WIN);
+            } else {
+                drawRoundCell(painter, cellX, enemyY, result.reasonKey(), ENEMY_WIN);
+            }
+            cellX += ROUND_STEP;
+            drawn++;
+        }
+        // 未打的回合：两排空点占位（最多补到 8 格，避免大屏铺满）
+        int placeholders = Math.min(maxCells - drawn, 8);
+        for (int i = 0; i < placeholders; i++) {
+            drawEmptyDot(painter, cellX + 4, top + 5);
+            drawEmptyDot(painter, cellX + 4, top + 5 + rowHeight);
+            cellX += ROUND_STEP;
+        }
     }
 
-    private static void drawSidebarHeader(StrinovaHudPainter painter, int left, int top, int sidebarW, boolean ally) {
+    private static void drawEmptyDot(StrinovaHudPainter painter, int x, int y) {
+        painter.rect(x, y, 3, 3, withAlpha(0xFFFFFF, 0x55));
+    }
+
+    private static void drawRoundCell(StrinovaHudPainter painter, int x, int y, String reasonKey, int color) {
+        painter.rect(x, y, ROUND_CELL, ROUND_CELL, withAlpha(color, 0x55));
+        painter.border(x, y, ROUND_CELL, ROUND_CELL, color, 1);
+        String glyph = reasonGlyph(reasonKey);
+        painter.textScaled(glyph, x + 1, y + 1, 0.6F, TEXT, true);
+    }
+
+    private static String reasonGlyph(String reasonKey) {
+        if (reasonKey == null) {
+            return "?";
+        }
+        return switch (reasonKey) {
+            case "hud.strinova.match.reason.explode" -> "爆";
+            case "hud.strinova.match.reason.defuse" -> "拆";
+            case "hud.strinova.match.reason.elimination" -> "灭";
+            case "hud.strinova.match.reason.timeout" -> "时";
+            default -> "?";
+        };
+    }
+
+    // ==================== 左侧竖栏（按阵营区块） ====================
+
+    private static void renderSidebarBlock(StrinovaHudPainter painter, int left, int top,
+                                           int blockHeight, boolean ally) {
         int accent = ally ? TEAM_ALLY : TEAM_ENEMY;
         String teamKey = ally ? StrinovaMatchState.getAlliesTeamKey() : StrinovaMatchState.getEnemiesTeamKey();
         String teamName = teamKey == null || teamKey.isEmpty()
@@ -144,57 +198,27 @@ public final class StrinovaScoreboardOverlay {
                 : Component.translatable(teamKey).getString();
         String sideLabel = Component.translatable(
                 ally ? "hud.strinova.match.allies" : "hud.strinova.match.enemies").getString();
-
-        painter.rect(left + 1, top, sidebarW - 1, HEADER_HEIGHT, withAlpha(accent, 0xE6));
-        painter.text(teamName, left + 5, top + 6, TEXT, true);
-        painter.textRightAligned(sideLabel, left + sidebarW - 5, top + 6, 0xE6FFFFFF, false);
-    }
-
-    // 竖栏内的徽章 + 大比分
-    private static void drawSidebarCrest(StrinovaHudPainter painter, int left, int top,
-                                         int sidebarW, int blockHeight, boolean ally) {
-        int accent = ally ? TEAM_ALLY : TEAM_ENEMY;
         int score = ally ? StrinovaMatchState.getAlliesScore() : StrinovaMatchState.getEnemiesScore();
+
+        // 整列底色
+        painter.rect(left + 1, top, SIDEBAR_WIDTH - 1, blockHeight - 1, SIDEBAR_BG);
+        // 表头：队名 + 我方/敌方
+        painter.rect(left + 1, top, SIDEBAR_WIDTH - 1, HEADER_HEIGHT, withAlpha(accent, 0xE6));
+        painter.text(teamName, left + 5, top + 6, TEXT, true);
+        painter.textRightAligned(sideLabel, left + SIDEBAR_WIDTH - 5, top + 6, 0xE6FFFFFF, false);
+
+        // logo + 大比分（在表头下方居中）
+        int areaTop = top + HEADER_HEIGHT;
+        int areaHeight = blockHeight - HEADER_HEIGHT - 1;
         int crestSize = 30;
-        drawCrest(painter, left + (sidebarW - crestSize) / 2, top + 4, crestSize, accent);
+        int blockHeightPx = crestSize + 22;
+        int crestTop = areaTop + Math.max(0, (areaHeight - blockHeightPx) / 2);
+        drawCrest(painter, left + (SIDEBAR_WIDTH - crestSize) / 2, crestTop, crestSize, accent);
         String scoreText = String.valueOf(score);
         float scoreScale = 1.5F;
         float scoreWidth = painter.textWidth(scoreText) * scoreScale;
-        painter.textScaled(scoreText, left + (sidebarW - scoreWidth) / 2,
-                top + crestSize + 8, scoreScale, TEXT, true);
-    }
-
-    // 回合记录：每行「我方/敌方 + 赢法」（炸弹爆炸 / 拆除炸弹 / 灭队 / 时间耗尽）
-    private static void renderRoundHistory(StrinovaHudPainter painter, int left, int top,
-                                           int bottom, int sidebarW) {
-        List<StrinovaMatchState.RoundResult> results = StrinovaMatchState.roundResults();
-        if (results.isEmpty()) {
-            return;
-        }
-        int available = bottom - top;
-        if (available < HISTORY_ENTRY_HEIGHT) {
-            return;
-        }
-        int maxEntries = Math.max(1, available / HISTORY_ENTRY_HEIGHT);
-        int start = Math.max(0, results.size() - maxEntries);
-        int y = top;
-        for (int i = start; i < results.size(); i++) {
-            StrinovaMatchState.RoundResult result = results.get(i);
-            boolean allyWon = result.allyWon();
-            String side = Component.translatable(
-                    allyWon ? "hud.strinova.match.allies" : "hud.strinova.match.enemies").getString();
-            String reason = Component.translatable(
-                    result.reasonKey() == null || result.reasonKey().isEmpty()
-                            ? "hud.strinova.match.reason.elimination" : result.reasonKey()).getString();
-            int sideColor = allyWon ? ALLY_WIN : ENEMY_WIN;
-            float sideScale = 0.72F;
-            // 小菱形标记
-            painter.rect(left + 5, y + 4, 4, 4, sideColor);
-            painter.textScaled(side, left + 12, y, sideScale, sideColor, false);
-            int reasonX = left + 12 + Math.round(painter.textWidth(side) * sideScale) + 3;
-            painter.textScaled(reason, reasonX, y, 0.68F, withAlpha(TEXT_DIM, 0xCC), false);
-            y += HISTORY_ENTRY_HEIGHT;
-        }
+        painter.textScaled(scoreText, left + (SIDEBAR_WIDTH - scoreWidth) / 2,
+                crestTop + crestSize + 6, scoreScale, TEXT, true);
     }
 
     // ==================== 右侧内容区 ====================
