@@ -109,6 +109,13 @@ public final class StrinovaHudMockData {
         StrinovaMatchState.setAlliesAttacking(true);
         StrinovaMatchState.setAlliesTeamKey("hud.strinova.faction.scissors");
         StrinovaMatchState.setEnemiesTeamKey("hud.strinova.faction.opal");
+        // 左侧竖栏的回合记录：我方/敌方 + 赢法（炸弹爆炸 / 拆除 / 灭队 / 时间耗尽）
+        StrinovaMatchState.setRoundResults(java.util.List.of(
+                new StrinovaMatchState.RoundResult(true, "hud.strinova.match.reason.elimination"),
+                new StrinovaMatchState.RoundResult(false, "hud.strinova.match.reason.explode"),
+                new StrinovaMatchState.RoundResult(true, "hud.strinova.match.reason.defuse"),
+                new StrinovaMatchState.RoundResult(false, "hud.strinova.match.reason.timeout"),
+                new StrinovaMatchState.RoundResult(true, "hud.strinova.match.reason.elimination")));
     }
 
     /** 模拟 5v5 计分板数据（列数据参考真实 TAB 计分板截图）。 */

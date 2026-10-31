@@ -1,12 +1,17 @@
 package com.hhdxcz.strinova.client.hud;
 
+import java.util.List;
 import java.util.Locale;
 
 /**
- * 对局状态数据契约（客户端侧）：模式、阶段、回合、倒计时、双方比分。
+ * 对局状态数据契约（客户端侧）：模式、阶段、回合、倒计时、双方比分、回合记录。
  * 当前由模拟数据填充；未来由服务端对局系统 S2C 同步。
  */
 public final class StrinovaMatchState {
+
+    /** 一条回合记录：哪一方赢下该回合（我方 true / 敌方 false）+ 赢法（炸弹爆炸/拆除/灭队/时间到）。 */
+    public record RoundResult(boolean allyWon, String reasonKey) {
+    }
 
     public enum Phase {
         WARMUP("hud.strinova.match.warmup"),
@@ -35,6 +40,8 @@ public final class StrinovaMatchState {
     private static volatile boolean alliesAttacking = true;
     private static volatile String alliesTeamKey = "";
     private static volatile String enemiesTeamKey = "";
+    /** 已结束回合的记录（左侧竖栏「我方/敌方」那几行）。 */
+    private static volatile List<RoundResult> roundResults = List.of();
 
     private StrinovaMatchState() {
     }
@@ -117,6 +124,14 @@ public final class StrinovaMatchState {
         enemiesTeamKey = key == null ? "" : key;
     }
 
+    public static List<RoundResult> roundResults() {
+        return roundResults;
+    }
+
+    public static void setRoundResults(List<RoundResult> results) {
+        roundResults = results == null ? List.of() : List.copyOf(results);
+    }
+
     /** 回合倒计时格式化为 mm:ss。 */
     public static String formattedTime() {
         int total = Math.max(0, roundSecondsLeft);
@@ -134,5 +149,6 @@ public final class StrinovaMatchState {
         alliesAttacking = true;
         alliesTeamKey = "";
         enemiesTeamKey = "";
+        roundResults = List.of();
     }
 }

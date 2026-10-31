@@ -523,6 +523,15 @@ public final class StrinovaNetwork {
             String alliesTeamKey = buf.readUtf(128);
             String enemiesTeamKey = buf.readUtf(128);
 
+            // 回合记录（左侧竖栏「我方/敌方」那几行）
+            int resultCount = Math.min(32, Math.max(0, buf.readVarInt()));
+            List<StrinovaMatchState.RoundResult> roundResults = new ArrayList<>(resultCount);
+            for (int i = 0; i < resultCount; i++) {
+                boolean allyWon = buf.readBoolean();
+                String reasonKey = buf.readUtf(128);
+                roundResults.add(new StrinovaMatchState.RoundResult(allyWon, reasonKey));
+            }
+
             int killCount = Math.min(64, Math.max(0, buf.readVarInt()));
             List<StrinovaHudState.KillFeedEntry> killEvents = new ArrayList<>(killCount);
             long now = StrinovaHudState.now();
@@ -586,6 +595,7 @@ public final class StrinovaNetwork {
                 StrinovaMatchState.setAlliesTeamKey(alliesTeamKey);
                 StrinovaMatchState.setEnemiesTeamKey(enemiesTeamKey);
                 StrinovaMatchState.setAlliesAttacking(true);
+                StrinovaMatchState.setRoundResults(roundResults);
                 StrinovaScoreboardState.setEntries(entries);
                 StrinovaHudState.setServerMatchActive(true);
                 if (finalSelfHealth >= 0.0F) {
@@ -911,6 +921,14 @@ public final class StrinovaNetwork {
         buf.writeInt(StrinovaMatchManager.enemiesScore());
         buf.writeUtf(StrinovaMatchManager.alliesTeamKey(), 128);
         buf.writeUtf(StrinovaMatchManager.enemiesTeamKey(), 128);
+
+        // 回合记录：哪方赢下 + 赢法（炸弹爆炸/拆除/灭队/时间耗尽）
+        List<StrinovaMatchManager.RoundResult> results = StrinovaMatchManager.roundResults();
+        buf.writeVarInt(results.size());
+        for (StrinovaMatchManager.RoundResult result : results) {
+            buf.writeBoolean(result.allyWon());
+            buf.writeUtf(result.reasonKey() == null ? "" : result.reasonKey(), 128);
+        }
 
         List<StrinovaCombatManager.KillEvent> safeKills = kills == null ? List.of() : kills;
         buf.writeVarInt(safeKills.size());
