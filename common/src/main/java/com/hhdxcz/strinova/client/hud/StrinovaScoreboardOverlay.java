@@ -116,9 +116,11 @@ public final class StrinovaScoreboardOverlay {
         return new int[]{layout.left(), layout.top(), layout.width(), layout.height()};
     }
 
-    /** 游戏内渲染（带背景压暗）。 */
+    /** 游戏内渲染（默认不压暗背景，可在配置开启）。 */
     public static void render(GuiGraphics graphics, StrinovaHudPainter painter) {
-        graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), DIM);
+        if (StrinovaHudConfig.get().scoreboardDimBackground) {
+            graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), DIM);
+        }
         renderPanel(graphics, painter);
     }
 
@@ -132,8 +134,10 @@ public final class StrinovaScoreboardOverlay {
 
         painter.rect(layout.left(), layout.top(), layout.width(), layout.height(),
                 opacity(backgroundColor("panel", PANEL_BG)));
-        painter.border(layout.left(), layout.top(), layout.width(), layout.height(),
-                textColor("panel", PANEL_BORDER), 1);
+        if (StrinovaHudConfig.get().scoreboardPanelBorder) {
+            painter.border(layout.left(), layout.top(), layout.width(), layout.height(),
+                    textColor("panel", PANEL_BORDER), 1);
+        }
 
         renderTeamContent(painter, layout, true);
         renderTeamContent(painter, layout, false);

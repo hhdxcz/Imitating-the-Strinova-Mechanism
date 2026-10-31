@@ -71,6 +71,12 @@ public final class StrinovaHudConfig {
     /** 计分板整体不透明度（0.20~1.00，越小越透明）。 */
     public float scoreboardOpacity = 0.95F;
 
+    /** TAB 时是否把游戏画面整体压暗（默认关闭 → 大背景透明）。 */
+    public boolean scoreboardDimBackground = false;
+
+    /** 是否显示计分板最外层的大边框（默认关闭）。 */
+    public boolean scoreboardPanelBorder = false;
+
     /** 每个部件独立样式（可见性/字号/文字色/背景色）。 */
     public java.util.LinkedHashMap<String, ScoreboardComponentStyle> scoreboardComponents;
 
@@ -326,6 +332,8 @@ public final class StrinovaHudConfig {
         map.put("nameLeftPadding", scoreboardNameLeftPadding);
         map.put("sidebarWidthRatio", scoreboardSidebarWidthRatio);
         map.put("opacity", scoreboardOpacity);
+        map.put("dimBackground", scoreboardDimBackground);
+        map.put("panelBorder", scoreboardPanelBorder);
         Map<String, Float> weights = new LinkedHashMap<>();
         for (String key : SCOREBOARD_COLUMN_KEYS) {
             weights.put(key, scoreboardColumnWeight(key));
@@ -375,6 +383,12 @@ public final class StrinovaHudConfig {
             }
             if (object.has("opacity")) {
                 scoreboardOpacity = object.get("opacity").getAsFloat();
+            }
+            if (object.has("dimBackground")) {
+                scoreboardDimBackground = object.get("dimBackground").getAsBoolean();
+            }
+            if (object.has("panelBorder")) {
+                scoreboardPanelBorder = object.get("panelBorder").getAsBoolean();
             }
             if (object.has("columns") && object.get("columns").isJsonObject()) {
                 JsonObject columns = object.getAsJsonObject("columns");
