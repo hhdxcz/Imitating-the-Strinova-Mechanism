@@ -71,11 +71,6 @@ public final class StrinovaCommonConfig {
         return data.taczExitStatesOnAction;
     }
 
-    /** 手持 TACZ 枪械时是否保持第一人称（TACZ 在第三人称下无法开火/开镜）。 */
-    public static synchronized boolean isTaczHoldFirstPerson() {
-        return data.taczHoldFirstPerson;
-    }
-
     public static synchronized boolean isThirdPersonCompatBypassEnabled() {
         return data.thirdPersonCompatBypass;
     }
@@ -255,8 +250,6 @@ public final class StrinovaCommonConfig {
         public int defaultExtraJumps = 1;
         public double paperDamageReduction = 0.4D;
         public boolean taczForceFirstPerson = true;
-        /** 手持 TACZ 枪械时保持第一人称：TACZ 在第三人称下无法开火/开镜。 */
-        public boolean taczHoldFirstPerson = true;
         public boolean taczExitStatesOnAction = true;
         public boolean thirdPersonCompatBypass = true;
         public boolean tpsExitFlyOnAction = true;
@@ -287,7 +280,6 @@ public final class StrinovaCommonConfig {
             out.defaultExtraJumps = this.defaultExtraJumps;
             out.paperDamageReduction = this.paperDamageReduction;
             out.taczForceFirstPerson = this.taczForceFirstPerson;
-            out.taczHoldFirstPerson = this.taczHoldFirstPerson;
             out.taczExitStatesOnAction = this.taczExitStatesOnAction;
             out.thirdPersonCompatBypass = this.thirdPersonCompatBypass;
             out.tpsExitFlyOnAction = this.tpsExitFlyOnAction;
