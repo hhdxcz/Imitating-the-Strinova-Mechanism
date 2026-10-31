@@ -54,8 +54,14 @@ public final class StrinovaHudConfig {
     /** 数据行高度（GUI 像素）。 */
     public int scoreboardRowHeight = 20;
 
-    /** 每个部件独立样式（可见性/字号/文字色/背景色）。 */
-    public java.util.LinkedHashMap<String, ScoreboardComponentStyle> scoreboardComponents = defaultScoreboardComponents();
+    /**
+     * 每个部件独立样式（可见性/字号/文字色/背景色）。
+     * <p>注意：这里不能在字段初始化器里调用 defaultScoreboardComponents()——
+     * 静态数组 SCOREBOARD_COMPONENT_KEYS 在源码中声明得更靠后，静态初始化尚未完成时为 null，
+     * 会在构造配置实例（HUD 配置初始化）时抛 NullPointerException。
+     * 因此改为惰性初始化：由 sanitize() / scoreboardComponent() 在类初始化完成后补齐。</p>
+     */
+    public java.util.LinkedHashMap<String, ScoreboardComponentStyle> scoreboardComponents;
 
     /** 单个计分板部件的独立样式；颜色为 0 表示用默认色。 */
     public static final class ScoreboardComponentStyle {
