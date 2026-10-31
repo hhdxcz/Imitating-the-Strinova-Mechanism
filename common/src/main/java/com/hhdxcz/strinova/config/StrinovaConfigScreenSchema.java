@@ -25,6 +25,7 @@ public final class StrinovaConfigScreenSchema {
         compat.booleanToggle("config.strinova.tps_exit_fly_on_action", data.tpsExitFlyOnAction, true, v -> data.tpsExitFlyOnAction = v);
         compat.booleanToggle("config.strinova.tacz_exit_states_on_action", data.taczExitStatesOnAction, true, v -> data.taczExitStatesOnAction = v);
         compat.booleanToggle("config.strinova.tacz_force_first_person", data.taczForceFirstPerson, true, v -> data.taczForceFirstPerson = v);
+        compat.booleanToggle("config.strinova.tacz_hold_first_person", data.taczHoldFirstPerson, true, v -> data.taczHoldFirstPerson = v);
         compat.booleanToggle("config.strinova.growth_key_yield_tacz", data.growthKeyYieldToTacz, true, v -> data.growthKeyYieldToTacz = v);
 
         command.stringField("config.strinova.wall_blacklist_csv", data.wallBlacklistCsv, "", v -> data.wallBlacklistCsv = v);

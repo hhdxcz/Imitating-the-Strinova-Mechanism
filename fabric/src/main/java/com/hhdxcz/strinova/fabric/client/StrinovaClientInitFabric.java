@@ -125,11 +125,21 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
                             }))
                     .then(ClientCommandManager.literal("status")
                             .executes(ctx -> {
+                                Minecraft client = Minecraft.getInstance();
+                                var player = client.player;
+                                String uuidState = player == null ? "n/a" : ("wall=" + com.hhdxcz.strinova.paper.WaPaperState.isWall(player.getUUID())
+                                        + ",paper=" + com.hhdxcz.strinova.paper.WaPaperState.isPaper(player.getUUID())
+                                        + ",fly=" + com.hhdxcz.strinova.paper.WaPaperState.isFly(player.getUUID()));
                                 ctx.getSource().sendFeedback(Component.literal(
                                         "Strinova: enabled=" + com.hhdxcz.strinova.StrinovaMod.isEnabled()
                                                 + " serverHandshake=" + (com.hhdxcz.strinova.StrinovaMod.lastRemoteEnabledMs() != 0L)
                                                 + " mock=" + StrinovaHudRenderer.isMockEnabled()
-                                                + " match=" + com.hhdxcz.strinova.client.hud.StrinovaHudState.isServerMatchActive()));
+                                                + " match=" + com.hhdxcz.strinova.client.hud.StrinovaHudState.isServerMatchActive()
+                                                + " | taczLoaded=" + com.hhdxcz.strinova.client.hud.StrinovaTaczCompat.isTaczLoaded()
+                                                + " held=" + com.hhdxcz.strinova.client.hud.StrinovaTaczCompat.heldItemId(player)
+                                                + " cam=" + (client.options == null ? "?" : client.options.getCameraType())
+                                                + " screen=" + (client.screen != null)
+                                                + " " + uuidState));
                                 return 1;
                             }));
             dispatcher.register(root);

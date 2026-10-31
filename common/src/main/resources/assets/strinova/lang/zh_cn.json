@@ -17,6 +17,7 @@
   "config.strinova.tps_exit_fly_on_action": "TPS Zero动作时退出飘飞",
   "config.strinova.tacz_exit_states_on_action": "TACZ动作时退出弦化状态",
   "config.strinova.tacz_force_first_person": "TACZ动作时强制第一人称",
+  "config.strinova.tacz_hold_first_person": "手持TACZ枪械时保持第一人称（第三人称下TACZ无法开火/开镜）",
   "config.strinova.growth_key_yield_tacz": "手持TACZ枪械时把B键让给切换开火模式",
   "config.strinova.wall_blacklist_csv": "贴墙黑名单（逗号分隔）",
   "config.strinova.default_sync_offset_x": "默认同步碰撞箱偏移X",

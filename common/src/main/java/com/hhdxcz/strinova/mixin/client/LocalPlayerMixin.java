@@ -530,6 +530,42 @@ public abstract class LocalPlayerMixin {
         boolean isAttack = gunMainhand && mc.options.keyAttack.isDown();
         boolean isUse = gunMainhand && mc.options.keyUse.isDown();
         boolean isAction = isAttack || isUse;
+        // 持 TACZ 枪械时保持第一人称：TACZ 在第三人称下无法开火/开镜（独立于“动作时强制第一人称”）。
+        // 这是保证 TACZ 可用性的兜底开关，可在配置里关闭（关闭后想用第三人称需另装 TACZ 第三人称兼容 mod）。
+        if (StrinovaCommonConfig.isTaczHoldFirstPerson()) {
+            if (gunMainhand) {
+                // 贴墙状态会强制第三人称（并阻止切换第一人称），持枪时先解除，否则 TACZ 无法开火/开镜
+                var holdPlayerId = self.getUUID();
+                if (WaPaperState.isWall(holdPlayerId)) {
+                    WaPaperState.setWall(holdPlayerId, false);
+                    StrinovaNetwork.sendWallOff();
+                }
+                if (current != CameraType.FIRST_PERSON) {
+                    strinova$taczPrevCameraType = current;
+                    strinova$taczPrevShoulderSurfing = strinova$isShoulderSurfingActive();
+                    strinova$taczForcedFirstPerson = true;
+                    if (strinova$taczPrevShoulderSurfing) {
+                        strinova$changeShoulderPerspective("FIRST_PERSON");
+                    }
+                    mc.options.setCameraType(CameraType.FIRST_PERSON);
+                }
+                if (isAction && StrinovaCommonConfig.isTaczExitStatesOnAction()) {
+                    if (WaPaperState.isCtrlPaper(holdPlayerId) || WaPaperState.isPaper(holdPlayerId)) {
+                        WaPaperState.setPaper(holdPlayerId, false);
+                        StrinovaNetwork.sendPaper(false);
+                    }
+                    if (WaPaperState.isFly(holdPlayerId)) {
+                        WaPaperState.setFly(holdPlayerId, false);
+                        StrinovaNetwork.sendFly(false);
+                    }
+                }
+                strinova$lastTaczGunMainhand = true;
+                strinova$lastTaczAction = isAction;
+            } else if (strinova$taczForcedFirstPerson) {
+                strinova$restoreTaczPerspectiveIfNeeded(mc);
+            }
+            return;
+        }
         boolean allowTpsExitFlyOnAction = StrinovaCommonConfig.isTpsExitFlyOnAction();
         boolean thirdPersonCompatActive = StrinovaCommonConfig.isThirdPersonCompatBypassEnabled() && strinova$isThirdPersonShootCompatLoaded();
         if (thirdPersonCompatActive) {

@@ -28,6 +28,37 @@ public final class StrinovaTaczCompat {
     private StrinovaTaczCompat() {
     }
 
+    /** TACZ 是否已加载（Architectury 平台查询，结果缓存）。 */
+    private static Boolean taczLoadedCache;
+
+    public static boolean isTaczLoaded() {
+        Boolean cached = taczLoadedCache;
+        if (cached != null) {
+            return cached;
+        }
+        boolean loaded;
+        try {
+            loaded = dev.architectury.platform.Platform.isModLoaded("tacz");
+        } catch (Throwable t) {
+            loaded = false;
+        }
+        taczLoadedCache = loaded;
+        return loaded;
+    }
+
+    /** 主手物品注册名（诊断用，空手返回 ""）。 */
+    public static String heldItemId(LocalPlayer player) {
+        if (player == null) {
+            return "";
+        }
+        ItemStack stack = player.getMainHandItem();
+        if (stack.isEmpty()) {
+            return "";
+        }
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        return id == null ? "?" : id.toString();
+    }
+
     public static boolean isTaczItem(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return false;
