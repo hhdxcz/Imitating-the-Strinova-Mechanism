@@ -50,6 +50,12 @@ public final class StrinovaHudConfig {
     public String selectedAgentId = "";
     public StrinovaHudLayout layout = new StrinovaHudLayout();
 
+    // ==================== 选角界面 / 增幅网络（可视化自定义） ====================
+    /** 「弦能增幅网络」布局/显隐/配色（/strinova_client growth edit）。 */
+    public StrinovaGrowthUi growthUi = new StrinovaGrowthUi();
+    /** 「选角界面」布局/显隐/配色（/strinova_client agent edit）。 */
+    public StrinovaAgentSelectUi agentSelectUi = new StrinovaAgentSelectUi();
+
     // ==================== TAB 计分板（可视化编辑器可调） ====================
     /** 面板宽度占屏幕比例。 */
     public float scoreboardWidthRatio = 0.66F;
@@ -295,6 +301,14 @@ public final class StrinovaHudConfig {
             float value = scoreboardColumnWeight(key);
             scoreboardColumnWeights.put(key, Math.max(0.02F, Math.min(0.60F, value)));
         }
+        if (growthUi == null) {
+            growthUi = new StrinovaGrowthUi();
+        }
+        growthUi.sanitize();
+        if (agentSelectUi == null) {
+            agentSelectUi = new StrinovaAgentSelectUi();
+        }
+        agentSelectUi.sanitize();
     }
 
     private static float clampf(float value, float min, float max) {
@@ -438,6 +452,68 @@ public final class StrinovaHudConfig {
     /** 计分板导出文件的默认路径：config/strinova-scoreboard.json。 */
     public static Path scoreboardExportPath() {
         return Platform.getConfigFolder().resolve("strinova-scoreboard.json");
+    }
+
+    // ==================== 选角界面 / 增幅网络：导出 / 导入 / 路径 ====================
+
+    /** 「弦能增幅网络」界面配置导出为 JSON。 */
+    public String growthExportJson() {
+        growthUi.sanitize();
+        return GSON.toJson(growthUi);
+    }
+
+    /** 从 JSON 导入「弦能增幅网络」界面配置（成功返回 true，不自动保存）。 */
+    public boolean growthImportJson(String json) {
+        if (json == null || json.isBlank()) {
+            return false;
+        }
+        try {
+            StrinovaGrowthUi imported = GSON.fromJson(json.trim(), StrinovaGrowthUi.class);
+            if (imported == null) {
+                return false;
+            }
+            growthUi = imported;
+            growthUi.sanitize();
+            return true;
+        } catch (Exception e) {
+            StrinovaMod.LOGGER.warn("导入增幅网络界面配置失败: {}", e.toString());
+            return false;
+        }
+    }
+
+    /** 增幅网络界面配置的默认导出路径：config/strinova-growth-ui.json。 */
+    public static Path growthExportPath() {
+        return Platform.getConfigFolder().resolve("strinova-growth-ui.json");
+    }
+
+    /** 「选角界面」配置导出为 JSON。 */
+    public String agentSelectExportJson() {
+        agentSelectUi.sanitize();
+        return GSON.toJson(agentSelectUi);
+    }
+
+    /** 从 JSON 导入「选角界面」配置（成功返回 true，不自动保存）。 */
+    public boolean agentSelectImportJson(String json) {
+        if (json == null || json.isBlank()) {
+            return false;
+        }
+        try {
+            StrinovaAgentSelectUi imported = GSON.fromJson(json.trim(), StrinovaAgentSelectUi.class);
+            if (imported == null) {
+                return false;
+            }
+            agentSelectUi = imported;
+            agentSelectUi.sanitize();
+            return true;
+        } catch (Exception e) {
+            StrinovaMod.LOGGER.warn("导入选角界面配置失败: {}", e.toString());
+            return false;
+        }
+    }
+
+    /** 选角界面配置的默认导出路径：config/strinova-agent-select-ui.json。 */
+    public static Path agentSelectExportPath() {
+        return Platform.getConfigFolder().resolve("strinova-agent-select-ui.json");
     }
 
     /** 列宽权重文本（如 name=0.20,kda=0.12,...）。 */

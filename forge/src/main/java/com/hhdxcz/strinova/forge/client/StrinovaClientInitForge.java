@@ -119,13 +119,63 @@ public final class StrinovaClientInitForge {
                             Minecraft client = Minecraft.getInstance();
                             client.tell(() -> client.setScreen(new StrinovaAgentSelectScreen(client.screen)));
                             return 1;
-                        }))
+                        })
+                        .then(Commands.literal("edit")
+                                .executes(ctx -> {
+                                    Minecraft client = Minecraft.getInstance();
+                                    client.tell(() -> client.setScreen(
+                                            new com.hhdxcz.strinova.client.StrinovaAgentSelectEditScreen(client.screen)));
+                                    return 1;
+                                }))
+                        .then(Commands.literal("export")
+                                .executes(ctx -> {
+                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                            com.hhdxcz.strinova.client.StrinovaUiConfigActions.exportSelect()), false);
+                                    return 1;
+                                }))
+                        .then(Commands.literal("import")
+                                .executes(ctx -> {
+                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                            com.hhdxcz.strinova.client.StrinovaUiConfigActions.importSelect()), false);
+                                    return 1;
+                                }))
+                        .then(Commands.literal("values")
+                                .executes(ctx -> {
+                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                            com.hhdxcz.strinova.client.StrinovaUiConfigActions.valuesSelect()), false);
+                                    return 1;
+                                })))
                 .then(Commands.literal("growth")
                         .executes(ctx -> {
                             Minecraft client = Minecraft.getInstance();
                             client.tell(() -> client.setScreen(new StrinovaGrowthScreen(client.screen)));
                             return 1;
-                        }))
+                        })
+                        .then(Commands.literal("edit")
+                                .executes(ctx -> {
+                                    Minecraft client = Minecraft.getInstance();
+                                    client.tell(() -> client.setScreen(
+                                            new com.hhdxcz.strinova.client.StrinovaGrowthEditScreen(client.screen)));
+                                    return 1;
+                                }))
+                        .then(Commands.literal("export")
+                                .executes(ctx -> {
+                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                            com.hhdxcz.strinova.client.StrinovaUiConfigActions.exportGrowth()), false);
+                                    return 1;
+                                }))
+                        .then(Commands.literal("import")
+                                .executes(ctx -> {
+                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                            com.hhdxcz.strinova.client.StrinovaUiConfigActions.importGrowth()), false);
+                                    return 1;
+                                }))
+                        .then(Commands.literal("values")
+                                .executes(ctx -> {
+                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                            com.hhdxcz.strinova.client.StrinovaUiConfigActions.valuesGrowth()), false);
+                                    return 1;
+                                })))
                 .then(Commands.literal("scoreboard")
                         .executes(ctx -> {
                             Minecraft client = Minecraft.getInstance();

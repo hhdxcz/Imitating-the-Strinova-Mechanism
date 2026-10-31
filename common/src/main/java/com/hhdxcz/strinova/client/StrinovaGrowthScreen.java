@@ -2,6 +2,7 @@ package com.hhdxcz.strinova.client;
 
 import com.hhdxcz.strinova.client.hud.StrinovaAgentRoster;
 import com.hhdxcz.strinova.client.hud.StrinovaGrowthState;
+import com.hhdxcz.strinova.client.hud.StrinovaGrowthUi;
 import com.hhdxcz.strinova.client.hud.StrinovaHudConfig;
 import com.hhdxcz.strinova.client.hud.StrinovaHudState;
 import com.hhdxcz.strinova.client.hud.StrinovaMatchState;
@@ -69,7 +70,13 @@ public class StrinovaGrowthScreen extends Screen {
     private int contentTop;
     private int contentBottom;
 
+    /** 顶部标题栏是否绘制（自定义显隐；隐藏时内容上移，但右上角按钮仍保留）。 */
+    private boolean showHeaderBar;
     private boolean showPortrait;
+    /** 右侧武器栏是否绘制（自定义显隐；隐藏时成长网格延伸到右边界）。 */
+    private boolean showWeapons;
+    /** 底部觉醒区是否绘制（自定义显隐；隐藏时成长网格延伸到下边界）。 */
+    private boolean showAwakenings;
     private int portraitX;
     private int portraitY;
     private int portraitWidth;
@@ -99,6 +106,7 @@ public class StrinovaGrowthScreen extends Screen {
 
     // ==================== 控件与悬停状态 ====================
     private Button closeButton;
+    private Button customizeButton;
     private int hoveredCategory = -1;
     private int hoveredItem = -1;
     private int hoveredAwakening = -1;
@@ -108,7 +116,7 @@ public class StrinovaGrowthScreen extends Screen {
         this.parent = parent;
     }
 
-    /** 初始化界面：解析当前角色、计算自适应布局并添加最右侧关闭按钮。 */
+    /** 初始化界面：解析当前角色、计算自适应布局并添加右上角「自定义」与关闭按钮。 */
     @Override
     protected void init() {
         this.clearWidgets();
@@ -121,6 +129,20 @@ public class StrinovaGrowthScreen extends Screen {
         this.closeButton = this.addRenderableWidget(Button.builder(Component.empty(), button -> this.onClose())
                 .bounds(this.closeButtonX(), this.closeButtonY(), this.closeButtonSize, this.closeButtonSize)
                 .build());
+        this.addCustomizeButton();
+    }
+
+    /** 右上角「自定义」按钮：放在关闭按钮左侧，打开「弦能增幅网络」界面可视化编辑器。 */
+    private void addCustomizeButton() {
+        Component label = Component.translatable("config.strinova.ui.customize");
+        int right = this.closeButtonX() - 4;
+        int maxWidth = Math.max(20, right - this.innerLeft);
+        int width = Math.min(maxWidth, this.font.width(label) + 12);
+        this.customizeButton = this.addRenderableWidget(Button.builder(label, button -> {
+            if (this.minecraft != null) {
+                this.minecraft.setScreen(new StrinovaGrowthEditScreen(this));
+            }
+        }).bounds(right - width, this.closeButtonY(), width, this.closeButtonSize).build());
     }
 
     /** 从客户端配置读取当前选角，无效或未选择时回退到默认角色。 */
@@ -129,55 +151,109 @@ public class StrinovaGrowthScreen extends Screen {
         return selected != null ? selected : StrinovaAgentRoster.defaultAgent();
     }
 
-    /** 计算自适应布局：先按窗口尺寸决定顶部栏/底部觉醒区高度，再切分左立绘、中成长区、右武器栏。 */
+    /**
+     * 计算自适应布局：读取 {@code growthUi} 的显隐 / 比例 / 间距配置，
+     * 先切出顶部栏与底部觉醒区，再按比例切分左立绘、中成长网格、右武器栏；
+     * 任一区域被隐藏时其余区域自动延伸，小窗口下逐级隐藏次要区域并收窄行距，保证不越界。
+     */
     private void computeLayout() {
+        StrinovaGrowthUi ui = StrinovaHudConfig.get().growthUi;
         int margin = clamp(this.width / 96, 4, 12);
         this.gap = this.height >= 300 ? 8 : 6;
         this.innerLeft = margin;
-        this.innerRight = this.width - margin;
+        this.innerRight = Math.max(this.innerLeft + 1, this.width - margin);
 
         this.headerTop = margin;
-        this.headerHeight = this.height >= 300 ? 28 : 22;
         this.closeButtonSize = this.height >= 300 ? 20 : 18;
+        this.showHeaderBar = ui.showHeader && this.width >= 320;
+        this.headerHeight = this.showHeaderBar ? (this.height >= 300 ? 28 : 22) : 0;
+        // 右上角按钮始终保留，内容区从按钮条下方开始（隐藏标题栏时内容上移）
+        int controlHeight = Math.max(this.headerHeight, this.closeButtonSize);
+        this.contentTop = this.headerTop + controlHeight + this.gap;
 
-        // 底部觉醒区：空间足够时显示描述并加高，否则只保留图标+名称+状态
-        this.showAwakenDescription = this.height >= 300 && this.width >= 520;
-        this.awakenHeight = this.showAwakenDescription
-                ? clamp((int) (this.height * 0.26F), 64, 160)
-                : clamp(this.height / 9, 34, 54);
-        this.awakenTop = this.height - margin - this.awakenHeight;
+        // 底部觉醒区：高度 = 窗口高度 × awakenHeightRatio；空间不足时自动收窄，给网格留至少 4 行
+        int gridMinHeight = CATEGORY_ROWS * 18 + (CATEGORY_ROWS - 1) * 2;
+        int awakenMax = Math.max(34,
+                this.height - this.contentTop - margin - gridMinHeight - this.gap * 2);
+        this.showAwakenings = ui.showAwakenings && this.width >= 260 && this.height >= 220;
+        if (this.showAwakenings) {
+            this.awakenHeight = clamp(Math.round(this.height * ui.awakenHeightRatio),
+                    34, Math.max(34, Math.min(awakenMax, this.height / 2)));
+            this.showAwakenDescription = this.awakenHeight >= 56 && this.width >= 520;
+        } else {
+            this.awakenHeight = 0;
+            this.showAwakenDescription = false;
+        }
+        this.awakenTop = this.showAwakenings
+                ? this.height - margin - this.awakenHeight
+                : this.height - margin;
+        this.contentBottom = Math.max(this.contentTop + 8,
+                this.showAwakenings ? this.awakenTop - this.gap : this.height - margin);
 
-        this.contentTop = this.headerTop + this.headerHeight + this.gap;
-        this.contentBottom = this.awakenTop - this.gap;
-
-        // 左侧角色立绘：窗口过小时隐藏，把宽度让给成长网格
-        this.showPortrait = this.width >= 620 && this.height >= 280;
-        this.portraitWidth = this.showPortrait ? clamp(this.width / 5, 120, 210) : 0;
+        // 左立绘 / 右武器栏：宽度 = 屏宽 × 配置比例；窗口过小时自动隐藏，把宽度让给成长网格
+        int available = this.innerRight - this.innerLeft;
+        int portraitRaw = Math.round(this.width * ui.portraitWidthRatio);
+        int weaponsRaw = Math.round(this.width * ui.weaponsWidthRatio);
+        this.showPortrait = ui.showPortrait && this.width >= 480 && this.height >= 240
+                && portraitRaw >= 56;
+        this.portraitWidth = this.showPortrait
+                ? clamp(portraitRaw, 56, Math.max(56, available / 3))
+                : 0;
         this.portraitX = this.innerLeft;
         this.portraitY = this.contentTop;
         this.portraitHeight = Math.max(0, this.contentBottom - this.contentTop);
 
-        // 右侧武器栏：小窗口只显示图标 + 数字键
-        this.weaponsWidth = this.showPortrait ? 130 : (this.width >= 480 ? 96 : 56);
-        this.compactWeapons = this.weaponsWidth < 80;
-        this.weaponsX = this.innerRight - this.weaponsWidth;
+        this.showWeapons = ui.showWeapons && this.width >= 400 && weaponsRaw >= 36;
+        this.weaponsWidth = this.showWeapons
+                ? clamp(weaponsRaw, 36, Math.max(36, available / 3))
+                : 0;
+        // 武器栏较窄时只显示图标 + 数字键，隐藏名称/槽位类型（留出图标空间）
+        this.compactWeapons = !this.showWeapons || this.weaponsWidth < 64;
+        this.weaponsX = this.showWeapons ? this.innerRight - this.weaponsWidth : this.innerRight;
         this.weaponsY = this.contentTop;
 
-        // 中间成长网格：两列，每列最多 4 类；行高设上限，超大窗口时整块垂直居中避免过于稀疏
+        // 中间成长网格：两列 × 4 行，左右边界按显隐自适应
         this.categoriesLeft = this.innerLeft + (this.showPortrait ? this.portraitWidth + this.gap : 0);
         this.categoriesTop = this.contentTop;
-        this.categoriesRight = this.weaponsX - this.gap;
+        this.categoriesRight = this.showWeapons ? this.weaponsX - this.gap : this.innerRight;
         this.categoriesBottom = this.contentBottom;
-        this.categoryColumnGap = this.width >= 560 ? 10 : 6;
-        this.categoryRowGap = this.height >= 320 ? 8 : 4;
-        this.categoryColumnWidth = Math.max(60,
+
+        // 极端窄窗口保护：网格过窄时先隐藏立绘、再隐藏武器栏，保证两列可读
+        int minGridWidth = 2 * 48 + 6;
+        if (this.categoriesRight - this.categoriesLeft < minGridWidth) {
+            if (this.showPortrait) {
+                this.showPortrait = false;
+                this.portraitWidth = 0;
+                this.categoriesLeft = this.innerLeft;
+            }
+            if (this.categoriesRight - this.categoriesLeft < minGridWidth && this.showWeapons) {
+                this.showWeapons = false;
+                this.weaponsWidth = 0;
+                this.weaponsX = this.innerRight;
+                this.categoriesRight = this.innerRight;
+                this.compactWeapons = true;
+            }
+        }
+
+        // 列 / 行间距读取自定义配置；空间不足时行间距自动收窄，避免 4 行越界
+        this.categoryColumnGap = clamp(Math.round(ui.columnGap), 0, 32);
+        int rowGapWanted = clamp(Math.round(ui.rowGap), 0, 32);
+        int gridAvail = Math.max(8, this.categoriesBottom - this.categoriesTop);
+        int rowGapEff = rowGapWanted;
+        int blockHeight = (gridAvail - rowGapEff * (CATEGORY_ROWS - 1)) / CATEGORY_ROWS;
+        if (blockHeight < 30 && rowGapEff > 2) {
+            // 小窗口/大觉醒区时行距自适应收窄，优先保证 4 行完整可见
+            rowGapEff = Math.min(rowGapEff, 2);
+            blockHeight = (gridAvail - rowGapEff * (CATEGORY_ROWS - 1)) / CATEGORY_ROWS;
+        }
+        this.categoryRowGap = rowGapEff;
+        this.categoryColumnWidth = Math.max(40,
                 (this.categoriesRight - this.categoriesLeft - this.categoryColumnGap) / 2);
-        this.categoryBlockHeight = clamp(
-                (this.categoriesBottom - this.categoriesTop
-                        - this.categoryRowGap * (CATEGORY_ROWS - 1)) / CATEGORY_ROWS, 24, 120);
+        this.categoryBlockHeight = clamp(blockHeight, 16, 120);
         this.itemRowGap = 2;
+        // 行高下限压到 1：极小窗口下条目条也随之收缩，保证不撑出类别块
         this.itemRowHeight = clamp(
-                (this.categoryBlockHeight - ITEM_HEADER_HEIGHT - this.itemRowGap) / 2, 10, 36);
+                (this.categoryBlockHeight - ITEM_HEADER_HEIGHT - this.itemRowGap) / 2, 1, 36);
         int gridHeight = this.categoryBlockHeight * CATEGORY_ROWS
                 + this.categoryRowGap * (CATEGORY_ROWS - 1);
         this.categoriesGridTop = this.categoriesTop
@@ -189,21 +265,33 @@ public class StrinovaGrowthScreen extends Screen {
     }
 
     private int closeButtonY() {
-        return this.headerTop + (this.headerHeight - this.closeButtonSize) / 2;
+        int controlHeight = Math.max(this.headerHeight, this.closeButtonSize);
+        return this.headerTop + (controlHeight - this.closeButtonSize) / 2;
     }
 
-    /** 渲染界面：深色底 → 顶部栏 → 左立绘 → 中成长网格 → 右武器栏 → 底部觉醒 → 控件/提示。 */
+    /** 渲染界面：深色底（可叠加自定义压暗）→ 顶部栏 → 左立绘 → 中成长网格 → 右武器栏 → 底部觉醒 → 控件/提示。 */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        StrinovaGrowthUi ui = StrinovaHudConfig.get().growthUi;
         this.renderBackground(graphics);
         graphics.fillGradient(0, 0, this.width, this.height, COLOR_BG_TOP, COLOR_BG_BOTTOM);
-        this.renderTopBar(graphics);
+        int dimAlpha = (int) (ui.backgroundDim * 255.0F);
+        if (dimAlpha > 0) {
+            graphics.fill(0, 0, this.width, this.height, (Math.min(255, dimAlpha) << 24));
+        }
+        if (this.showHeaderBar) {
+            this.renderTopBar(graphics);
+        }
         if (this.showPortrait) {
             this.renderPortrait(graphics);
         }
         this.renderCategories(graphics, mouseX, mouseY);
-        this.renderWeapons(graphics);
-        this.renderAwakenings(graphics, mouseX, mouseY);
+        if (this.showWeapons) {
+            this.renderWeapons(graphics);
+        }
+        if (this.showAwakenings) {
+            this.renderAwakenings(graphics, mouseX, mouseY);
+        }
         super.render(graphics, mouseX, mouseY, partialTick);
         this.renderCloseGlyph(graphics, mouseX, mouseY);
         this.renderHoverTooltips(graphics, mouseX, mouseY);
@@ -214,7 +302,7 @@ public class StrinovaGrowthScreen extends Screen {
     /** 渲染顶部栏：标题·角色名、中央能量点、右侧准备阶段倒计时与底部装饰线。 */
     private void renderTopBar(GuiGraphics graphics) {
         int headerBottom = this.headerTop + this.headerHeight;
-        graphics.fill(this.innerLeft, this.headerTop, this.innerRight, headerBottom, COLOR_HEADER_BG);
+        graphics.fill(this.innerLeft, this.headerTop, this.innerRight, headerBottom, this.cardColor(COLOR_HEADER_BG));
         int midX = this.width / 2;
         graphics.fill(this.innerLeft, headerBottom - 1, midX, headerBottom, 0x8035D6E8);
         graphics.fill(midX, headerBottom - 1, this.innerRight, headerBottom, 0x60FF4FA3);
@@ -236,10 +324,11 @@ public class StrinovaGrowthScreen extends Screen {
         graphics.drawString(this.font, Component.literal(truncate(title.getString(), titleMax)),
                 titleX, textY, COLOR_TEXT, false);
 
-        // 右侧准备阶段 + 倒计时（右对齐到关闭按钮左侧，空间不足时截断）
+        // 右侧准备阶段 + 倒计时（右对齐到「自定义」按钮左侧，空间不足时截断）
         Component ready = Component.translatable("config.strinova.growth.ready_phase")
                 .append(" " + StrinovaMatchState.formattedTime());
-        int readyRight = this.closeButtonX() - 8;
+        int controlLeft = this.customizeButton != null ? this.customizeButton.getX() : this.closeButtonX();
+        int readyRight = controlLeft - 8;
         int readyMinX = this.width / 2 + this.font.width(points) / 2 + 12;
         int readyMaxWidth = Math.max(10, readyRight - readyMinX);
         String readyText = truncate(ready.getString(), readyMaxWidth);
@@ -277,9 +366,10 @@ public class StrinovaGrowthScreen extends Screen {
 
     // ==================== 左侧角色立绘 ====================
 
-    /** 渲染角色立绘占位：渐变底 + 定位色装饰 + 名字首字大号字 + 角色名 + 定位标签。 */
+    /** 渲染角色立绘占位：渐变底 + 定位色/自定义强调色装饰 + 名字首字大号字 + 角色名 + 定位标签 +（可选）数值/身份。 */
     private void renderPortrait(GuiGraphics graphics) {
-        int accent = this.agent == null ? COLOR_CYAN : this.agent.accentColor();
+        StrinovaGrowthUi ui = StrinovaHudConfig.get().growthUi;
+        int accent = this.accentColor();
         graphics.fillGradient(this.portraitX, this.portraitY,
                 this.portraitX + this.portraitWidth, this.portraitY + this.portraitHeight,
                 0xFF1C2735, 0xFF0C121B);
@@ -291,18 +381,22 @@ public class StrinovaGrowthScreen extends Screen {
         // 名字首字放大绘制（PoseStack 缩放，避免依赖贴图）
         int centerX = this.portraitX + this.portraitWidth / 2;
         int charCenterY = this.portraitY + this.portraitHeight / 2 - 12;
-        int scale = clamp(this.portraitWidth / 22, 3, 9);
+        int scale = clamp(this.portraitWidth / 22, 2, 9);
         graphics.pose().pushPose();
         graphics.pose().scale(scale, scale, 1.0F);
         graphics.drawCenteredString(this.font, initialOf(this.agent),
                 centerX / scale, charCenterY / scale, accent & 0x80FFFFFF);
         graphics.pose().popPose();
 
-        // 底部：角色名 + 定位标签
-        int nameY = this.portraitY + this.portraitHeight - 40;
+        // 底部：角色名 + 定位标签（立绘太窄时只画名字，避免文字越界）
+        int nameY = Math.max(this.portraitY + 14, this.portraitY + this.portraitHeight - 40);
+        boolean roomForText = this.portraitWidth >= 44 && this.portraitHeight >= 56;
         Component name = this.agent == null ? Component.literal("?") : Component.literal(this.agent.name());
-        graphics.drawCenteredString(this.font, name, centerX, nameY, COLOR_TEXT);
-        if (this.agent != null) {
+        if (roomForText) {
+            graphics.drawCenteredString(this.font, truncate(name.getString(), this.portraitWidth - 4),
+                    centerX, nameY, COLOR_TEXT);
+        }
+        if (this.agent != null && roomForText && this.portraitWidth >= 60) {
             Component role = Component.translatable(StrinovaAgentRoster.roleNameKey(this.agent.role()));
             int roleWidth = this.font.width(role) + 14;
             int roleX = centerX - roleWidth / 2;
@@ -312,9 +406,11 @@ public class StrinovaGrowthScreen extends Screen {
             graphics.fill(roleX, roleY + 13, roleX + roleWidth, roleY + 14, accent);
             graphics.drawCenteredString(this.font, role, centerX, roleY + 3, accent);
         }
+        // 数值 / 身份：受自定义显隐控制；立绘太小时不绘制避免越界
         StrinovaWikiData.Agent wiki = this.wikiAgent();
-        if (wiki != null) {
-            if (wiki.stats() != null && wiki.stats().hp() > 0) {
+        boolean roomForExtra = this.portraitWidth >= 72 && this.portraitHeight >= 96;
+        if (wiki != null && roomForExtra) {
+            if (ui.showStats && wiki.stats() != null && wiki.stats().hp() > 0) {
                 String stats = Component.translatable("config.strinova.growth.stat.hp").getString() + " "
                         + wiki.stats().hp() + "   "
                         + Component.translatable("config.strinova.growth.stat.armor").getString() + " "
@@ -324,7 +420,7 @@ public class StrinovaGrowthScreen extends Screen {
                 graphics.drawCenteredString(this.font, truncate(stats, this.portraitWidth - 8),
                         centerX, nameY - 26, COLOR_TEXT_DISABLED);
             }
-            if (wiki.identity() != null && !wiki.identity().isEmpty()) {
+            if (ui.showIdentity && wiki.identity() != null && !wiki.identity().isEmpty()) {
                 graphics.drawCenteredString(this.font, truncate(wiki.identity(), this.portraitWidth - 10),
                         centerX, nameY - 14, COLOR_TEXT_DIM);
             }
@@ -411,9 +507,13 @@ public class StrinovaGrowthScreen extends Screen {
         } else {
             background = 0x12000000;
         }
-        graphics.fill(x, y, x + width, y + height, background);
+        graphics.fill(x, y, x + width, y + height, this.cardColor(background));
         if (purchased || (hovered && affordable)) {
             graphics.fill(x, y, x + 2, y + height, purchased ? COLOR_CYAN : 0x80FFFFFF);
+        }
+        if (height < 9) {
+            // 极小窗口下条目高度不足以放文字时只保留色条，避免文字越界
+            return;
         }
 
         String statusText = Component.translatable("config.strinova.growth.upgraded").getString();
@@ -422,7 +522,7 @@ public class StrinovaGrowthScreen extends Screen {
                 : this.font.width(String.valueOf(item.cost())) + 13;
         int nameWidth = Math.max(16, width - 12 - statusWidth);
         int textY = y + Math.max(1, (height - 9) / 2);
-        int nameColor = purchased ? COLOR_TEXT : (affordable ? COLOR_TEXT : COLOR_TEXT_DISABLED);
+        int nameColor = (purchased || affordable) ? this.itemTextColor() : COLOR_TEXT_DISABLED;
         graphics.drawString(this.font,
                 truncate(item.text() == null ? "" : item.text(), nameWidth),
                 x + 6, textY, nameColor, false);
@@ -437,7 +537,7 @@ public class StrinovaGrowthScreen extends Screen {
             String price = String.valueOf(item.cost());
             graphics.drawString(this.font, price,
                     diamondX - 8 - this.font.width(price), textY,
-                    affordable ? 0xFFFF8A7A : COLOR_TEXT_DISABLED, false);
+                    affordable ? this.priceTextColor() : COLOR_TEXT_DISABLED, false);
         }
     }
 
@@ -446,7 +546,7 @@ public class StrinovaGrowthScreen extends Screen {
     /** 渲染右侧 5 个武器槽：几何图标 + 名称（小窗口隐藏）+ 数字键 1~5，当前槽高亮。 */
     private void renderWeapons(GuiGraphics graphics) {
         int panelLeft = this.weaponsX - 4;
-        graphics.fill(panelLeft, this.weaponsY, this.innerRight, this.contentBottom, 0x88101824);
+        graphics.fill(panelLeft, this.weaponsY, this.innerRight, this.contentBottom, this.cardColor(0x88101824));
         graphics.fill(panelLeft, this.weaponsY, panelLeft + 1, this.contentBottom, COLOR_BORDER);
 
         List<StrinovaHudState.WeaponSlot> slots = StrinovaHudState.getWeaponSlots();
@@ -598,7 +698,8 @@ public class StrinovaGrowthScreen extends Screen {
                                      int index, int x, int cardWidth, int mouseX, int mouseY) {
         boolean active = awakening.active();
         int accent = active ? COLOR_GOLD : 0xFF3A4756;
-        graphics.fill(x, this.awakenTop, x + cardWidth, this.awakenTop + this.awakenHeight, COLOR_CARD_BG);
+        graphics.fill(x, this.awakenTop, x + cardWidth, this.awakenTop + this.awakenHeight,
+                this.cardColor(COLOR_CARD_BG));
         graphics.fill(x, this.awakenTop, x + cardWidth, this.awakenTop + 2, accent);
         graphics.fill(x, this.awakenTop, x + 1, this.awakenTop + this.awakenHeight,
                 active ? 0x8035D6E8 : 0x30FFFFFF);
@@ -616,7 +717,14 @@ public class StrinovaGrowthScreen extends Screen {
         Component status = Component.translatable(active
                 ? "config.strinova.growth.activated"
                 : "config.strinova.growth.not_activated");
-        int nameColor = active ? COLOR_GOLD : COLOR_TEXT;
+        int nameColor = this.awakenNameColor(active);
+        if (!this.showAwakenDescription && this.awakenHeight < 20) {
+            // 觉醒区被压到极矮时只保留图标与色条，避免文字越界
+            int iconSize = clamp(this.awakenHeight - 4, 8, 12);
+            drawAwakeningIcon(graphics, x + 4, this.awakenTop + (this.awakenHeight - iconSize) / 2,
+                    iconSize, active);
+            return;
+        }
 
         if (this.showAwakenDescription) {
             int iconSize = 22;
@@ -848,7 +956,7 @@ public class StrinovaGrowthScreen extends Screen {
             this.renderAgentTooltip(graphics, mouseX, mouseY);
             return;
         }
-        if (mouseX >= this.weaponsX - 4 && mouseX < this.innerRight
+        if (this.showWeapons && mouseX >= this.weaponsX - 4 && mouseX < this.innerRight
                 && mouseY >= this.weaponsY && mouseY < this.contentBottom) {
             StrinovaWikiData.Agent wiki = this.wikiAgent();
             if (wiki != null && wiki.weapon() != null && !isBlank(wiki.weapon().name())) {
@@ -883,7 +991,8 @@ public class StrinovaGrowthScreen extends Screen {
             graphics.drawString(this.font, status, x + 7, secondY, COLOR_SUCCESS, false);
         } else {
             graphics.drawString(this.font, price, x + 7, secondY,
-                    item.cost() <= StrinovaGrowthState.energyPoints() ? COLOR_DIAMOND : COLOR_TEXT_DISABLED, false);
+                    item.cost() <= StrinovaGrowthState.energyPoints()
+                            ? this.priceTextColor() : COLOR_TEXT_DISABLED, false);
             drawDiamond(graphics, x + 7 + this.font.width(price) + 7, secondY + 4, 3, COLOR_DIAMOND);
         }
         int lineY = secondY + LINE_STEP;
@@ -916,7 +1025,7 @@ public class StrinovaGrowthScreen extends Screen {
         graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF2A3542);
         graphics.fill(x, y, x + width, y + height, 0xF00C121A);
         graphics.drawString(this.font, name, x + 7, y + 4,
-                awakening.active() ? COLOR_GOLD : COLOR_TEXT, false);
+                this.awakenNameColor(awakening.active()), false);
         graphics.drawString(this.font, need, x + 7, y + 4 + LINE_STEP, COLOR_TEXT_DIM, false);
         graphics.drawString(this.font, current, x + 7, y + 4 + LINE_STEP * 2, COLOR_TEXT_DISABLED, false);
         int lineY = y + 4 + LINE_STEP * 3;
@@ -1041,6 +1150,43 @@ public class StrinovaGrowthScreen extends Screen {
         }
     }
 
+    /** 按配置不透明度缩放 ARGB 颜色的 alpha 通道（卡片 / 面板 / 条目底色用）。 */
+    private int cardColor(int color) {
+        float opacity = clampf(StrinovaHudConfig.get().growthUi.opacity, 0.20F, 1.0F);
+        int alpha = Math.round(((color >>> 24) & 0xFF) * opacity);
+        return (alpha << 24) | (color & 0x00FFFFFF);
+    }
+
+    /** 角色定位强调色：自定义 accentColor 非 0 时覆盖，否则用角色定位色。 */
+    private int accentColor() {
+        int override = StrinovaHudConfig.get().growthUi.accentColor;
+        if (override != 0) {
+            return override;
+        }
+        return this.agent == null ? COLOR_CYAN : this.agent.accentColor();
+    }
+
+    /** 升级项文字色：自定义 itemTextColor 非 0 时覆盖默认文字色。 */
+    private int itemTextColor() {
+        int override = StrinovaHudConfig.get().growthUi.itemTextColor;
+        return override != 0 ? override : COLOR_TEXT;
+    }
+
+    /** 价格文字色：自定义 priceColor 非 0 时覆盖默认价格色。 */
+    private int priceTextColor() {
+        int override = StrinovaHudConfig.get().growthUi.priceColor;
+        return override != 0 ? override : 0xFFFF8A7A;
+    }
+
+    /** 觉醒名称色：自定义 awakenNameColor 非 0 时覆盖（未激活时压暗，保留状态区分）。 */
+    private int awakenNameColor(boolean active) {
+        int override = StrinovaHudConfig.get().growthUi.awakenNameColor;
+        if (override != 0) {
+            return active ? override : ((override & 0x00FFFFFF) | 0xCC000000);
+        }
+        return active ? COLOR_GOLD : COLOR_TEXT;
+    }
+
     /** 文本超宽时截断并追加“..”。 */
     private String truncate(String text, int maxWidth) {
         if (text == null || text.isEmpty()) {
@@ -1056,6 +1202,11 @@ public class StrinovaGrowthScreen extends Screen {
 
     /** 将数值限制在 [min, max] 区间内。 */
     private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /** 将浮点数值限制在 [min, max] 区间内。 */
+    private static float clampf(float value, float min, float max) {
         return Math.max(min, Math.min(max, value));
     }
 

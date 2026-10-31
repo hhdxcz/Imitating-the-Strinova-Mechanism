@@ -1,6 +1,7 @@
 package com.hhdxcz.strinova.client;
 
 import com.hhdxcz.strinova.client.hud.StrinovaAgentRoster;
+import com.hhdxcz.strinova.client.hud.StrinovaAgentSelectUi;
 import com.hhdxcz.strinova.client.hud.StrinovaHudConfig;
 import com.hhdxcz.strinova.client.hud.StrinovaMatchState;
 import com.hhdxcz.strinova.client.hud.StrinovaScoreboardState;
@@ -127,8 +128,43 @@ public class StrinovaAgentSelectScreen extends Screen {
     private int lockY;
     private int lockW;
     private int lockH;
-    /** 中央立绘是否显示（窗口太窄时隐藏，按任务要求小尺寸可隐藏立绘）。 */
+    /** 中央立绘是否显示（配置显隐 + 窗口太窄时自动隐藏）。 */
     private boolean showPortrait;
+    /** 配置中是否启用立绘（用于区分「窄屏回退」与「配置隐藏」）。 */
+    private boolean portraitEnabled;
+
+    // ---- 可视化自定义（StrinovaHudConfig#agentSelectUi，编辑器实时修改） ----
+    /** 顶部阶段条是否显示。 */
+    private boolean showTopBar;
+    /** 左侧队友列是否显示。 */
+    private boolean showTeam;
+    /** 右侧信息面板是否显示。 */
+    private boolean showRightPanel;
+    /** 底部 2×12 头像网格是否显示。 */
+    private boolean showGrid;
+    /** 底部锁定按钮是否显示。 */
+    private boolean showLockButton;
+    /** 底部阵营限制提示是否显示。 */
+    private boolean showNotice;
+    /** 中央角色简介是否显示。 */
+    private boolean showIntro;
+    /** 中央个性语录是否显示。 */
+    private boolean showQuote;
+    /** 右侧技能卡是否显示。 */
+    private boolean showSkills;
+    /** 右侧武器区是否显示。 */
+    private boolean showWeaponPanel;
+    /** 右侧页签是否显示。 */
+    private boolean showTabs;
+    /** 面板不透明度（来自 agentSelectUi.opacity，0.2~1.0）。 */
+    private float panelOpacity = 1.0F;
+    /** 底部限制提示行 Y。 */
+    private int noticeY;
+    /** 右上角「自定义」按钮位置/尺寸。 */
+    private int customizeX;
+    private int customizeY;
+    private int customizeW;
+    private int customizeH;
 
     // ---- 右侧面板内部布局 ----
     private int rightPad;
@@ -182,91 +218,157 @@ public class StrinovaAgentSelectScreen extends Screen {
         this.computeLayout();
         this.layoutRightPanel();
 
-        this.addRenderableWidget(Button.builder(Component.translatable("config.strinova.agent.lock"),
-                        button -> this.lockSelection())
-                .bounds(this.lockX, this.lockY, this.lockW, this.lockH)
+        // 底部「锁定角色」按钮：被配置隐藏时不创建，释放底部空间
+        if (this.showLockButton && this.lockW > 0 && this.lockH > 0) {
+            this.addRenderableWidget(Button.builder(Component.translatable("config.strinova.agent.lock"),
+                            button -> this.lockSelection())
+                    .bounds(this.lockX, this.lockY, this.lockW, this.lockH)
+                    .build());
+        }
+        // 右上角「自定义」按钮：打开选角界面可视化编辑器
+        this.addRenderableWidget(Button.builder(Component.translatable("config.strinova.ui.customize"),
+                        button -> Minecraft.getInstance().setScreen(new StrinovaAgentSelectEditScreen(this)))
+                .bounds(this.customizeX, this.customizeY, this.customizeW, this.customizeH)
                 .build());
     }
 
     /**
-     * 计算整页自适应布局：
+     * 计算整页自适应布局（读取 agentSelectUi 的比例/显隐配置）：
      * 顶部阶段条占满宽度；主区域分「左队友列 / 中央立绘 / 右侧信息面板」三栏；
-     * 底部为 2×12 头像网格 + 右下方大号锁定按钮（与右侧面板同列对齐）。
-     * 所有尺寸均带上下限，320×240 ~ 1920×1080 均不越界。
+     * 底部为 2×12 头像网格 + 大号锁定按钮，最下方为阵营限制提示。
+     * 任一区域被隐藏时其余区域回收空间；所有尺寸均带上下限，320×240 ~ 1920×1080 均不越界。
      */
     private void computeLayout() {
+        StrinovaAgentSelectUi ui = ui();
+        this.showTopBar = ui.showTopBar;
+        this.showTeam = ui.showTeam;
+        this.showRightPanel = ui.showRightPanel;
+        this.showGrid = ui.showGrid;
+        this.showLockButton = ui.showLockButton;
+        this.showNotice = ui.showNotice;
+        this.showIntro = ui.showIntro;
+        this.showQuote = ui.showQuote;
+        this.showSkills = ui.showSkills;
+        this.showWeaponPanel = ui.showWeaponPanel;
+        this.showTabs = ui.showTabs;
+        this.panelOpacity = Math.max(0.20F, Math.min(1.0F, ui.opacity));
+        this.portraitEnabled = ui.showPortrait;
+
         this.margin = clamp(4, 8, this.width / 80);
         this.gap = this.margin >= 6 ? 8 : 6;
-        this.barH = clamp(20, 30, Math.round(this.height * 0.075F));
+        this.barH = this.showTopBar ? clamp(18, 30, Math.round(this.height * 0.075F)) : 0;
         this.barX = this.margin;
         this.barY = this.margin;
         this.barW = this.width - 2 * this.margin;
-        this.mainTop = this.barY + this.barH + this.gap;
 
-        // 右栏（信息面板 + 锁定按钮）与左栏（队友列）宽度按比例分配并设上下限
-        int rightWidth = clamp(120, 240, Math.round(this.width * 0.29F));
-        int leftWidth = clamp(88, 150, Math.round(this.width * 0.19F));
+        // 右上角「自定义」按钮：优先放进顶部阶段条内，阶段条隐藏时放在顶部右角
+        this.customizeW = clamp(34, 58, this.width / 15);
+        this.customizeH = 16;
+        this.customizeX = this.width - this.margin - this.customizeW;
+        this.customizeY = this.showTopBar
+                ? this.barY + Math.max(0, (this.barH - this.customizeH) / 2)
+                : this.margin;
+        this.mainTop = this.showTopBar
+                ? this.barY + this.barH + this.gap
+                : this.margin + this.customizeH + this.gap;
+
         int contentWidth = this.width - 2 * this.margin;
-        int gridRegionW = contentWidth - rightWidth - this.gap;
+        this.noticeY = this.height - this.margin - 9;
+        int bottomLimit = this.height - this.margin - (this.showNotice ? 12 : 0);
 
-        // 底部 2×12 头像网格：格子近似正方形，宽高都有上下限
+        // 底部锁定按钮高度：读取配置并按窗口高度再收紧，避免小窗口占满底部
+        this.lockH = this.showLockButton
+                ? Math.min(clamp(18, 40, Math.round(ui.lockHeight)),
+                Math.max(12, Math.round(this.height * 0.12F)))
+                : 0;
+        this.lockY = bottomLimit - this.lockH;
+        int lockBottom = this.showLockButton ? this.lockY : bottomLimit;
+
+        // 三栏宽度：左队友列 / 右信息面板均按屏幕宽度比例，并带像素上下限
+        int leftWidth = this.showTeam
+                ? clamp(56, 220, Math.round(this.width * ui.teamWidthRatio)) : 0;
+        int rightWidth = this.showRightPanel
+                ? clamp(90, 380, Math.round(this.width * ui.rightWidthRatio)) : 0;
+        int sideGaps = (this.showTeam ? this.gap : 0) + (this.showRightPanel ? this.gap : 0);
+        int centerSpace = contentWidth - leftWidth - rightWidth - sideGaps;
+        if (centerSpace < 40) {
+            // 小窗口：先压右栏、再压左栏，保证中央区至少 40px
+            int deficit = 40 - centerSpace;
+            if (this.showRightPanel) {
+                int shrink = Math.min(deficit, Math.max(0, rightWidth - 64));
+                rightWidth -= shrink;
+                deficit -= shrink;
+            }
+            if (deficit > 0 && this.showTeam) {
+                leftWidth = Math.max(36, leftWidth - deficit);
+            }
+        }
+
+        // 底部 2×12 头像网格：右栏隐藏时整行回收宽度
+        int gridRegionW = Math.max(40, contentWidth
+                - (this.showRightPanel && rightWidth > 0 ? rightWidth + this.gap : 0));
         this.cellGap = clamp(1, 3, gridRegionW / 200);
         int cellWidth = (gridRegionW - (GRID_COLUMNS - 1) * this.cellGap) / GRID_COLUMNS;
-        this.cellW = clamp(12, 64, cellWidth);
-        this.cellH = clamp(16, 30, this.cellW);
-        this.gridH = GRID_ROWS * this.cellH + (GRID_ROWS - 1) * this.cellGap;
-        this.gridY = this.height - this.margin - this.gridH;
+        this.cellW = clamp(10, 64, cellWidth);
+        this.cellH = clamp(12, 30, this.cellW);
+        this.gridH = this.showGrid ? GRID_ROWS * this.cellH + (GRID_ROWS - 1) * this.cellGap : 0;
+        this.gridY = lockBottom - this.gridH;
         this.gridX = this.margin;
         this.gridW = gridRegionW;
         int realGridW = GRID_COLUMNS * this.cellW + (GRID_COLUMNS - 1) * this.cellGap;
         this.cellOffsetX = this.gridX + Math.max(0, (this.gridW - realGridW) / 2);
 
+        // 三栏垂直范围：底部网格/锁定条隐藏时回收空间
+        int mainBottom = (this.showGrid ? this.gridY : lockBottom) - this.gap;
+        int mainHeight = Math.max(40, mainBottom - this.mainTop);
         this.leftW = leftWidth;
         this.leftX = this.margin;
         this.leftY = this.mainTop;
-        this.rightW = rightWidth;
-        this.rightX = this.margin + gridRegionW + this.gap;
-        this.rightY = this.mainTop;
-        this.centerX = this.leftX + this.leftW + this.gap;
-        this.centerY = this.mainTop;
-        this.centerW = Math.max(40, gridRegionW - this.leftW - this.gap);
-        // 锁定按钮：居中放在立绘下方、头像网格上方（对齐真实 UI）
-        this.lockH = clamp(18, 30, Math.round(this.height * 0.030F));
-        this.lockW = Math.max(60, this.centerW);
-        this.lockX = this.centerX + (this.centerW - this.lockW) / 2;
-        this.lockY = this.gridY - this.gap - this.lockH;
-        int mainHeight = Math.max(40, this.lockY - this.gap - this.mainTop);
         this.leftH = mainHeight;
+        this.rightW = rightWidth;
+        this.rightX = this.width - this.margin - rightWidth;
+        this.rightY = this.mainTop;
         this.rightH = mainHeight;
+        this.centerX = this.leftX + (this.showTeam ? this.leftW + this.gap : 0);
+        int centerRight = this.rightX - (this.showRightPanel ? this.gap : 0);
+        this.centerW = Math.max(30, centerRight - this.centerX);
+        this.centerY = this.mainTop;
         this.centerH = mainHeight;
-        // 中央立绘：窗口太窄（≤84px）时隐藏，避免巨型字挤在窄条里
-        this.showPortrait = this.centerW >= 84;
+
+        // 锁定按钮：居中放在立绘下方、头像网格上方（对齐真实 UI）
+        this.lockW = this.showLockButton ? Math.max(60, this.centerW) : 0;
+        this.lockX = this.centerX + Math.max(0, (this.centerW - this.lockW) / 2);
+
+        // 中央立绘：配置隐藏；窗口太窄（<84px）时也自动隐藏，避免巨型字挤在窄条里
+        this.showPortrait = this.portraitEnabled && this.centerW >= 84;
     }
 
     /** 计算右侧信息面板布局：角色头衔块、身份、技能卡、技能详情、武器区（主武器大卡 + 2×2 小卡）、底部页签。 */
     private void layoutRightPanel() {
+        if (this.rightW <= 0 || this.rightH <= 0) {
+            return;
+        }
         this.rightPad = clamp(4, 8, this.rightW / 20);
         this.headerH = this.rightH < 200 ? 16 : clamp(22, 32, Math.round(this.rightH * 0.10F));
         this.skillIconSize = this.rightH < 200 ? 14 : this.rightH < 320 ? 18 : 22;
         this.descLines = this.rightH < 200 ? 1 : this.rightH < 320 ? 2 : 3;
         this.weaponRowH = this.rightH < 200 ? 12 : this.rightH < 320 ? 15 : 19;
-        this.tabH = clamp(14, 20, this.rightH / 12);
+        this.tabH = this.showTabs ? clamp(14, 20, this.rightH / 12) : 0;
         this.tabW = Math.max(20, (this.rightW - 2 * this.rightPad - 4) / 2);
 
         int identityH = 11;
         this.weaponMainH = clamp(22, 40, this.weaponRowH * 2);
         this.weaponCellH = clamp(16, 32, this.weaponRowH * 2);
         int weaponGap = 4;
-        int weaponArea = this.weaponMainH + weaponGap + this.weaponCellH * 2 + weaponGap;
-        int contentH = this.headerH
-                + identityH
-                + (this.skillIconSize + 4)
-                + 12
-                + (this.descLines * 11 + 6)
-                + weaponArea
-                + (this.tabH + 6);
+        int skillAreaH = this.showSkills
+                ? this.skillIconSize + 4 + 12 + this.descLines * 11 + 6 : 0;
+        int weaponAreaH = this.showWeaponPanel
+                ? this.weaponMainH + weaponGap + this.weaponCellH * 2 + weaponGap : 0;
+        int tabAreaH = this.tabH > 0 ? this.tabH + 6 : 0;
+        int contentH = this.headerH + identityH + skillAreaH + weaponAreaH + tabAreaH;
         // 极端窄高比时压缩武器区与描述行数，保证不压出面板
-        while (contentH > this.rightH - 2 * this.rightPad && this.weaponCellH > 12) {
+        while (contentH > this.rightH - 2 * this.rightPad && this.showWeaponPanel
+                && this.weaponCellH > 12) {
             this.weaponCellH--;
             this.weaponMainH = Math.max(18, this.weaponMainH - 1);
             contentH -= 4;
@@ -283,18 +385,25 @@ public class StrinovaAgentSelectScreen extends Screen {
         this.identityY = y;
         y += identityH;
         this.skillRowY = y;
-        y += this.skillIconSize + 4;
+        if (this.showSkills) {
+            y += this.skillIconSize + 4;
+        }
         this.qLineY = y;
-        y += 12;
+        if (this.showSkills) {
+            y += 12;
+        }
         this.descY = y;
-        y += this.descLines * 11 + 6;
+        if (this.showSkills) {
+            y += this.descLines * 11 + 6;
+        }
         this.weaponTop = y;
         this.weaponGridY = this.weaponTop + this.weaponMainH + weaponGap;
-        // 页签固定在面板底部
+        // 页签固定在面板底部（页签隐藏时武器区可延伸到面板底部）
         this.tabY = this.rightY + this.rightH - this.rightPad - this.tabH;
         this.weaponTabX = this.rightX + this.rightPad;
         this.appearanceTabX = this.weaponTabX + this.tabW + 4;
-        this.weaponGridBottom = this.tabY - 4;
+        this.weaponGridBottom = this.showTabs
+                ? this.tabY - 4 : this.rightY + this.rightH - this.rightPad;
         this.skillIconStartX = this.rightX + this.rightPad;
     }
 
@@ -359,6 +468,38 @@ public class StrinovaAgentSelectScreen extends Screen {
         return Math.max(min, Math.min(max, value));
     }
 
+    /** 当前可视化自定义配置（导入配置会替换对象，因此每次现取）。 */
+    private static StrinovaAgentSelectUi ui() {
+        return StrinovaHudConfig.get().agentSelectUi;
+    }
+
+    /** 面板颜色按配置不透明度缩放 alpha（作用于面板底色/描边）。 */
+    private int withOpacity(int color) {
+        if (this.panelOpacity >= 0.999F) {
+            return color;
+        }
+        int alpha = Math.round(((color >>> 24) & 0xFF) * this.panelOpacity);
+        return (alpha << 24) | (color & 0x00FFFFFF);
+    }
+
+    /** 定位强调色：agentSelectUi.accentColor 非 0 时统一覆盖为该色。 */
+    private static int configAccent(int base) {
+        int override = ui().accentColor;
+        return override != 0 ? override : base;
+    }
+
+    /** 中央角色名颜色（nameColor 非 0 时覆盖）。 */
+    private static int nameColor() {
+        int override = ui().nameColor;
+        return override != 0 ? override : COLOR_TEXT;
+    }
+
+    /** 右侧头衔块角色名颜色（headerNameColor 非 0 时覆盖）。 */
+    private static int headerNameColor() {
+        int override = ui().headerNameColor;
+        return override != 0 ? override : COLOR_TEXT;
+    }
+
     // ------------------------------------------------------------------
     // 交互
     // ------------------------------------------------------------------
@@ -372,21 +513,27 @@ public class StrinovaAgentSelectScreen extends Screen {
         if (button != 0) {
             return false;
         }
-        // 右侧页签：武器选择 / 外观选择（外观仅占位，点击只切换页签）
-        if (this.isInside((int) mouseX, (int) mouseY, this.weaponTabX, this.tabY, this.tabW, this.tabH)) {
-            this.weaponTab = true;
-            return true;
-        }
-        if (this.isInside((int) mouseX, (int) mouseY, this.appearanceTabX, this.tabY, this.tabW, this.tabH)) {
-            this.weaponTab = false;
-            return true;
-        }
-        // 右侧技能卡：点选后展示对应技能名称与描述
-        for (int i = 0; i < this.skillIconRects.length; i++) {
-            int[] rect = this.skillIconRects[i];
-            if (rect != null && this.isInside((int) mouseX, (int) mouseY, rect[0], rect[1], rect[2], rect[3])) {
-                this.selectedSkill = i;
+        // 右侧页签：武器选择 / 外观选择（外观仅占位，点击只切换页签；页签隐藏时不响应）
+        if (this.showTabs && this.showRightPanel) {
+            if (this.isInside((int) mouseX, (int) mouseY, this.weaponTabX, this.tabY, this.tabW, this.tabH)) {
+                this.weaponTab = true;
                 return true;
+            }
+            if (this.isInside((int) mouseX, (int) mouseY,
+                    this.appearanceTabX, this.tabY, this.tabW, this.tabH)) {
+                this.weaponTab = false;
+                return true;
+            }
+        }
+        // 右侧技能卡：点选后展示对应技能名称与描述（技能卡隐藏时不响应）
+        if (this.showSkills && this.showRightPanel) {
+            for (int i = 0; i < this.skillIconRects.length; i++) {
+                int[] rect = this.skillIconRects[i];
+                if (rect != null
+                        && this.isInside((int) mouseX, (int) mouseY, rect[0], rect[1], rect[2], rect[3])) {
+                    this.selectedSkill = i;
+                    return true;
+                }
             }
         }
         // 底部头像网格：点击切换选中
@@ -404,8 +551,11 @@ public class StrinovaAgentSelectScreen extends Screen {
         return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
     }
 
-    /** 返回鼠标命中的头像格下标；未命中返回 -1。 */
+    /** 返回鼠标命中的头像格下标；网格隐藏或未命中返回 -1。 */
     private int gridIndexAt(int mouseX, int mouseY) {
+        if (!this.showGrid || this.gridH <= 0 || this.cellW <= 0 || this.cellH <= 0) {
+            return -1;
+        }
         for (int i = 0; i < this.agents.size(); i++) {
             int row = i / GRID_COLUMNS;
             int col = i % GRID_COLUMNS;
@@ -456,25 +606,55 @@ public class StrinovaAgentSelectScreen extends Screen {
     // 渲染主流程
     // ------------------------------------------------------------------
 
-    /** 渲染整页：背景 → 顶部阶段条 → 三栏主区域 → 底部头像网格 → 锁定按钮 → 悬停提示。 */
+    /** 渲染整页：背景 → 顶部阶段条 → 三栏主区域 → 底部头像网格 → 锁定按钮 → 限制提示 → 悬停提示。 */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
+        StrinovaAgentSelectUi ui = ui();
+        // 背景额外压暗（0~0.8）
+        if (ui.backgroundDim > 0.001F) {
+            int dimAlpha = clamp(0, 255, Math.round(ui.backgroundDim * 255.0F));
+            graphics.fill(0, 0, this.width, this.height, dimAlpha << 24);
+        }
         StrinovaAgentRoster.Agent agent = this.selectedAgent();
-        int accent = agent == null ? COLOR_ENEMY : agent.accentColor();
+        // 强调色：accentColor 非 0 时覆盖角色定位色
+        int accent = ui.accentColor != 0 ? ui.accentColor
+                : (agent == null ? COLOR_ENEMY : agent.accentColor());
         int hoveredCell = this.gridIndexAt(mouseX, mouseY);
 
-        this.renderTopBar(graphics);
-        this.renderTeamColumn(graphics, mouseX, mouseY);
+        if (this.showTopBar) {
+            this.renderTopBar(graphics);
+        }
+        if (this.showTeam) {
+            this.renderTeamColumn(graphics, mouseX, mouseY);
+        }
         this.renderPortrait(graphics, agent, accent);
-        this.renderRightPanel(graphics, agent, accent, mouseX, mouseY);
-        this.renderAgentGrid(graphics, hoveredCell);
-        this.renderLockFrame(graphics, accent);
+        if (this.showRightPanel) {
+            this.renderRightPanel(graphics, agent, accent, mouseX, mouseY);
+        }
+        if (this.showGrid) {
+            this.renderAgentGrid(graphics, hoveredCell);
+        }
+        if (this.showLockButton) {
+            this.renderLockFrame(graphics, accent);
+        }
+        if (this.showNotice) {
+            this.renderNotice(graphics);
+        }
 
         super.render(graphics, mouseX, mouseY, partialTick);
 
         // 悬停提示：头像格 → 队友卡 → 技能卡 → 主武器
         this.renderHoverTips(graphics, hoveredCell, mouseX, mouseY);
+    }
+
+    /** 底部阵营限制提示（对齐真实 UI 的底部居中小字）。 */
+    private void renderNotice(GuiGraphics graphics) {
+        String text = StrinovaMatchState.areAlliesAttacking()
+                ? "阵营限制：进攻方无法选择欧泊角色"
+                : "阵营限制：防守方无法选择剪刀手角色";
+        String fitted = this.truncate(text, this.width - 2 * this.margin - 8);
+        this.drawCenteredText(graphics, fitted, this.width / 2, this.noticeY, COLOR_DIM, false);
     }
 
     /** 悬停提示分发：头像格 / 队友卡优先，其次技能卡、主武器行。 */
@@ -505,27 +685,30 @@ public class StrinovaAgentSelectScreen extends Screen {
         if (wiki == null) {
             return;
         }
-        // 技能卡：按键 · 技能类型 + 名称 + 描述
-        for (int i = 0; i < this.skillIconRects.length; i++) {
-            int[] rect = this.skillIconRects[i];
-            if (rect == null || !this.isInside(mouseX, mouseY, rect[0], rect[1], rect[2], rect[3])) {
-                continue;
+        // 技能卡：按键 · 技能类型 + 名称 + 描述（仅面板与技能卡都显示时）
+        if (this.showRightPanel && this.showSkills) {
+            for (int i = 0; i < this.skillIconRects.length; i++) {
+                int[] rect = this.skillIconRects[i];
+                if (rect == null || !this.isInside(mouseX, mouseY, rect[0], rect[1], rect[2], rect[3])) {
+                    continue;
+                }
+                StrinovaWikiData.Skill skill = wiki.skill(SKILL_KINDS[i]);
+                Component title = Component.literal(SKILL_KEYS[i] + " · "
+                        + Component.translatable(SKILL_LABEL_KEYS[i]).getString());
+                List<Component> lines = new ArrayList<>();
+                if (skill.name() != null && !skill.name().isEmpty()) {
+                    lines.add(Component.literal(skill.name()));
+                }
+                if (skill.desc() != null && !skill.desc().isEmpty()) {
+                    lines.add(Component.literal(skill.desc()));
+                }
+                this.renderHoverTooltip(graphics, title, mouseX, mouseY, lines);
+                return;
             }
-            StrinovaWikiData.Skill skill = wiki.skill(SKILL_KINDS[i]);
-            Component title = Component.literal(SKILL_KEYS[i] + " · "
-                    + Component.translatable(SKILL_LABEL_KEYS[i]).getString());
-            List<Component> lines = new ArrayList<>();
-            if (skill.name() != null && !skill.name().isEmpty()) {
-                lines.add(Component.literal(skill.name()));
-            }
-            if (skill.desc() != null && !skill.desc().isEmpty()) {
-                lines.add(Component.literal(skill.desc()));
-            }
-            this.renderHoverTooltip(graphics, title, mouseX, mouseY, lines);
-            return;
         }
-        // 主武器行：名称 + 类型 + 介绍
-        if (this.primaryWeaponRect != null && wiki.weapon() != null
+        // 主武器行：名称 + 类型 + 介绍（仅武器区显示时）
+        if (this.showRightPanel && this.showWeaponPanel && this.primaryWeaponRect != null
+                && wiki.weapon() != null
                 && this.isInside(mouseX, mouseY, this.primaryWeaponRect[0], this.primaryWeaponRect[1],
                 this.primaryWeaponRect[2], this.primaryWeaponRect[3])
                 && wiki.weapon().name() != null && !wiki.weapon().name().isEmpty()) {
@@ -577,12 +760,16 @@ public class StrinovaAgentSelectScreen extends Screen {
         int sideY = this.barY + (this.barH - sideH) / 2;
 
         // 中央深色底板（贯穿整条，左右被红/蓝条覆盖）
-        graphics.fill(this.barX, this.barY, this.barX + this.barW, this.barY + this.barH, COLOR_PANEL_DARK);
-        this.border(graphics, this.barX, this.barY, this.barW, this.barH, COLOR_BORDER);
+        graphics.fill(this.barX, this.barY, this.barX + this.barW, this.barY + this.barH,
+                this.withOpacity(COLOR_PANEL_DARK));
+        this.border(graphics, this.barX, this.barY, this.barW, this.barH, this.withOpacity(COLOR_BORDER));
 
         boolean alliesAttack = StrinovaMatchState.areAlliesAttacking();
+        // 右上角给「自定义」按钮预留空间，避免遮挡敌方阵营标签
+        int reserveRight = Math.min(this.barW / 2, this.customizeW + 6);
+        int rightSlabX = this.barX + this.barW - reserveRight - sideW;
         this.renderPhaseSlab(graphics, this.barX, sideY, sideW, sideH, slant, COLOR_ALLY, true);
-        this.renderPhaseSlab(graphics, this.barX + this.barW - sideW, sideY, sideW, sideH, slant, COLOR_ENEMY, false);
+        this.renderPhaseSlab(graphics, rightSlabX, sideY, sideW, sideH, slant, COLOR_ENEMY, false);
 
         Component leftLabel = Component.translatable("hud.strinova.match.allies")
                 .append(Component.literal(" "))
@@ -595,11 +782,11 @@ public class StrinovaAgentSelectScreen extends Screen {
         this.drawCenteredText(graphics, this.truncate(leftLabel.getString(), sideW - 10),
                 this.barX + sideW / 2, this.barY + (this.barH - 9) / 2, COLOR_TEXT, true);
         this.drawCenteredText(graphics, this.truncate(rightLabel.getString(), sideW - 10),
-                this.barX + this.barW - sideW / 2, this.barY + (this.barH - 9) / 2, COLOR_TEXT, true);
+                rightSlabX + sideW / 2, this.barY + (this.barH - 9) / 2, COLOR_TEXT, true);
 
         // 中央：选择角色 + 双方比分 + 大号倒计时（对齐真实 UI）
         int centerLeft = this.barX + sideW + 6;
-        int centerRight = this.barX + this.barW - sideW - 6;
+        int centerRight = rightSlabX - 6;
         int centerMid = (centerLeft + centerRight) / 2;
         Component selecting = Component.translatable("config.strinova.agent.selecting");
         String time = StrinovaMatchState.formattedTime();
@@ -666,10 +853,11 @@ public class StrinovaAgentSelectScreen extends Screen {
         }
     }
 
-    /** 队友卡高度：按左栏可用高度（扣除标题区）均分并限制在 24~64 之间。 */
+    /** 队友卡高度：按左栏可用高度（扣除标题区）均分，小窗口下自动缩小以免越界。 */
     private int teamCardHeight() {
         int areaH = this.leftH - 8 - TEAM_HEADER_H;
-        return clamp(24, 64, (areaH - (TEAM_SLOTS - 1) * 4) / TEAM_SLOTS);
+        int fit = (areaH - (TEAM_SLOTS - 1) * 4) / TEAM_SLOTS;
+        return Math.max(12, Math.min(64, fit));
     }
 
     /** 队友卡组起始 Y：卡片总高度小于可用区域时垂直居中。 */
@@ -685,7 +873,8 @@ public class StrinovaAgentSelectScreen extends Screen {
                                 StrinovaScoreboardState.Entry entry, boolean hovered) {
         boolean self = entry != null && entry.self();
         boolean dead = entry != null && entry.status() != StrinovaScoreboardState.Status.ALIVE;
-        int accent = entry == null ? COLOR_DEAD : agentAccent(entry.agentName(), COLOR_ENEMY);
+        int accent = entry == null
+                ? COLOR_DEAD : configAccent(agentAccent(entry.agentName(), COLOR_ENEMY));
         if (dead) {
             accent = COLOR_DEAD;
         }
@@ -694,18 +883,30 @@ public class StrinovaAgentSelectScreen extends Screen {
         graphics.fill(x, y, x + w, y + h, background);
         this.border(graphics, x, y, w, h, self ? COLOR_GOLD : 0x44FFFFFF);
 
-        int avatar = clamp(14, 30, Math.min(h - 6, w / 3));
+        int avatar = clamp(10, 30, Math.max(8, Math.min(h - 2, w / 3)));
         int avatarX = x + 4;
-        int avatarY = y + (h - avatar) / 2;
+        int avatarY = y + Math.max(0, (h - avatar) / 2);
         graphics.fill(avatarX, avatarY, avatarX + avatar, avatarY + avatar, 0xCC0A111C);
         graphics.fill(avatarX, avatarY, avatarX + 2, avatarY + avatar, accent);
         this.border(graphics, avatarX, avatarY, avatar, avatar, 0x66FFFFFF);
-        String avatarText = entry == null ? "?" : firstChar(entry.agentName());
-        this.drawCenteredText(graphics, avatarText, avatarX + avatar / 2,
-                avatarY + (avatar - 9) / 2, dead ? COLOR_DEAD : COLOR_TEXT, false);
+        if (avatar >= 9) {
+            String avatarText = entry == null ? "?" : firstChar(entry.agentName());
+            this.drawCenteredText(graphics, avatarText, avatarX + avatar / 2,
+                    avatarY + (avatar - 9) / 2, dead ? COLOR_DEAD : COLOR_TEXT, false);
+        }
 
         int textX = avatarX + avatar + 5;
         int textW = x + w - textX - 4;
+        if (textW < 8) {
+            return;
+        }
+        // 小窗口：卡片太矮时只画一行玩家名，避免文字溢出卡片
+        if (h < 20) {
+            String smallName = entry == null ? "-" : (entry.name() == null ? "?" : entry.name());
+            this.drawText(graphics, this.truncate(smallName, textW), textX, y + (h - 9) / 2,
+                    entry == null ? COLOR_DEAD : (self ? COLOR_GOLD : (dead ? COLOR_DEAD : COLOR_TEXT)));
+            return;
+        }
         int nameY = y + h / 2 - 9;
         int subY = y + h / 2 + 1;
         if (entry == null) {
@@ -723,8 +924,11 @@ public class StrinovaAgentSelectScreen extends Screen {
                 dead ? COLOR_DEAD : accent);
     }
 
-    /** 返回鼠标命中的队友条目（用于悬停提示），未命中返回 null。 */
+    /** 返回鼠标命中的队友条目（用于悬停提示），队友列隐藏或未命中返回 null。 */
     private StrinovaScoreboardState.Entry teamEntryAt(int mouseX, int mouseY) {
+        if (!this.showTeam || this.leftH <= 0 || this.leftW <= 0) {
+            return null;
+        }
         List<StrinovaScoreboardState.Entry> allies = StrinovaScoreboardState.allies();
         int cardGap = 4;
         int cardH = this.teamCardHeight();
@@ -744,7 +948,10 @@ public class StrinovaAgentSelectScreen extends Screen {
     // 中央立绘占位
     // ------------------------------------------------------------------
 
-    /** 中央立绘占位：定位色渐变 + 巨型名字首字 + 底部角色名/定位条。 */
+    /**
+     * 中央立绘占位：定位色渐变 + 巨型名字首字 + 底部角色名/定位条；
+     * 简介（showIntro）与语录（showQuote）可独立显隐；立绘被配置隐藏时只保留中央面板与文本。
+     */
     private void renderPortrait(GuiGraphics graphics, StrinovaAgentRoster.Agent agent, int accent) {
         if (agent == null || this.centerW <= 0 || this.centerH <= 0) {
             return;
@@ -752,154 +959,209 @@ public class StrinovaAgentSelectScreen extends Screen {
         this.drawPanel(graphics, this.centerX, this.centerY, this.centerW, this.centerH);
         String name = agent.name() == null ? "?" : agent.name();
         int nameBlockH = clamp(26, 56, this.centerH / 5);
-
-        if (!this.showPortrait) {
-            // 窄屏：隐藏立绘，只显示名字与定位
-            this.drawCenteredText(graphics, this.truncate(name, this.centerW - 8),
-                    this.centerX + this.centerW / 2, this.centerY + this.centerH / 2 - 12, COLOR_TEXT, true);
-            this.drawCenteredText(graphics,
-                    this.truncate(Component.translatable(StrinovaAgentRoster.roleNameKey(agent.role())).getString(),
-                            this.centerW - 8),
-                    this.centerX + this.centerW / 2, this.centerY + this.centerH / 2 + 2, accent, true);
-            return;
-        }
-
         int charTop = this.centerY;
         int charBottom = this.centerY + this.centerH - nameBlockH;
-        // 立绘区渐变：上方定位色 → 下方深色
-        graphics.fillGradient(this.centerX, charTop, this.centerX + this.centerW, charBottom,
-                withAlpha(accent, 0xAA), 0xFF05070C);
-        this.border(graphics, this.centerX, this.centerY, this.centerW, this.centerH, COLOR_BORDER);
-        graphics.fill(this.centerX, charTop, this.centerX + 2, charBottom, accent);
-        graphics.fill(this.centerX + this.centerW - 2, charTop, this.centerX + this.centerW, charBottom, accent);
-        // 顶部装饰线
-        graphics.fill(this.centerX + this.centerW / 4, charTop + 6,
-                this.centerX + this.centerW * 3 / 4, charTop + 7, withAlpha(accent, 0x99));
-
-        float scale = Math.min(Math.min(this.centerW * 0.50F, (charBottom - charTop) * 0.55F) / 9.0F, 12.0F);
-        scale = Math.max(1.0F, scale);
-        int charCx = this.centerX + this.centerW / 2;
-        int charCy = charTop + (charBottom - charTop) / 2;
-        this.drawGiantChar(graphics, firstChar(name), charCx + Math.round(scale), charCy + Math.round(scale),
-                scale, 0x55000000);
-        this.drawGiantChar(graphics, firstChar(name), charCx, charCy, scale, withAlpha(COLOR_TEXT, 0xE6));
-
-        // 底部名字条：角色名（大号）+ 定位 · 阵营（小字）
-        int nameTop = this.centerY + this.centerH - nameBlockH;
         StrinovaWikiData.Agent wiki = this.wikiAgent();
-        if (wiki != null && wiki.intro() != null && !wiki.intro().isEmpty()) {
-            List<FormattedCharSequence> introLines = this.font.split(Component.literal(wiki.intro()), this.centerW - 16);
-            int lines = Math.min(3, introLines.size());
-            int introY = nameTop - 6 - lines * 11;
-            for (int i = 0; i < lines; i++) {
-                graphics.drawString(this.font, introLines.get(i), this.centerX + 8,
-                        introY + i * 11, 0xCCD8E4EE, false);
+
+        if (!this.showPortrait) {
+            // 窄屏回退：只显示名字与定位；若是配置隐藏立绘，则中央区只保留面板 + 简介/语录
+            if (this.portraitEnabled) {
+                this.drawCenteredText(graphics, this.truncate(name, this.centerW - 8),
+                        this.centerX + this.centerW / 2, this.centerY + this.centerH / 2 - 12,
+                        this.nameColor(), true);
+                this.drawCenteredText(graphics,
+                        this.truncate(Component.translatable(
+                                StrinovaAgentRoster.roleNameKey(agent.role())).getString(), this.centerW - 8),
+                        this.centerX + this.centerW / 2, this.centerY + this.centerH / 2 + 2, accent, true);
+            }
+        } else {
+            int charCx = this.centerX + this.centerW / 2;
+            int charCy = charTop + (charBottom - charTop) / 2;
+            // 立绘区渐变：上方定位色 → 下方深色
+            graphics.fillGradient(this.centerX, charTop, this.centerX + this.centerW, charBottom,
+                    withAlpha(accent, 0xAA), 0xFF05070C);
+            this.border(graphics, this.centerX, this.centerY, this.centerW, this.centerH, COLOR_BORDER);
+            graphics.fill(this.centerX, charTop, this.centerX + 2, charBottom, accent);
+            graphics.fill(this.centerX + this.centerW - 2, charTop,
+                    this.centerX + this.centerW, charBottom, accent);
+            // 顶部装饰线
+            graphics.fill(this.centerX + this.centerW / 4, charTop + 6,
+                    this.centerX + this.centerW * 3 / 4, charTop + 7, withAlpha(accent, 0x99));
+
+            float scale = Math.min(Math.min(this.centerW * 0.50F,
+                    (charBottom - charTop) * 0.55F) / 9.0F, 12.0F);
+            scale = Math.max(1.0F, scale);
+            this.drawGiantChar(graphics, firstChar(name), charCx + Math.round(scale),
+                    charCy + Math.round(scale), scale, 0x55000000);
+            this.drawGiantChar(graphics, firstChar(name), charCx, charCy, scale,
+                    withAlpha(COLOR_TEXT, 0xE6));
+
+            // 底部名字条：角色名（大号）+ 定位 · 阵营（小字）
+            int nameTop = charBottom;
+            graphics.fill(this.centerX, nameTop, this.centerX + this.centerW,
+                    this.centerY + this.centerH, this.withOpacity(COLOR_PANEL_DARK));
+            graphics.fill(this.centerX, nameTop, this.centerX + this.centerW, nameTop + 1, accent);
+            float nameScale = Math.min(2.0F,
+                    Math.max(1.0F, (this.centerW - 12.0F) / Math.max(1, this.font.width(name))));
+            nameScale = Math.min(nameScale, Math.max(1.0F, (nameBlockH - 13.0F) / 9.0F));
+            this.drawScaledCenteredText(graphics, name, charCx, nameTop + 2.0F, nameScale,
+                    this.nameColor(), true);
+            Component roleLine = Component.translatable(StrinovaAgentRoster.roleNameKey(agent.role()))
+                    .append(Component.literal(" · "))
+                    .append(Component.translatable(StrinovaAgentRoster.factionNameKey(agent.faction())));
+            this.drawCenteredText(graphics, this.truncate(roleLine.getString(), this.centerW - 8),
+                    charCx, nameTop + nameBlockH - 11, accent, false);
+        }
+
+        // 简介 / 语录（可独立显隐；对齐真实 UI：简介在上、语录在下）
+        int infoBottom = (this.showPortrait ? charBottom : this.centerY + this.centerH) - 4;
+        int infoWidth = Math.max(10, this.centerW - 16);
+        if (this.showQuote) {
+            String quote = wiki != null && wiki.quote() != null && !wiki.quote().isEmpty()
+                    ? wiki.quote()
+                    : Component.translatable("config.strinova.agent.quote").getString() + "：……";
+            List<FormattedCharSequence> quoteLines = this.font.split(
+                    Component.literal("「" + quote + "」"), infoWidth);
+            int drawLines = Math.min(2, quoteLines.size());
+            int quoteTop = infoBottom - drawLines * 11;
+            if (quoteTop > this.centerY + 2) {
+                for (int i = quoteLines.size() - drawLines; i < quoteLines.size(); i++) {
+                    graphics.drawString(this.font, quoteLines.get(i), this.centerX + 8,
+                            quoteTop + (i - (quoteLines.size() - drawLines)) * 11, 0xFFAFC3D4, false);
+                }
+                infoBottom = quoteTop - 2;
             }
         }
-        graphics.fill(this.centerX, nameTop, this.centerX + this.centerW, this.centerY + this.centerH,
-                COLOR_PANEL_DARK);
-        graphics.fill(this.centerX, nameTop, this.centerX + this.centerW, nameTop + 1, accent);
-        float nameScale = Math.min(2.0F,
-                Math.max(1.0F, (this.centerW - 12.0F) / Math.max(1, this.font.width(name))));
-        nameScale = Math.min(nameScale, Math.max(1.0F, (nameBlockH - 13.0F) / 9.0F));
-        this.drawScaledCenteredText(graphics, name, charCx, nameTop + 2.0F, nameScale, COLOR_TEXT, true);
-        Component roleLine = Component.translatable(StrinovaAgentRoster.roleNameKey(agent.role()))
-                .append(Component.literal(" · "))
-                .append(Component.translatable(StrinovaAgentRoster.factionNameKey(agent.faction())));
-        this.drawCenteredText(graphics, this.truncate(roleLine.getString(), this.centerW - 8),
-                charCx, nameTop + nameBlockH - 11, accent, false);
+        if (this.showIntro) {
+            String intro = wiki != null && wiki.intro() != null && !wiki.intro().isEmpty()
+                    ? wiki.intro() : "";
+            if (!intro.isEmpty()) {
+                List<FormattedCharSequence> introLines = this.font.split(
+                        Component.literal(intro), infoWidth);
+                int drawLines = Math.min(3, introLines.size());
+                int introTop = infoBottom - drawLines * 11;
+                if (introTop > this.centerY + 2) {
+                    for (int i = 0; i < drawLines; i++) {
+                        graphics.drawString(this.font, introLines.get(i), this.centerX + 8,
+                                introTop + i * 11, 0xCCD8E4EE, false);
+                    }
+                }
+            }
+        }
     }
 
     // ------------------------------------------------------------------
     // 右侧信息面板
     // ------------------------------------------------------------------
 
-    /** 右侧信息面板：定位/阵营、身份、4 个技能卡（可点选）、选中技能名称与描述、武器/外观页签与武器列表。 */
+    /** 右侧信息面板：头衔块、身份、技能卡（可点选）、技能详情、武器区、底部页签；子项按配置显隐。 */
     private void renderRightPanel(GuiGraphics graphics, StrinovaAgentRoster.Agent agent,
                                   int accent, int mouseX, int mouseY) {
         this.drawPanel(graphics, this.rightX, this.rightY, this.rightW, this.rightH);
+        // 每帧重建命中区域，隐藏时不残留
+        for (int i = 0; i < this.skillIconRects.length; i++) {
+            this.skillIconRects[i] = null;
+        }
+        this.primaryWeaponRect = null;
         if (agent == null) {
             return;
         }
         int contentX = this.rightX + this.rightPad;
         int contentW = this.rightW - 2 * this.rightPad;
+        if (contentW < 8) {
+            return;
+        }
         StrinovaWikiData.Agent wiki = this.wikiAgent();
-        this.primaryWeaponRect = null;
+        int panelBottom = this.rightY + this.rightH - this.rightPad;
 
         // 1) 顶部角色头衔块：定位图标 + 定位 · 阵营 + 角色名（对齐真实 UI）
-        graphics.fill(this.rightX, this.headerY, this.rightX + this.rightW,
-                this.headerY + this.headerH, 0xCC1A222E);
-        graphics.fill(this.rightX, this.headerY, this.rightX + 2,
-                this.headerY + this.headerH, accent);
-        this.drawFilledDiamond(graphics, contentX + 5, this.headerY + 5, 13, accent);
-        String roleName = Component.translatable(StrinovaAgentRoster.roleNameKey(agent.role())).getString();
-        String factionName = Component.translatable(StrinovaAgentRoster.factionNameKey(agent.faction())).getString();
-        this.drawText(graphics, roleName, contentX + 23, this.headerY + 4, accent);
-        int factionX = contentX + 23 + this.font.width(roleName) + 8;
-        this.drawText(graphics, this.truncate(factionName, contentX + contentW - factionX),
-                factionX, this.headerY + 4, COLOR_DIM);
-        float nameScale = Math.min(1.7F, Math.max(1.0F, (this.headerH - 14.0F) / 9.0F));
-        this.drawScaledText(graphics,
-                this.truncate(agent.name(), Math.max(8, (int) (contentW / nameScale))),
-                contentX + 4, this.headerY + 13, nameScale, COLOR_TEXT, false);
-
-        // 2) 身份（来自 wiki 信息框，缺数据时回退为定位说明）
-        String identity = wiki != null && wiki.identity() != null && !wiki.identity().isEmpty()
-                ? wiki.identity()
-                : Component.translatable(StrinovaAgentRoster.roleDescKey(agent.role())).getString();
-        String identityLine = Component.translatable("config.strinova.agent.identity").getString()
-                + " · " + identity;
-        this.drawText(graphics, this.truncate(identityLine, contentW), contentX, this.identityY, COLOR_DIM);
-
-        // 3) 4 个技能卡（Q 主动 / P 被动 / X 终极 / E 战术）
-        for (int i = 0; i < SKILL_KEYS.length; i++) {
-            int x = this.skillIconStartX + i * (this.skillIconSize + 4);
-            if (x + this.skillIconSize > contentX + contentW) {
-                this.skillIconRects[i] = null;
-                break;
-            }
-            int y = this.skillRowY;
-            boolean selected = i == this.selectedSkill;
-            boolean hovered = this.isInside(mouseX, mouseY, x, y, this.skillIconSize, this.skillIconSize);
-            graphics.fill(x, y, x + this.skillIconSize, y + this.skillIconSize,
-                    selected ? withAlpha(accent, 0x88) : 0xCC0A111C);
-            this.border(graphics, x, y, this.skillIconSize, this.skillIconSize,
-                    selected ? accent : (hovered ? withAlpha(accent, 0xAA) : withAlpha(accent, 0x55)));
-            this.drawCenteredText(graphics, SKILL_KEYS[i], x + this.skillIconSize / 2,
-                    y + (this.skillIconSize - 9) / 2, selected ? 0xFF0A111C : COLOR_DIM, false);
-            this.skillIconRects[i] = new int[]{x, y, this.skillIconSize, this.skillIconSize};
+        if (this.headerY + this.headerH <= panelBottom) {
+            graphics.fill(this.rightX, this.headerY, this.rightX + this.rightW,
+                    this.headerY + this.headerH, this.withOpacity(0xCC1A222E));
+            graphics.fill(this.rightX, this.headerY, this.rightX + 2,
+                    this.headerY + this.headerH, accent);
+            this.drawFilledDiamond(graphics, contentX + 5, this.headerY + 5, 13, accent);
+            String roleName = Component.translatable(StrinovaAgentRoster.roleNameKey(agent.role())).getString();
+            String factionName = Component.translatable(
+                    StrinovaAgentRoster.factionNameKey(agent.faction())).getString();
+            this.drawText(graphics, roleName, contentX + 23, this.headerY + 4, accent);
+            int factionX = contentX + 23 + this.font.width(roleName) + 8;
+            this.drawText(graphics, this.truncate(factionName, contentX + contentW - factionX),
+                    factionX, this.headerY + 4, COLOR_DIM);
+            float nameScale = Math.min(1.7F, Math.max(1.0F, (this.headerH - 14.0F) / 9.0F));
+            this.drawScaledText(graphics,
+                    this.truncate(agent.name(), Math.max(8, (int) (contentW / nameScale))),
+                    contentX + 4, this.headerY + 13, nameScale, headerNameColor(), false);
         }
 
-        // 4) 选中技能：名称 + 描述
-        StrinovaWikiData.Skill skill = wiki == null
-                ? new StrinovaWikiData.Skill("", "")
-                : wiki.skill(SKILL_KINDS[this.selectedSkill]);
-        String skillName = skill.name() == null || skill.name().isEmpty()
-                ? Component.translatable(SKILL_LABEL_KEYS[this.selectedSkill]).getString()
-                : skill.name();
-        String skillLine = Component.translatable(SKILL_LABEL_KEYS[this.selectedSkill]).getString()
-                + " · " + skillName;
-        this.drawText(graphics, this.truncate(skillLine, contentW), contentX, this.qLineY, COLOR_TEXT);
-        String descText = skill.desc() == null || skill.desc().isEmpty()
-                ? Component.translatable(StrinovaAgentRoster.roleDescKey(agent.role())).getString()
-                : skill.desc();
-        List<FormattedCharSequence> desc = this.font.split(Component.literal(descText), contentW);
-        for (int i = 0; i < desc.size() && i < this.descLines; i++) {
-            graphics.drawString(this.font, desc.get(i), contentX, this.descY + i * 11, COLOR_DIM, false);
+        // 2) 身份（来自 wiki 信息框，缺数据时回退为定位说明）
+        if (this.identityY + 9 <= panelBottom) {
+            String identity = wiki != null && wiki.identity() != null && !wiki.identity().isEmpty()
+                    ? wiki.identity()
+                    : Component.translatable(StrinovaAgentRoster.roleDescKey(agent.role())).getString();
+            String identityLine = Component.translatable("config.strinova.agent.identity").getString()
+                    + " · " + identity;
+            this.drawText(graphics, this.truncate(identityLine, contentW), contentX, this.identityY, COLOR_DIM);
+        }
+
+        // 3) 4 个技能卡（Q 主动 / P 被动 / X 终极 / E 战术）+ 选中技能名称与描述
+        if (this.showSkills && this.skillRowY + this.skillIconSize <= panelBottom) {
+            for (int i = 0; i < SKILL_KEYS.length; i++) {
+                int x = this.skillIconStartX + i * (this.skillIconSize + 4);
+                if (x + this.skillIconSize > contentX + contentW) {
+                    this.skillIconRects[i] = null;
+                    break;
+                }
+                int y = this.skillRowY;
+                boolean selected = i == this.selectedSkill;
+                boolean hovered = this.isInside(mouseX, mouseY, x, y, this.skillIconSize, this.skillIconSize);
+                graphics.fill(x, y, x + this.skillIconSize, y + this.skillIconSize,
+                        selected ? withAlpha(accent, 0x88) : this.withOpacity(0xCC0A111C));
+                this.border(graphics, x, y, this.skillIconSize, this.skillIconSize,
+                        selected ? accent : (hovered ? withAlpha(accent, 0xAA) : withAlpha(accent, 0x55)));
+                this.drawCenteredText(graphics, SKILL_KEYS[i], x + this.skillIconSize / 2,
+                        y + (this.skillIconSize - 9) / 2, selected ? 0xFF0A111C : COLOR_DIM, false);
+                this.skillIconRects[i] = new int[]{x, y, this.skillIconSize, this.skillIconSize};
+            }
+
+            StrinovaWikiData.Skill skill = wiki == null
+                    ? new StrinovaWikiData.Skill("", "")
+                    : wiki.skill(SKILL_KINDS[this.selectedSkill]);
+            String skillName = skill.name() == null || skill.name().isEmpty()
+                    ? Component.translatable(SKILL_LABEL_KEYS[this.selectedSkill]).getString()
+                    : skill.name();
+            String skillLine = Component.translatable(SKILL_LABEL_KEYS[this.selectedSkill]).getString()
+                    + " · " + skillName;
+            this.drawText(graphics, this.truncate(skillLine, contentW), contentX, this.qLineY, COLOR_TEXT);
+            String descText = skill.desc() == null || skill.desc().isEmpty()
+                    ? Component.translatable(StrinovaAgentRoster.roleDescKey(agent.role())).getString()
+                    : skill.desc();
+            List<FormattedCharSequence> desc = this.font.split(Component.literal(descText), contentW);
+            for (int i = 0; i < desc.size() && i < this.descLines; i++) {
+                int lineY = this.descY + i * 11;
+                if (lineY + 9 > panelBottom) {
+                    break;
+                }
+                graphics.drawString(this.font, desc.get(i), contentX, lineY, COLOR_DIM, false);
+            }
         }
 
         // 5) 武器区：主武器大卡 + 2×2 小卡 / 外观占位
-        if (this.weaponTab) {
-            this.renderWeaponPanel(graphics, contentX, contentW, accent, wiki);
-        } else {
-            this.renderAppearancePlaceholder(graphics, contentX, contentW, accent);
+        if (this.showWeaponPanel) {
+            if (this.weaponTab) {
+                this.renderWeaponPanel(graphics, contentX, contentW, accent, wiki);
+            } else {
+                this.renderAppearancePlaceholder(graphics, contentX, contentW, accent);
+            }
         }
 
         // 6) 「武器选择 / 外观选择」页签（固定在面板底部）
-        this.renderTab(graphics, this.weaponTabX, this.tabY, this.tabW, this.tabH,
-                "config.strinova.agent.weapon_select", this.weaponTab, accent, mouseX, mouseY);
-        this.renderTab(graphics, this.appearanceTabX, this.tabY, this.tabW, this.tabH,
-                "config.strinova.agent.appearance_select", !this.weaponTab, accent, mouseX, mouseY);
+        if (this.showTabs) {
+            this.renderTab(graphics, this.weaponTabX, this.tabY, this.tabW, this.tabH,
+                    "config.strinova.agent.weapon_select", this.weaponTab, accent, mouseX, mouseY);
+            this.renderTab(graphics, this.appearanceTabX, this.tabY, this.tabW, this.tabH,
+                    "config.strinova.agent.appearance_select", !this.weaponTab, accent, mouseX, mouseY);
+        }
     }
 
     /** 绘制一个页签：选中时定位色底 + 高亮描边，未选中为深色。 */
@@ -916,10 +1178,16 @@ public class StrinovaAgentSelectScreen extends Screen {
     /** 武器面板：主武器大卡 + 副武器 / 近战 / 战术道具 2×2 小卡（对齐真实 UI）。 */
     private void renderWeaponPanel(GuiGraphics graphics, int contentX, int contentW, int accent,
                                    StrinovaWikiData.Agent wiki) {
+        this.primaryWeaponRect = null;
+        int panelBottom = this.rightY + this.rightH - this.rightPad;
+        if (contentW < 10 || this.weaponTop + this.weaponMainH > panelBottom) {
+            return;
+        }
         boolean hasPrimary = wiki != null && wiki.weapon() != null
                 && wiki.weapon().name() != null && !wiki.weapon().name().isEmpty();
         int mainH = this.weaponMainH;
-        graphics.fill(contentX, this.weaponTop, contentX + contentW, this.weaponTop + mainH, 0x40000000);
+        graphics.fill(contentX, this.weaponTop, contentX + contentW, this.weaponTop + mainH,
+                this.withOpacity(0x40000000));
         this.border(graphics, contentX, this.weaponTop, contentW, mainH, withAlpha(accent, 0x88));
         this.drawText(graphics, "1 " + Component.translatable(WEAPON_KEYS[0]).getString(),
                 contentX + 5, this.weaponTop + 3, COLOR_DIM);
@@ -968,11 +1236,12 @@ public class StrinovaAgentSelectScreen extends Screen {
     /** 外观页签占位内容：菱形几何图形 + 标签（外观系统待接入）。 */
     private void renderAppearancePlaceholder(GuiGraphics graphics, int contentX, int contentW, int accent) {
         int top = this.weaponTop;
-        int bottom = this.tabY - 4;
-        if (bottom - top <= 12) {
+        int panelBottom = this.rightY + this.rightH - this.rightPad;
+        int bottom = Math.min(this.showTabs ? this.tabY - 4 : panelBottom, panelBottom);
+        if (bottom - top <= 12 || contentW < 10) {
             return;
         }
-        graphics.fill(contentX, top, contentX + contentW, bottom, 0x40000000);
+        graphics.fill(contentX, top, contentX + contentW, bottom, this.withOpacity(0x40000000));
         this.border(graphics, contentX, top, contentW, bottom - top, 0x33FFFFFF);
         int cx = contentX + contentW / 2;
         int cy = top + (bottom - top) / 2 - 6;
@@ -1043,7 +1312,9 @@ public class StrinovaAgentSelectScreen extends Screen {
     /** 绘制单个超弦体头像格。 */
     private void renderAgentCell(GuiGraphics graphics, int x, int y,
                                  StrinovaAgentRoster.Agent agent, boolean selected, boolean hovered) {
-        int cellAccent = agent.accentColor();
+        // 头像格底色：gridCellColor 非 0 时覆盖；accentColor 非 0 时统一强调色
+        int gridColor = ui().gridCellColor;
+        int cellAccent = gridColor != 0 ? gridColor : configAccent(agent.accentColor());
         String agentId = agent.id() == null ? "" : agent.id();
         boolean locked = agentId.equals(this.lockedAgentId);
         int background = selected
@@ -1109,13 +1380,13 @@ public class StrinovaAgentSelectScreen extends Screen {
     // 通用绘制辅助
     // ------------------------------------------------------------------
 
-    /** 面板：半透明深底 + 描边。 */
+    /** 面板：半透明深底 + 描边（alpha 随配置不透明度变化）。 */
     private void drawPanel(GuiGraphics graphics, int x, int y, int w, int h) {
         if (w <= 0 || h <= 0) {
             return;
         }
-        graphics.fill(x, y, x + w, y + h, COLOR_PANEL);
-        this.border(graphics, x, y, w, h, COLOR_BORDER);
+        graphics.fill(x, y, x + w, y + h, this.withOpacity(COLOR_PANEL));
+        this.border(graphics, x, y, w, h, this.withOpacity(COLOR_BORDER));
     }
 
     /** 1px 矩形描边。 */

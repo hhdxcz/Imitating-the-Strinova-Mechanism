@@ -116,13 +116,63 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
                                 Minecraft client = Minecraft.getInstance();
                                 client.tell(() -> client.setScreen(new StrinovaAgentSelectScreen(client.screen)));
                                 return 1;
-                            }))
+                            })
+                            .then(ClientCommandManager.literal("edit")
+                                    .executes(ctx -> {
+                                        Minecraft client = Minecraft.getInstance();
+                                        client.tell(() -> client.setScreen(
+                                                new com.hhdxcz.strinova.client.StrinovaAgentSelectEditScreen(client.screen)));
+                                        return 1;
+                                    }))
+                            .then(ClientCommandManager.literal("export")
+                                    .executes(ctx -> {
+                                        ctx.getSource().sendFeedback(Component.literal(
+                                                com.hhdxcz.strinova.client.StrinovaUiConfigActions.exportSelect()));
+                                        return 1;
+                                    }))
+                            .then(ClientCommandManager.literal("import")
+                                    .executes(ctx -> {
+                                        ctx.getSource().sendFeedback(Component.literal(
+                                                com.hhdxcz.strinova.client.StrinovaUiConfigActions.importSelect()));
+                                        return 1;
+                                    }))
+                            .then(ClientCommandManager.literal("values")
+                                    .executes(ctx -> {
+                                        ctx.getSource().sendFeedback(Component.literal(
+                                                com.hhdxcz.strinova.client.StrinovaUiConfigActions.valuesSelect()));
+                                        return 1;
+                                    })))
                     .then(ClientCommandManager.literal("growth")
                             .executes(ctx -> {
                                 Minecraft client = Minecraft.getInstance();
                                 client.tell(() -> client.setScreen(new StrinovaGrowthScreen(client.screen)));
                                 return 1;
-                            }))
+                            })
+                            .then(ClientCommandManager.literal("edit")
+                                    .executes(ctx -> {
+                                        Minecraft client = Minecraft.getInstance();
+                                        client.tell(() -> client.setScreen(
+                                                new com.hhdxcz.strinova.client.StrinovaGrowthEditScreen(client.screen)));
+                                        return 1;
+                                    }))
+                            .then(ClientCommandManager.literal("export")
+                                    .executes(ctx -> {
+                                        ctx.getSource().sendFeedback(Component.literal(
+                                                com.hhdxcz.strinova.client.StrinovaUiConfigActions.exportGrowth()));
+                                        return 1;
+                                    }))
+                            .then(ClientCommandManager.literal("import")
+                                    .executes(ctx -> {
+                                        ctx.getSource().sendFeedback(Component.literal(
+                                                com.hhdxcz.strinova.client.StrinovaUiConfigActions.importGrowth()));
+                                        return 1;
+                                    }))
+                            .then(ClientCommandManager.literal("values")
+                                    .executes(ctx -> {
+                                        ctx.getSource().sendFeedback(Component.literal(
+                                                com.hhdxcz.strinova.client.StrinovaUiConfigActions.valuesGrowth()));
+                                        return 1;
+                                    })))
                     .then(ClientCommandManager.literal("scoreboard")
                             .executes(ctx -> {
                                 Minecraft client = Minecraft.getInstance();
