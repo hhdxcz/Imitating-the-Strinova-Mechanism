@@ -16,11 +16,12 @@ import net.minecraft.util.FormattedCharSequence;
 import java.util.List;
 
 /**
- * 「弦能增幅网络」成长/加点界面（按真实游戏截图对齐）。
- * 顶部栏：标题·角色名 / 拥有能量点 / 准备阶段倒计时 / 关闭按钮；
+ * 「弦能增幅网络」成长/加点界面（按真实游戏截图对齐，布局完全由 {@link StrinovaGrowthUi} 分割线配置驱动）。
+ * 顶部栏：标题·角色名 / 拥有能量点 / 准备阶段倒计时 / 关闭按钮（高度 = 窗口高 × headerHeightRatio）；
  * 左侧：满高角色立绘占位（渐变 + 名字首字大字，底部角色名 / 定位 / 数值 / 身份）；
- * 中间：8 类增幅网络两列排布（每类 2 个升级项，标题右上角「刷新」可返还能量重新选择，
- *       每类只能选一项，已选后其余项灰显），网格下方为 3 个觉醒卡（图标 + 名称 + 状态 + 描述）；
+ * 中间：8 类增幅网络两列排布（列宽由 networkSplitRatio 分配、4 行高度由 networkRowWeights 归一化；
+ *       每类 2 个升级项，标题右上角「刷新」可返还能量重新选择，每类只能选一项，已选后其余项灰显），
+ *       网格下方为 3 个觉醒卡（图标 + 名称 + 状态 + 描述），觉醒 2/3 卡片间隙有「⇄ 切换激活」按钮；
  * 右侧：满高武器栏——1/2/3 主武器 / 副武器 / 近战各占整列宽等分高度，4/5 战术道具底部并排各半宽，
  *       每张卡右下角有黄色「切换」双向箭头装饰。
  *
@@ -101,13 +102,14 @@ public class StrinovaGrowthScreen extends Screen {
     private int categoriesTop;
     private int categoriesRight;
     private int categoriesBottom;
-    /** 成长网格实际起始 Y（行高有上限，超大窗口时整块垂直居中）。 */
-    private int categoriesGridTop;
-    private int categoryColumnWidth;
+    /** 增幅网络列布局：0 左列 / 1 右列（宽度由 networkSplitRatio 决定）。 */
+    private final int[] columnX = new int[2];
+    private final int[] columnW = new int[2];
+    /** 增幅网络 4 行的实际 Y / 高度（由 networkRowWeights 归一化分配）。 */
+    private final int[] rowTops = new int[CATEGORY_ROWS];
+    private final int[] rowHeights = new int[CATEGORY_ROWS];
     private int categoryColumnGap;
     private int categoryRowGap;
-    private int categoryBlockHeight;
-    private int itemRowHeight;
     private int itemRowGap;
 
     /** 觉醒区（位于立绘右侧、中间列底部，不再横跨整行）。 */
@@ -126,6 +128,14 @@ public class StrinovaGrowthScreen extends Screen {
     private int hoveredAwakening = -1;
     /** 悬停的分类「刷新」图标（-1 = 无）。 */
     private int hoveredRefresh = -1;
+    /** 觉醒 2/3「切换激活」按钮（位置在渲染时写入，供点击/提示命中）。 */
+    private int awakenToggleX;
+    private int awakenToggleY;
+    private int awakenToggleW;
+    private int awakenToggleH;
+    private boolean awakenToggleVisible;
+    /** 是否悬停「切换激活」按钮。 */
+    private boolean hoveredAwakenToggle;
     /** 各分类标题右上角刷新图标的绝对位置（渲染时写入，供点击/提示命中）。 */
     private final int[] refreshIconX = new int[CATEGORY_ROWS * 2];
     private final int[] refreshIconY = new int[CATEGORY_ROWS * 2];
@@ -174,10 +184,11 @@ public class StrinovaGrowthScreen extends Screen {
     }
 
     /**
-     * 计算自适应布局（按真实游戏截图对齐）：
-     * 左侧立绘满高一直延伸到底部，右侧武器栏整列到底部；
-     * 中间列上方为增幅网络网格、底部为觉醒区（x = 立绘右边缘 + gap，右边界 = 武器栏左边缘 - gap）。
-     * 读取 {@code growthUi} 的显隐 / 比例 / 间距；区域隐藏时其余区域自动延伸，小窗口逐级收窄。
+     * 计算自适应布局（所有分割线由配置驱动）：
+     * 标题栏高度 = 窗口高 × {@code headerHeightRatio}；左立绘 / 右武器栏满高；
+     * 中间列为增幅网络（列宽由 {@code networkSplitRatio} 分配、4 行高度由 {@code networkRowWeights}
+     * 归一化分配）+ 底部觉醒区（高度 = 窗口高 × {@code awakenHeightRatio}，只占中间列）。
+     * 区域隐藏时其余区域自动延伸，小窗口逐级收窄。
      */
     private void computeLayout() {
         StrinovaGrowthUi ui = StrinovaHudConfig.get().growthUi;
@@ -187,12 +198,17 @@ public class StrinovaGrowthScreen extends Screen {
         this.innerRight = Math.max(this.innerLeft + 1, this.width - margin);
 
         this.headerTop = margin;
-        this.closeButtonSize = this.height >= 300 ? 20 : 18;
         this.showHeaderBar = ui.showHeader && this.width >= 320;
-        this.headerHeight = this.showHeaderBar ? (this.height >= 300 ? 28 : 22) : 0;
-        // 右上角按钮始终保留，内容区从按钮条下方开始（隐藏标题栏时内容上移）
-        int controlHeight = Math.max(this.headerHeight, this.closeButtonSize);
-        this.contentTop = this.headerTop + controlHeight + this.gap;
+        int baseCloseSize = this.height >= 300 ? 20 : 18;
+        // 标题栏高度 = 窗口高度 × headerHeightRatio（隐藏标题栏时只保留右上角按钮条）
+        int headerRaw = clamp(Math.round(this.height * clampf(ui.headerHeightRatio, 0.030F, 0.120F)),
+                10, Math.max(10, this.height / 3));
+        this.headerHeight = this.showHeaderBar ? headerRaw : 0;
+        this.closeButtonSize = this.showHeaderBar
+                ? clamp(this.headerHeight - 4, 10, baseCloseSize)
+                : baseCloseSize;
+        this.contentTop = this.headerTop
+                + (this.showHeaderBar ? this.headerHeight : this.closeButtonSize) + this.gap;
         // 内容区一直延伸到窗口底部：立绘 / 武器栏都是满高列
         this.contentBottom = this.height - margin;
 
@@ -207,7 +223,6 @@ public class StrinovaGrowthScreen extends Screen {
                 : 0;
         this.portraitX = this.innerLeft;
         this.portraitY = this.contentTop;
-        // 立绘不再止于觉醒区上方，而是一直延伸到底部
         this.portraitHeight = Math.max(0, this.contentBottom - this.contentTop);
 
         this.showWeapons = ui.showWeapons && this.width >= 400 && weaponsRaw >= 36;
@@ -244,7 +259,7 @@ public class StrinovaGrowthScreen extends Screen {
             }
         }
 
-        // 觉醒区：只在立绘右侧的中间列底部（不再横跨整行），高度 = 窗口高度 × awakenHeightRatio
+        // 觉醒区：只在立绘右侧的中间列底部，高度 = 窗口高度 × awakenHeightRatio
         int gridMinHeight = CATEGORY_ROWS * 18 + (CATEGORY_ROWS - 1) * 2;
         int middleWidth = Math.max(0, this.categoriesRight - this.categoriesLeft);
         int awakenMax = Math.max(34,
@@ -269,29 +284,78 @@ public class StrinovaGrowthScreen extends Screen {
                 ? Math.max(this.categoriesTop + 8, this.awakenTop - this.gap)
                 : this.contentBottom;
 
-        // 列 / 行间距读取自定义配置；空间不足时行间距自动收窄，避免 4 行越界
+        // 增幅网络列宽：左列 = (可用宽 - 列间距) × networkSplitRatio，右列取剩余
         this.categoryColumnGap = clamp(Math.round(ui.columnGap), 0, 32);
-        int rowGapWanted = clamp(Math.round(ui.rowGap), 0, 32);
+        int availCol = Math.max(2, this.categoriesRight - this.categoriesLeft);
+        int colInner = Math.max(2, availCol - this.categoryColumnGap);
+        float split = clampf(ui.networkSplitRatio, 0.20F, 0.80F);
+        int minCol = Math.min(28, Math.max(8, colInner / 2));
+        int leftWidth = clamp(Math.round(colInner * split), minCol, Math.max(minCol, colInner - minCol));
+        this.columnX[0] = this.categoriesLeft;
+        this.columnW[0] = leftWidth;
+        this.columnX[1] = this.categoriesLeft + leftWidth + this.categoryColumnGap;
+        this.columnW[1] = Math.max(8, this.categoriesRight - this.columnX[1]);
+
+        // 4 行高度：按 networkRowWeights 归一化分配；空间不足时行距自动收窄，避免越界
         int gridAvail = Math.max(8, this.categoriesBottom - this.categoriesTop);
+        int rowGapWanted = clamp(Math.round(ui.rowGap), 0, 32);
         int rowGapEff = rowGapWanted;
-        int blockHeight = (gridAvail - rowGapEff * (CATEGORY_ROWS - 1)) / CATEGORY_ROWS;
-        if (blockHeight < 30 && rowGapEff > 2) {
-            // 小窗口/大觉醒区时行距自适应收窄，优先保证 4 行完整可见
+        int usable = gridAvail - rowGapEff * (CATEGORY_ROWS - 1);
+        if (usable < CATEGORY_ROWS * 24 && rowGapEff > 2) {
             rowGapEff = Math.min(rowGapEff, 2);
-            blockHeight = (gridAvail - rowGapEff * (CATEGORY_ROWS - 1)) / CATEGORY_ROWS;
+            usable = gridAvail - rowGapEff * (CATEGORY_ROWS - 1);
         }
+        usable = Math.max(4, Math.min(usable, gridAvail));
         this.categoryRowGap = rowGapEff;
-        this.categoryColumnWidth = Math.max(40,
-                (this.categoriesRight - this.categoriesLeft - this.categoryColumnGap) / 2);
-        this.categoryBlockHeight = clamp(blockHeight, 16, 120);
+        distributeRowHeights(usable, ui.networkRowWeights, this.rowHeights);
+        int rowCursor = this.categoriesTop;
+        for (int row = 0; row < CATEGORY_ROWS; row++) {
+            this.rowTops[row] = rowCursor;
+            rowCursor += this.rowHeights[row] + rowGapEff;
+        }
         this.itemRowGap = 2;
-        // 行高下限压到 1：极小窗口下条目条也随之收缩，保证不撑出类别块
-        this.itemRowHeight = clamp(
-                (this.categoryBlockHeight - ITEM_HEADER_HEIGHT - this.itemRowGap) / 2, 1, 36);
-        int gridHeight = this.categoryBlockHeight * CATEGORY_ROWS
-                + this.categoryRowGap * (CATEGORY_ROWS - 1);
-        this.categoriesGridTop = this.categoriesTop
-                + Math.max(0, (this.categoriesBottom - this.categoriesTop - gridHeight) / 2);
+    }
+
+    /** 把可用高度按 4 行权重归一化分配，保证总和 = usable 且每行至少 4px。 */
+    private static void distributeRowHeights(int usable, float[] weights, int[] out) {
+        float total = 0.0F;
+        for (int i = 0; i < CATEGORY_ROWS; i++) {
+            total += rowWeight(weights, i);
+        }
+        int remaining = usable;
+        for (int i = 0; i < CATEGORY_ROWS; i++) {
+            int height;
+            if (i == CATEGORY_ROWS - 1) {
+                height = remaining;
+            } else {
+                height = Math.max(4, Math.round(usable * rowWeight(weights, i) / total));
+                int reserve = (CATEGORY_ROWS - 1 - i) * 4;
+                height = Math.min(height, Math.max(4, remaining - reserve));
+            }
+            out[i] = height;
+            remaining -= height;
+        }
+        if (out[CATEGORY_ROWS - 1] < 4) {
+            int deficit = 4 - out[CATEGORY_ROWS - 1];
+            out[CATEGORY_ROWS - 1] = 4;
+            for (int i = CATEGORY_ROWS - 2; i >= 0 && deficit > 0; i--) {
+                int take = Math.min(deficit, Math.max(0, out[i] - 4));
+                out[i] -= take;
+                deficit -= take;
+            }
+        }
+        int diff = usable - (out[0] + out[1] + out[2] + out[3]);
+        if (diff != 0) {
+            out[CATEGORY_ROWS - 1] = Math.max(4, out[CATEGORY_ROWS - 1] + diff);
+        }
+    }
+
+    /** 读取第 index 行权重（缺失/越界时按 1.0 处理）。 */
+    private static float rowWeight(float[] weights, int index) {
+        if (weights == null || index < 0 || index >= weights.length) {
+            return 1.0F;
+        }
+        return clampf(weights[index], 0.35F, 2.5F);
     }
 
     private int closeButtonX() {
@@ -299,8 +363,10 @@ public class StrinovaGrowthScreen extends Screen {
     }
 
     private int closeButtonY() {
-        int controlHeight = Math.max(this.headerHeight, this.closeButtonSize);
-        return this.headerTop + (controlHeight - this.closeButtonSize) / 2;
+        if (this.showHeaderBar) {
+            return this.headerTop + Math.max(0, (this.headerHeight - this.closeButtonSize) / 2);
+        }
+        return this.headerTop;
     }
 
     /** 渲染界面：深色底（可叠加自定义压暗）→ 顶部栏 → 左立绘 → 中成长网格 → 右武器栏 → 底部觉醒 → 控件/提示。 */
@@ -492,25 +558,25 @@ public class StrinovaGrowthScreen extends Screen {
         }
         int energy = StrinovaGrowthState.energyPoints();
         for (int i = 0; i < categories.size(); i++) {
-            int column = i / CATEGORY_ROWS;
+            int column = Math.min(1, i / CATEGORY_ROWS);
             int row = i % CATEGORY_ROWS;
-            int blockX = this.categoriesLeft + column * (this.categoryColumnWidth + this.categoryColumnGap);
-            int blockY = this.categoriesGridTop + row * (this.categoryBlockHeight + this.categoryRowGap);
-            this.renderCategory(graphics, categories.get(i), i, blockX, blockY, energy, mouseX, mouseY);
+            this.renderCategory(graphics, categories.get(i), i, this.columnX[column], this.rowTops[row],
+                    this.columnW[column], this.rowHeights[row], energy, mouseX, mouseY);
         }
     }
 
     /** 渲染单个成长类别：标题（右上角「刷新」图标）+ 2 个升级项；本类已选时未选项灰显。 */
     private void renderCategory(GuiGraphics graphics, StrinovaGrowthState.Category category, int categoryIndex,
-                                int blockX, int blockY, int energy, int mouseX, int mouseY) {
+                                int blockX, int blockY, int blockW, int blockH,
+                                int energy, int mouseX, int mouseY) {
         int accent = CATEGORY_ACCENTS[categoryIndex % CATEGORY_ACCENTS.length];
         boolean locked = StrinovaGrowthState.isCategoryLocked(categoryIndex);
         int titleY = blockY + 1;
         drawBranchIcon(graphics, category.kind(), category.slot(), blockX, titleY - 1, 12, accent);
 
         // 标题右上角刷新图标：绿色斜四边形底 + 白色圆形箭头；无可返还项时半透明
-        boolean drawIcon = this.categoryColumnWidth >= REFRESH_ICON_W + 10;
-        int iconX = blockX + this.categoryColumnWidth - REFRESH_ICON_W - 2;
+        boolean drawIcon = blockW >= REFRESH_ICON_W + 10;
+        int iconX = blockX + blockW - REFRESH_ICON_W - 2;
         int iconY = blockY;
         if (categoryIndex >= 0 && categoryIndex < this.refreshIconX.length) {
             this.refreshIconX[categoryIndex] = drawIcon ? iconX : -1;
@@ -526,35 +592,50 @@ public class StrinovaGrowthScreen extends Screen {
         }
 
         // 标题文字给刷新图标让位
-        int titleMax = Math.max(10, this.categoryColumnWidth - 20
-                - (drawIcon ? REFRESH_ICON_W + 4 : 0));
+        int titleMax = Math.max(10, blockW - 20 - (drawIcon ? REFRESH_ICON_W + 4 : 0));
         graphics.drawString(this.font, truncate(category.label(), titleMax),
                 blockX + 16, titleY, COLOR_TEXT, false);
 
+        int itemHeight = itemHeightFor(blockH);
         List<StrinovaGrowthState.UpgradeItem> items = category.items();
-        int itemsBlockHeight = this.itemRowHeight * items.size() + this.itemRowGap * Math.max(0, items.size() - 1);
+        int itemsBlockHeight = itemHeight * items.size() + this.itemRowGap * Math.max(0, items.size() - 1);
         int itemsTop = blockY + ITEM_HEADER_HEIGHT
-                + Math.max(0, (this.categoryBlockHeight - ITEM_HEADER_HEIGHT - itemsBlockHeight) / 2);
+                + Math.max(0, (blockH - ITEM_HEADER_HEIGHT - itemsBlockHeight) / 2);
         for (int j = 0; j < items.size(); j++) {
-            int itemY = itemsTop + j * (this.itemRowHeight + this.itemRowGap);
-            boolean hovered = mouseX >= blockX && mouseX < blockX + this.categoryColumnWidth
-                    && mouseY >= itemY && mouseY < itemY + this.itemRowHeight;
+            int itemY = itemsTop + j * (itemHeight + this.itemRowGap);
+            boolean hovered = mouseX >= blockX && mouseX < blockX + blockW
+                    && mouseY >= itemY && mouseY < itemY + itemHeight;
             if (hovered) {
                 this.hoveredCategory = categoryIndex;
                 this.hoveredItem = j;
             }
-            this.renderUpgradeItem(graphics, items.get(j), blockX, itemY, energy, hovered, locked);
+            this.renderUpgradeItem(graphics, items.get(j), blockX, itemY, blockW, itemHeight,
+                    energy, hovered, locked);
         }
+    }
+
+    /** 某行高度下升级项的行高（1~36）。 */
+    private int itemHeightFor(int blockHeight) {
+        return clamp((blockHeight - ITEM_HEADER_HEIGHT - this.itemRowGap) / 2, 1, 36);
+    }
+
+    /** 某类升级项起始 Y（与 renderCategory 的排布一致，供点击命中）。 */
+    private int itemsTopFor(int categoryIndex, int itemCount) {
+        int row = categoryIndex % CATEGORY_ROWS;
+        int blockH = this.rowHeights[row];
+        int itemH = itemHeightFor(blockH);
+        int blockItemsH = itemH * itemCount + this.itemRowGap * Math.max(0, itemCount - 1);
+        return this.rowTops[row] + ITEM_HEADER_HEIGHT
+                + Math.max(0, (blockH - ITEM_HEADER_HEIGHT - blockItemsH) / 2);
     }
 
     /** 渲染单个升级项：已购买高亮、本类已选后未选项灰显不可点、能量不足灰显、悬停高亮。 */
     private void renderUpgradeItem(GuiGraphics graphics, StrinovaGrowthState.UpgradeItem item,
-                                   int x, int y, int energy, boolean hovered, boolean categoryLocked) {
+                                   int x, int y, int width, int height, int energy,
+                                   boolean hovered, boolean categoryLocked) {
         boolean purchased = item.purchased();
         boolean locked = categoryLocked && !purchased;
         boolean affordable = !purchased && !locked && energy >= item.cost();
-        int width = this.categoryColumnWidth;
-        int height = this.itemRowHeight;
 
         int background;
         if (purchased) {
@@ -683,23 +764,18 @@ public class StrinovaGrowthScreen extends Screen {
                     selected ? COLOR_CYAN : (index == 0 ? 0xFFC8D4E0 : COLOR_TEXT_DIM));
         }
 
-        // 底部说明文字（半宽卡放不下就省略），右侧留出「切换」图标位置
+        // 底部说明文字：只显示武器名称（战术道具槽不再显示红色提示）
         if (!this.compactWeapons && height >= 26 && width >= 64) {
             int bottomY = y + height - 10;
             int textMax = Math.max(10, width - 22);
-            if (index >= 3) {
-                // 战术道具槽：真实 UI 显示「现在可装备战术技能」
-                String hint = Component.translatable("config.strinova.growth.weapon_hint").getString();
-                graphics.drawString(this.font, truncate(hint, textMax),
-                        x + 4, bottomY, 0xFFFF6B6B, false);
-            } else {
-                boolean hasName = name != null && !name.isEmpty();
-                String label = hasName
-                        ? name
-                        : Component.translatable("hud.strinova.weapon.none").getString();
-                graphics.drawString(this.font, truncate(label, textMax),
-                        x + 4, bottomY,
-                        hasName ? (selected ? COLOR_TEXT : COLOR_TEXT_DIM) : COLOR_TEXT_DISABLED, false);
+            boolean hasName = name != null && !name.isEmpty();
+            if (hasName) {
+                graphics.drawString(this.font, truncate(name, textMax),
+                        x + 4, bottomY, selected ? COLOR_TEXT : COLOR_TEXT_DIM, false);
+            } else if (index < 3) {
+                String none = Component.translatable("hud.strinova.weapon.none").getString();
+                graphics.drawString(this.font, truncate(none, textMax),
+                        x + 4, bottomY, COLOR_TEXT_DISABLED, false);
             }
         }
         // 右下角黄色「切换 / 更换」双向箭头（装饰，无功能）
@@ -825,21 +901,87 @@ public class StrinovaGrowthScreen extends Screen {
 
     // ==================== 底部觉醒 ====================
 
-    /** 渲染觉醒区 3 卡（位于立绘右侧、中间列底部）：图标 + 觉醒序号 + 名称 + 激活状态，空间足够时换行显示描述。 */
+    /**
+     * 渲染觉醒区（位于立绘右侧、中间列底部）：3 张卡；觉醒 2 与觉醒 3 的卡片间隙中放
+     * 「⇄ 切换激活」小按钮（二觉/三觉二选一）。按钮宽度随觉醒区宽度自适应。
+     */
     private void renderAwakenings(GuiGraphics graphics, int mouseX, int mouseY) {
         List<StrinovaGrowthState.Awakening> awakenings = StrinovaGrowthState.awakenings();
         this.hoveredAwakening = -1;
+        this.hoveredAwakenToggle = false;
+        this.awakenToggleVisible = false;
         if (awakenings.isEmpty() || this.awakenWidth <= 0) {
             return;
         }
         int cardGap = this.gap;
-        int cardWidth = Math.max(8, (this.awakenWidth
-                - (awakenings.size() - 1) * cardGap) / awakenings.size());
-        for (int i = 0; i < awakenings.size(); i++) {
-            StrinovaGrowthState.Awakening awakening = awakenings.get(i);
-            int x = this.awakenLeft + i * (cardWidth + cardGap);
-            this.renderAwakeningCard(graphics, awakening, i, x, cardWidth, mouseX, mouseY);
+        if (awakenings.size() != 3) {
+            // 非标准 3 卡数据时按普通等分排布（不显示切换按钮）
+            int cardWidth = Math.max(8,
+                    (this.awakenWidth - (awakenings.size() - 1) * cardGap) / awakenings.size());
+            for (int i = 0; i < awakenings.size(); i++) {
+                int x = this.awakenLeft + i * (cardWidth + cardGap);
+                this.renderAwakeningCard(graphics, awakenings.get(i), i, x, cardWidth, mouseX, mouseY);
+            }
+            return;
         }
+        // 卡片间隙加宽出「切换激活」按钮的位置；过窄时按钮只保留图标
+        int toggleW = clamp(Math.round(this.awakenWidth * 0.16F), 16, 60);
+        int cardWidth = (this.awakenWidth - 3 * cardGap - toggleW) / 3;
+        if (cardWidth < 30) {
+            toggleW = Math.max(10, this.awakenWidth - 3 * cardGap - 3 * 30);
+            cardWidth = Math.max(8, (this.awakenWidth - 3 * cardGap - toggleW) / 3);
+        }
+        int card0X = this.awakenLeft;
+        int card1X = card0X + cardWidth + cardGap;
+        int toggleX = card1X + cardWidth + cardGap;
+        int card2X = toggleX + toggleW + cardGap;
+        this.renderAwakeningCard(graphics, awakenings.get(0), 0, card0X, cardWidth, mouseX, mouseY);
+        this.renderAwakeningCard(graphics, awakenings.get(1), 1, card1X, cardWidth, mouseX, mouseY);
+        this.renderAwakeningCard(graphics, awakenings.get(2), 2, card2X, cardWidth, mouseX, mouseY);
+
+        int toggleH = clamp(this.awakenHeight - 12, 14, 18);
+        this.awakenToggleX = toggleX;
+        this.awakenToggleY = this.awakenTop + (this.awakenHeight - toggleH) / 2;
+        this.awakenToggleW = toggleW;
+        this.awakenToggleH = toggleH;
+        this.awakenToggleVisible = true;
+        boolean enabled = StrinovaGrowthState.canToggleAwakenings();
+        boolean hovered = mouseX >= toggleX && mouseX < toggleX + toggleW
+                && mouseY >= this.awakenToggleY && mouseY < this.awakenToggleY + toggleH;
+        this.hoveredAwakenToggle = hovered;
+        this.renderAwakenToggle(graphics, toggleX, this.awakenToggleY, toggleW, toggleH, enabled, hovered);
+    }
+
+    /** 觉醒 2/3 二选一的「切换激活」按钮：图标「⇄」+ 文案（宽度足够时显示）。 */
+    private void renderAwakenToggle(GuiGraphics graphics, int x, int y, int width, int height,
+                                    boolean enabled, boolean hovered) {
+        int bg = enabled ? (hovered ? 0xCC203548 : 0x99101824) : 0x44000000;
+        graphics.fill(x, y, x + width, y + height, bg);
+        int border = enabled ? (hovered ? 0xFF7BE8AC : 0xFF57C785) : 0x6656626E;
+        graphics.fill(x, y, x + width, y + 1, border);
+        graphics.fill(x, y + height - 1, x + width, y + height, border);
+        graphics.fill(x, y, x + 1, y + height, border);
+        graphics.fill(x + width - 1, y, x + width, y + height, border);
+        int color = enabled ? (hovered ? 0xFF7BE8AC : COLOR_CYAN) : 0x665E6874;
+        String text = "切换激活";
+        int textW = this.font.width(text);
+        boolean showText = width >= textW + 16;
+        int iconW = 10;
+        int contentW = showText ? iconW + 3 + textW : iconW;
+        int startX = x + Math.max(2, (width - contentW) / 2);
+        int centerY = y + height / 2;
+        drawSwapIcon(graphics, startX, centerY - 3, color);
+        if (showText) {
+            graphics.drawString(this.font, text, startX + iconW + 3, centerY - 4, color, false);
+        }
+    }
+
+    /** 双向交换图标「⇄」：上箭头向右、下箭头向左（纯形状绘制）。 */
+    private static void drawSwapIcon(GuiGraphics graphics, int x, int y, int color) {
+        graphics.fill(x, y, x + 7, y + 1, color);
+        graphics.fill(x + 7, y - 1, x + 9, y + 2, color);
+        graphics.fill(x + 2, y + 5, x + 9, y + 6, color);
+        graphics.fill(x, y + 4, x + 2, y + 7, color);
     }
 
     /** 渲染单个觉醒卡片。 */
@@ -894,6 +1036,13 @@ public class StrinovaGrowthScreen extends Screen {
             drawWrapped(graphics, Component.literal(awakening.desc() == null ? "" : awakening.desc()),
                     x + 8, descTop, cardWidth - 16, maxLines, 0xFFB4C0CC);
         } else {
+            if (cardWidth < 30) {
+                // 卡片过窄（极小窗口）时只画图标，避免文字越界
+                int iconSize = clamp(this.awakenHeight - 8, 10, 16);
+                drawAwakeningIcon(graphics, x + Math.max(1, (cardWidth - iconSize) / 2),
+                        this.awakenTop + (this.awakenHeight - iconSize) / 2, iconSize, active);
+                return;
+            }
             int iconSize = clamp(this.awakenHeight - 8, 12, 16);
             int iconX = x + 4;
             int iconY = this.awakenTop + (this.awakenHeight - iconSize) / 2;
@@ -1029,7 +1178,7 @@ public class StrinovaGrowthScreen extends Screen {
 
     // ==================== 交互 ====================
 
-    /** 鼠标点击：先交给按钮控件；再命中分类刷新图标（返还能量），最后命中成长项时尝试购买。 */
+    /** 鼠标点击：先交给按钮控件；再命中「切换激活」/分类刷新图标，最后命中成长项时尝试购买。 */
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (super.mouseClicked(mouseX, mouseY, button)) {
@@ -1039,6 +1188,14 @@ public class StrinovaGrowthScreen extends Screen {
             return false;
         }
         List<StrinovaGrowthState.Category> categories = StrinovaGrowthState.categories();
+        // 0) 觉醒 2/3「切换激活」：仅当二觉与三觉需求都满足时可用
+        int[] toggleRect = this.awakenToggleRect();
+        if (toggleRect != null && insideRect(mouseX, mouseY, toggleRect)) {
+            if (StrinovaGrowthState.canToggleAwakenings()) {
+                StrinovaGrowthState.toggleAwakenings();
+            }
+            return true;
+        }
         // 1) 分类标题右上角「刷新」：返还该分支已选项目的能量并解除锁定
         for (int categoryIndex = 0; categoryIndex < categories.size(); categoryIndex++) {
             int[] iconRect = this.refreshIconRect(categoryIndex);
@@ -1087,16 +1244,22 @@ public class StrinovaGrowthScreen extends Screen {
         if (itemIndex < 0 || itemIndex >= items.size()) {
             return null;
         }
-        int column = categoryIndex / CATEGORY_ROWS;
+        int column = Math.min(1, categoryIndex / CATEGORY_ROWS);
         int row = categoryIndex % CATEGORY_ROWS;
-        int blockX = this.categoriesLeft + column * (this.categoryColumnWidth + this.categoryColumnGap);
-        int blockY = this.categoriesGridTop + row * (this.categoryBlockHeight + this.categoryRowGap);
-        int itemsBlockHeight = this.itemRowHeight * items.size()
-                + this.itemRowGap * Math.max(0, items.size() - 1);
-        int itemsTop = blockY + ITEM_HEADER_HEIGHT
-                + Math.max(0, (this.categoryBlockHeight - ITEM_HEADER_HEIGHT - itemsBlockHeight) / 2);
-        return new int[]{blockX, itemsTop + itemIndex * (this.itemRowHeight + this.itemRowGap),
-                this.categoryColumnWidth, this.itemRowHeight};
+        int blockW = this.columnW[column];
+        int itemH = itemHeightFor(this.rowHeights[row]);
+        int itemsTop = itemsTopFor(categoryIndex, items.size());
+        return new int[]{this.columnX[column], itemsTop + itemIndex * (itemH + this.itemRowGap),
+                blockW, itemH};
+    }
+
+    /** 觉醒「切换激活」按钮 Rectangle；不可见时返回 null。 */
+    private int[] awakenToggleRect() {
+        if (!this.awakenToggleVisible) {
+            return null;
+        }
+        return new int[]{this.awakenToggleX, this.awakenToggleY,
+                this.awakenToggleW, this.awakenToggleH};
     }
 
     private static boolean insideRect(double mouseX, double mouseY, int[] rect) {
@@ -1106,10 +1269,14 @@ public class StrinovaGrowthScreen extends Screen {
 
     // ==================== 悬停提示 ====================
 
-    /** 悬停提示：刷新图标、成长项（锁定提示/属性变化）、觉醒（含三色需求）、左侧立绘、武器栏。 */
+    /** 悬停提示：刷新图标、切换激活按钮、成长项（锁定提示/属性变化）、觉醒、左侧立绘、武器栏。 */
     private void renderHoverTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
         if (this.hoveredRefresh >= 0) {
             this.renderRefreshTooltip(graphics, mouseX, mouseY);
+            return;
+        }
+        if (this.hoveredAwakenToggle) {
+            this.renderAwakenToggleTooltip(graphics, mouseX, mouseY);
             return;
         }
         if (this.hoveredCategory >= 0 && this.hoveredItem >= 0) {
@@ -1162,6 +1329,28 @@ public class StrinovaGrowthScreen extends Screen {
         graphics.fill(x, y, x + width, y + height, 0xF00C121A);
         graphics.drawString(this.font, title, x + 7, y + 4, 0xFF7BE8AC, false);
         graphics.drawString(this.font, hint, x + 7, y + 4 + LINE_STEP, 0xFFB4C0CC, false);
+    }
+
+    /** 「切换激活」按钮提示：二觉 / 三觉二选一，点击切换激活。 */
+    private void renderAwakenToggleTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        boolean enabled = StrinovaGrowthState.canToggleAwakenings();
+        String title = "切换激活";
+        String hint = "二觉 / 三觉二选一，点击切换激活";
+        String extra = enabled ? "" : "需同时满足二觉与三觉需求";
+        int width = Math.max(this.font.width(title),
+                Math.max(this.font.width(hint), this.font.width(extra))) + 14;
+        int lines = enabled ? 2 : 3;
+        int height = LINE_STEP * lines + 8;
+        int x = clamp(mouseX + 10, 4, Math.max(4, this.width - width - 4));
+        int y = clamp(mouseY + 10, 4, Math.max(4, this.height - height - 4));
+        graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF2A3542);
+        graphics.fill(x, y, x + width, y + height, 0xF00C121A);
+        graphics.drawString(this.font, title, x + 7, y + 4, 0xFF7BE8AC, false);
+        graphics.drawString(this.font, hint, x + 7, y + 4 + LINE_STEP, 0xFFB4C0CC, false);
+        if (!enabled) {
+            graphics.drawString(this.font, extra, x + 7, y + 4 + LINE_STEP * 2,
+                    0xFFFFB37A, false);
+        }
     }
 
     /** 已锁定分类中未购买项的提示：灰显 + 引导点击右上角刷新重新选择。 */

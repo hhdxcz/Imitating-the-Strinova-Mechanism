@@ -42,6 +42,8 @@ public final class StrinovaGrowthState {
     private static volatile int purchasedSkill;
     private static volatile int purchasedDefense;
     private static final Set<String> purchased = new LinkedHashSet<>();
+    /** 二觉 / 三觉二选一：当前选择（2 或 3）。 */
+    private static volatile int selectedAwakening23 = 2;
     private static List<StrinovaWikiData.NetworkGroup> groups = List.of();
     private static StrinovaWikiData.Agent wikiAgent;
 
@@ -205,10 +207,55 @@ public final class StrinovaGrowthState {
         return activeAwakenings() > 0;
     }
 
+    /** 二觉 / 三觉当前选择（2 或 3）。 */
+    public static int selectedAwakening23() {
+        return selectedAwakening23;
+    }
+
+    /** 第 index 个觉醒（1~3）的需求是否已满足（不看二/三选一状态）。 */
+    public static boolean isAwakeningEligible(int index) {
+        if (wikiAgent == null || index < 1 || index > wikiAgent.awakenings().size()) {
+            return false;
+        }
+        StrinovaWikiData.Awakening source = wikiAgent.awakenings().get(index - 1);
+        return purchasedWeapon >= source.needWeapon()
+                && purchasedSkill >= source.needSkill()
+                && purchasedDefense >= source.needDefense();
+    }
+
+    /** 二觉与三觉是否都已满足需求（此时「切换激活」可用）。 */
+    public static boolean canToggleAwakenings() {
+        return isAwakeningEligible(2) && isAwakeningEligible(3);
+    }
+
+    /** 在二觉 / 三觉之间切换激活（两者都满足时才有效）。 */
+    public static boolean toggleAwakenings() {
+        if (!canToggleAwakenings()) {
+            return false;
+        }
+        selectedAwakening23 = selectedAwakening23 == 2 ? 3 : 2;
+        rebuild();
+        return true;
+    }
+
+    /** 当前已激活觉醒的序号（1~3，按顺序），供 TAB 计分板显示八芒星。 */
+    public static int[] activeAwakeningIndices() {
+        int count = activeAwakenings();
+        int[] result = new int[count];
+        int k = 0;
+        for (int i = 0; i < awakenings.size(); i++) {
+            if (awakenings.get(i).active()) {
+                result[k++] = i + 1;
+            }
+        }
+        return result;
+    }
+
     /** 重置当前角色的能量点与购买状态（能量点恢复为配置值）。 */
     public static void reset() {
         energyPoints = configuredEnergy();
         purchased.clear();
+        selectedAwakening23 = 2;
         rebuild();
     }
 
@@ -250,11 +297,33 @@ public final class StrinovaGrowthState {
         if (agent == null || agent.awakenings().isEmpty()) {
             return List.of();
         }
-        List<Awakening> result = new ArrayList<>();
-        for (StrinovaWikiData.Awakening source : agent.awakenings()) {
-            boolean active = weapon >= source.needWeapon()
+        boolean[] eligible = new boolean[agent.awakenings().size()];
+        for (int i = 0; i < eligible.length; i++) {
+            StrinovaWikiData.Awakening source = agent.awakenings().get(i);
+            eligible[i] = weapon >= source.needWeapon()
                     && skill >= source.needSkill()
                     && defense >= source.needDefense();
+        }
+        // 二觉 / 三觉只能二选一：当前选择不满足时自动切到另一个可用的
+        if (eligible.length >= 3) {
+            boolean currentOk = selectedAwakening23 == 2 ? eligible[1] : eligible[2];
+            if (!currentOk) {
+                if (eligible[1]) {
+                    selectedAwakening23 = 2;
+                } else if (eligible[2]) {
+                    selectedAwakening23 = 3;
+                }
+            }
+        }
+        List<Awakening> result = new ArrayList<>();
+        for (int i = 0; i < eligible.length; i++) {
+            boolean active = eligible[i];
+            if (i == 1) {
+                active = active && selectedAwakening23 == 2;
+            } else if (i == 2) {
+                active = active && selectedAwakening23 == 3;
+            }
+            StrinovaWikiData.Awakening source = agent.awakenings().get(i);
             result.add(new Awakening(source.name(), source.desc(),
                     source.needWeapon(), source.needSkill(), source.needDefense(), active));
         }

@@ -82,13 +82,18 @@ body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; color: #EAF2FA; b
   .whint { position:absolute; left:5px; right:3px; bottom:4px; font-size:10px; color:#FF6B6B;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .wcard:has(.whint) .wname { display:none; }
-  .whintbar { height:14px; flex:none; display:flex; align-items:center; justify-content:flex-end;
-    font-size:10.5px; color:#FF6B6B; }
   .swap { position:absolute; right:5px; bottom:4px; width:15px; height:10px; opacity:.9; }
   .swap::before { content:''; position:absolute; left:0; top:2px; width:11px; height:2px; background:#FFC94A; }
   .swap::after { content:''; position:absolute; left:0; top:0; border-right:4px solid #FFC94A;
     border-top:2px solid transparent; border-bottom:2px solid transparent; transform:rotate(180deg); }
-  .awaken { height:186px; flex:none; display:flex; gap:12px; }
+  .awaken { height:186px; flex:none; display:flex; gap:10px; align-items:stretch; }
+  .awtoggle { flex:none; width:86px; align-self:center; height:30px; background:rgba(0,0,0,.55);
+    border:1px solid rgba(255,255,255,.45); color:#EAF2FA; font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; gap:6px; font-family:inherit; }
+  .awswap { width:14px; height:10px; position:relative; display:inline-block; }
+  .awswap::before { content:''; position:absolute; left:0; top:1px; width:12px; height:2px; background:#EAF2FA; }
+  .awswap::after { content:''; position:absolute; left:0; top:4px; width:12px; height:2px; background:#EAF2FA;
+    transform:scaleX(-1); }
   .acard { flex:1; min-width:0; padding:9px 11px; background:rgba(255,255,255,.045);
     border:1px solid rgba(255,255,255,.10); position:relative; }
   .acard.on { border-color:rgba(255,209,102,.7); background:rgba(255,209,102,.07); }
@@ -252,12 +257,12 @@ body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; color: #EAF2FA; b
       </div>
       <div class="aname">Residual String Embers</div>
       <div class="adesc">Dark String Missiles fired by spirits detonate and create an erosion field that continuously damages and slows enemies inside it.</div>
-    </div>
-    <div class="acard off">
+    </div><button class="awtoggle"><i class="awswap"></i>切换激活</button>
+    <div class="acard on">
       <div class="atop">
         <span class="alabel">Awakening3：</span>
         <span class="aneed"><i class="needneed sq" style="background:#4FA3FF"></i><i class="needneed ci" style="background:#FFD166"></i><i class="needneed tri" style="background:#54E0A0"></i><i class="needneed tri" style="background:#54E0A0"></i></span>
-        <span class="astatus">Inactive</span>
+        <span class="astatus">Active</span>
       </div>
       <div class="aname">Eye of Omniscience</div>
       <div class="adesc">Greatly extend the duration of summoned spirits. While they are active, the Active Skill can be reactivated to take direct control of a spirit, enhancing its attributes during the control period.</div>
@@ -298,7 +303,6 @@ body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; color: #EAF2FA; b
         <div class="wname">Tactical</div>
         <span class="swap"></span>
       </div></div>
-        <div class="whintbar">Tactical Skill equippable</div>
       </div>
     </div>
     

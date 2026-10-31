@@ -197,16 +197,24 @@ function growthHtml(agent, lang) {
     }
     return html;
   };
-  const awakenCards = agent.awakenings.map((awakening, index) => `
-    <div class="acard ${awakening.active ? 'on' : 'off'}">
+  const awakenCards = agent.awakenings.map((awakening, index) => {
+    // 演示：觉醒1 与 觉醒3 激活（二觉/三觉二选一）
+    const active = index !== 1;
+    const card = `
+    <div class="acard ${active ? 'on' : 'off'}">
       <div class="atop">
         <span class="alabel">${t.awakening}${index + 1}：</span>
         <span class="aneed">${needShapes(awakening)}</span>
-        <span class="astatus">${awakening.active ? t.activated : t.inactive}</span>
+        <span class="astatus">${active ? t.activated : t.inactive}</span>
       </div>
       <div class="aname">${esc(awakening.name)}</div>
       <div class="adesc">${esc(awakening.desc)}</div>
-    </div>`).join('');
+    </div>`;
+    if (index === 1) {
+      return card + '<button class="awtoggle"><i class="awswap"></i>切换激活</button>';
+    }
+    return card;
+  }).join('');
 
   let tip = null;
   if (lang === 'zh') {
@@ -299,13 +307,18 @@ function growthHtml(agent, lang) {
   .whint { position:absolute; left:5px; right:3px; bottom:4px; font-size:10px; color:#FF6B6B;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .wcard:has(.whint) .wname { display:none; }
-  .whintbar { height:14px; flex:none; display:flex; align-items:center; justify-content:flex-end;
-    font-size:10.5px; color:#FF6B6B; }
   .swap { position:absolute; right:5px; bottom:4px; width:15px; height:10px; opacity:.9; }
   .swap::before { content:''; position:absolute; left:0; top:2px; width:11px; height:2px; background:#FFC94A; }
   .swap::after { content:''; position:absolute; left:0; top:0; border-right:4px solid #FFC94A;
     border-top:2px solid transparent; border-bottom:2px solid transparent; transform:rotate(180deg); }
-  .awaken { height:186px; flex:none; display:flex; gap:12px; }
+  .awaken { height:186px; flex:none; display:flex; gap:10px; align-items:stretch; }
+  .awtoggle { flex:none; width:86px; align-self:center; height:30px; background:rgba(0,0,0,.55);
+    border:1px solid rgba(255,255,255,.45); color:#EAF2FA; font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; gap:6px; font-family:inherit; }
+  .awswap { width:14px; height:10px; position:relative; display:inline-block; }
+  .awswap::before { content:''; position:absolute; left:0; top:1px; width:12px; height:2px; background:#EAF2FA; }
+  .awswap::after { content:''; position:absolute; left:0; top:4px; width:12px; height:2px; background:#EAF2FA;
+    transform:scaleX(-1); }
   .acard { flex:1; min-width:0; padding:9px 11px; background:rgba(255,255,255,.045);
     border:1px solid rgba(255,255,255,.10); position:relative; }
   .acard.on { border-color:rgba(255,209,102,.7); background:rgba(255,209,102,.07); }
@@ -349,7 +362,6 @@ function growthHtml(agent, lang) {
         ${weaponCard(1)}
         ${weaponCard(2)}
         <div class="wrowlow">${weaponCard(3)}${weaponCard(4)}</div>
-        <div class="whintbar">${esc(t.weaponHint)}</div>
       </div>
     </div>
     ${tipHtml}
@@ -556,6 +568,50 @@ function selectHtml(agent, lang) {
   </div></body></html>`;
 }
 
+function starPolygon(cx, cy, outer, inner, points) {
+  const parts = [];
+  for (let i = 0; i < points * 2; i++) {
+    const radius = i % 2 === 0 ? outer : inner;
+    const angle = Math.PI * i / points - Math.PI / 2;
+    parts.push((cx + Math.cos(angle) * radius).toFixed(1) + '% ' + (cy + Math.sin(angle) * radius).toFixed(1) + '%');
+  }
+  return 'polygon(' + parts.join(',') + ')';
+}
+
+/** TAB 计分板「成长等级」列效果预览（形色计数 > 八芒星）。 */
+function growthChipHtml(lang) {
+  const title = lang === 'zh' ? '成长等级' : 'Growth';
+  const star = starPolygon(50, 50, 50, 21, 8);
+  const shape = (cls, text) => `<div class="shape ${cls}"><span>${text}</span></div>`;
+  return `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { width:900px; height:170px; overflow:hidden; }
+  body { background:#140d04; font-family:"Microsoft YaHei","Segoe UI",sans-serif; }
+  .wrap { width:900px; height:170px; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:10px;
+    background:linear-gradient(90deg,#2a1f0c 0%,#7a6222 22%,#8a6f28 50%,#7a6222 78%,#2a1f0c 100%); }
+  .title { font-size:17px; color:#F0DFB0; letter-spacing:2px; }
+  .row { display:flex; align-items:center; gap:9px; }
+  .shape { width:46px; height:46px; display:flex; align-items:center; justify-content:center; }
+  .shape span { font-size:27px; font-weight:800; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.55); }
+  .sq { background:#4FA3FF; border-radius:5px; }
+  .ci { background:#F2B21B; border-radius:50%; }
+  .tri { background:#4CAF50; clip-path:polygon(50% 0,100% 100%,0 100%); }
+  .tri span { padding-top:12px; font-size:23px; }
+  .gt { font-size:32px; font-weight:800; color:#F0DFB0; margin:0 2px; }
+  .star { width:52px; height:52px; background:#E8833A; display:flex; align-items:center;
+    justify-content:center; clip-path:${star}; }
+  .star span { font-size:26px; font-weight:800; color:#fff; }
+  </style></head><body><div class="wrap">
+    <div class="title">${title}</div>
+    <div class="row">
+      ${shape('sq', 4)}${shape('ci', 1)}${shape('tri', 0)}
+      <div class="gt">&gt;</div>
+      <div class="star"><span>1</span></div>
+    </div>
+  </div></body></html>`;
+}
+
 // ------------------------------------------------------------------
 const args = process.argv.slice(2);
 const getArg = (name, fallback) => {
@@ -564,12 +620,19 @@ const getArg = (name, fallback) => {
 };
 const screens = getArg('screen', 'all');
 const langs = getArg('lang', 'all');
-const runScreens = screens === 'all' ? ['growth', 'select'] : [screens];
+const runScreens = screens === 'all' ? ['growth', 'select', 'growth-chip'] : [screens];
 const runLangs = langs === 'all' ? ['zh', 'en'] : [langs];
 
 fs.mkdirSync(OUT, { recursive: true });
 for (const screen of runScreens) {
   for (const lang of runLangs) {
+    if (screen === 'growth-chip') {
+      const html = growthChipHtml(lang);
+      const file = path.join(OUT, `scoreboard-growth-real-${lang}.html`);
+      fs.writeFileSync(file, html, 'utf8');
+      console.log('written', path.relative(ROOT, file), html.length, 'bytes');
+      continue;
+    }
     const agent = screen === 'growth' ? agentData('nono', lang) : agentData('michele', lang);
     const html = screen === 'growth' ? growthHtml(agent, lang) : selectHtml(agent, lang);
     const file = path.join(OUT, `${screen}-real-${lang}.html`);

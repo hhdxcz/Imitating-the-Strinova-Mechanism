@@ -19,10 +19,14 @@ import java.util.Locale;
  * 「弦能增幅网络」界面可视化自定义编辑器（与 TAB 计分板编辑器同一套交互习惯）。
  *
  * <ul>
- *   <li>中区按真实比例绘制界面示意图：标题条 / 满高左立绘 / 中间 2×4 增幅网络 + 底部 3 觉醒卡 /
- *       右侧武器栏（1/2/3 整列宽 + 4/5 底部并排），并示意分类标题刷新图标、锁定灰显、武器切换图标；</li>
- *   <li>三条可拖拽边界（青色高亮）：立绘右边界 → {@code portraitWidthRatio}、
- *       武器栏左边界 → {@code weaponsWidthRatio}、觉醒区上边界 → {@code awakenHeightRatio}；</li>
+ *   <li>中区按真实比例绘制界面示意图：标题条 / 满高左立绘 / 中间 2×4 增幅网络 + 底部 3 觉醒卡
+ *       （含觉醒 2/3「切换激活」按钮）/ 右侧武器栏（1/2/3 整列宽 + 4/5 底部并排），
+ *       并示意分类标题刷新图标、锁定灰显、武器切换图标；</li>
+ *   <li>8 条可拖拽分割线（青色高亮、实时改配置、按配置类范围 clamp）：
+ *       竖线 = 立绘右边界 → {@code portraitWidthRatio}、网络列分界 → {@code networkSplitRatio}、
+ *       武器栏左边界 → {@code weaponsWidthRatio}；
+ *       横线 = 标题栏底边 → {@code headerHeightRatio}、网络 1/2 与 2/3 与 3/4 行分隔线 →
+ *       相邻两行 {@code networkRowWeights}（总和保持不变）、觉醒区上边界 → {@code awakenHeightRatio}；</li>
  *   <li>底部按钮：6 个显隐开关 + 不透明度 / 列间距 / 行间距微调 + 4 个颜色循环按钮
  *       （主色 / 升级项文字 / 价格 / 觉醒名称，点击按「默认→白→金→青→品红→绿→橙→紫→默认」循环）
  *       + 能量点 -100 / +100 / 重置购买 + 重置 / 保存 / 返回；</li>
@@ -78,11 +82,24 @@ public class StrinovaGrowthEditScreen extends Screen {
             "默认", "白", "金", "青", "品红", "绿", "橙", "紫"
     };
 
-    // ==================== 拖拽边界 ====================
+    // ==================== 拖拽边界（8 条可调分割线） ====================
     private static final int DRAG_NONE = 0;
+    /** 竖线：立绘右边界 → portraitWidthRatio。 */
     private static final int DRAG_PORTRAIT = 1;
-    private static final int DRAG_WEAPONS = 2;
-    private static final int DRAG_AWAKENINGS = 3;
+    /** 竖线：增幅网络左右列分隔 → networkSplitRatio。 */
+    private static final int DRAG_NETWORK_SPLIT = 2;
+    /** 竖线：武器栏左边界 → weaponsWidthRatio。 */
+    private static final int DRAG_WEAPONS = 3;
+    /** 横线：标题栏底边 → headerHeightRatio。 */
+    private static final int DRAG_HEADER = 4;
+    /** 横线：增幅网络第 1/2 行之间 → networkRowWeights[0]/[1]。 */
+    private static final int DRAG_ROW_12 = 5;
+    /** 横线：增幅网络第 2/3 行之间 → networkRowWeights[1]/[2]。 */
+    private static final int DRAG_ROW_23 = 6;
+    /** 横线：增幅网络第 3/4 行之间 → networkRowWeights[2]/[3]。 */
+    private static final int DRAG_ROW_34 = 7;
+    /** 横线：觉醒区上边界 → awakenHeightRatio。 */
+    private static final int DRAG_AWAKENINGS = 8;
 
     private static final int BUTTON_COUNT = 22;
     private static final int BUTTON_HEIGHT = 18;
@@ -123,6 +140,10 @@ public class StrinovaGrowthEditScreen extends Screen {
     private double dragStartMouseX;
     private double dragStartMouseY;
     private float dragStartRatio;
+    /** 行分隔线拖拽：起始 4 行权重备份 / 网络总权重 / 网络可用高度（虚拟 px）。 */
+    private final float[] dragStartRowWeights = new float[CATEGORY_ROWS];
+    private int dragStartGridUsable;
+    private float dragStartTotalWeight;
 
     /** 底部操作反馈文案（2 秒内显示在参数行下方，如「能量 330」「已重置购买」）。 */
     private String statusText = "";
@@ -185,7 +206,8 @@ public class StrinovaGrowthEditScreen extends Screen {
         this.buttonsTop = this.height - 6 - rows * BUTTON_HEIGHT - (rows - 1) * BUTTON_ROW_GAP;
         this.previewLeft = 6;
         this.previewRight = Math.max(this.previewLeft + 40, this.width - 6);
-        this.previewTop = hasHiddenParts(ui) ? 56 : 44;
+        // 顶部固定 4 行文字（标题 / 两行参数 / 拖动提示），状态或「已隐藏」占第 5 行
+        this.previewTop = (hasHiddenParts(ui) || this.statusVisible()) ? 66 : 54;
         this.previewBottom = Math.max(this.previewTop + 10, this.buttonsTop - 6);
     }
 
@@ -396,6 +418,9 @@ public class StrinovaGrowthEditScreen extends Screen {
         // 半透明压暗背景（与计分板编辑器一致）
         graphics.fill(0, 0, this.width, this.height, 0xC8000000);
         this.preview = PreviewLayout.compute(this.width, this.height, ui);
+        // 第 5 行状态提示可能 2 秒后消失，这里逐帧重算示意图区域，避免留下空白
+        this.previewTop = (hasHiddenParts(ui) || this.statusVisible()) ? 66 : 54;
+        this.previewBottom = Math.max(this.previewTop + 10, this.buttonsTop - 6);
         this.updateMapping();
         this.hoveredBoundary = this.hitBoundary(mouseX, mouseY);
         this.drawPreview(graphics, ui);
@@ -403,29 +428,42 @@ public class StrinovaGrowthEditScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
-    /** 顶部标题 / 参数行（含当前能量点）/ 操作提示 / 操作反馈或已隐藏汇总（超宽自动截断）。 */
+    /** 顶部标题 / 两行参数（含分割线比例、行权重、能量点）/ 拖动提示 / 操作反馈或已隐藏汇总。 */
     private void drawEditorText(GuiGraphics graphics, StrinovaGrowthUi ui) {
         this.drawCenteredText(graphics, "弦能增幅网络 · 界面自定义", 6, COLOR_TITLE, true);
-        // 能量点放在最前，窄窗口截断时也能看到当前值（读运行时状态，-/+ 后立即刷新）
-        String info = String.format(Locale.ROOT,
-                "能量 %d   立绘宽 %.1f%%   武器宽 %.1f%%   觉醒高 %.1f%%   透明 %.0f%%   列距 %d   行距 %d",
+        // 第一行：能量点 + 主要比例（能量放最前，窄窗口截断时也能看到）
+        String info1 = String.format(Locale.ROOT,
+                "能量 %d   标题高 %.1f%%   立绘宽 %.1f%%   武器宽 %.1f%%   觉醒高 %.1f%%",
                 StrinovaGrowthState.energyPoints(),
-                ui.portraitWidthRatio * 100.0F, ui.weaponsWidthRatio * 100.0F,
-                ui.awakenHeightRatio * 100.0F, ui.opacity * 100.0F,
-                Math.round(ui.columnGap), Math.round(ui.rowGap));
-        this.drawCenteredText(graphics, info, 18, COLOR_INFO, false);
+                ui.headerHeightRatio * 100.0F, ui.portraitWidthRatio * 100.0F,
+                ui.weaponsWidthRatio * 100.0F, ui.awakenHeightRatio * 100.0F);
+        this.drawCenteredText(graphics, info1, 18, COLOR_INFO, false);
+        // 第二行：网络列分界 / 行权重 / 间距 / 不透明度
+        String info2 = String.format(Locale.ROOT,
+                "网络列分界 %.0f%%   行权重 %.1f:%.1f:%.1f:%.1f   列距 %d   行距 %d   透明 %.0f%%",
+                ui.networkSplitRatio * 100.0F,
+                rowWeight(ui, 0), rowWeight(ui, 1), rowWeight(ui, 2), rowWeight(ui, 3),
+                Math.round(ui.columnGap), Math.round(ui.rowGap), ui.opacity * 100.0F);
+        this.drawCenteredText(graphics, info2, 30, COLOR_INFO, false);
         this.drawCenteredText(graphics,
-                "拖动青色边界调整布局 · 底部按钮切换显隐 / 微调 / 颜色 / 能量 · ESC 放弃并还原 · 保存写入客户端配置",
-                30, COLOR_INFO, false);
+                "拖动 8 条青色分割线调整布局 · 底部按钮切换显隐 / 微调 / 颜色 / 能量 · ESC 放弃还原 · 保存写入配置",
+                42, COLOR_INFO, false);
         if (this.statusVisible()) {
             // 能量 +/- 与重置购买的 2 秒操作反馈
-            this.drawCenteredText(graphics, this.statusText, 42, COLOR_GOLD, false);
+            this.drawCenteredText(graphics, this.statusText, 54, COLOR_GOLD, false);
             return;
         }
         String hidden = hiddenSummary(ui);
         if (!hidden.isEmpty()) {
-            this.drawCenteredText(graphics, hidden, 42, COLOR_HIDDEN, false);
+            this.drawCenteredText(graphics, hidden, 54, COLOR_HIDDEN, false);
         }
+    }
+
+    private static float rowWeight(StrinovaGrowthUi ui, int index) {
+        if (ui.networkRowWeights == null || index < 0 || index >= ui.networkRowWeights.length) {
+            return 1.0F;
+        }
+        return clampf(ui.networkRowWeights[index], 0.35F, 2.5F);
     }
 
     /** 居中绘制一行文字，超过窗口宽度时截断。 */
@@ -583,6 +621,11 @@ public class StrinovaGrowthEditScreen extends Screen {
         }
     }
 
+    /** 某行高度下升级项的行高（与真实界面一致，1~36）。 */
+    private int previewItemHeight(int blockHeight) {
+        return clamp((blockHeight - ITEM_HEADER_HEIGHT - 2) / 2, 1, 36);
+    }
+
     private void drawCategoriesPreview(GuiGraphics graphics, StrinovaGrowthUi ui) {
         PreviewLayout l = this.preview;
         List<StrinovaWikiData.NetworkGroup> groups = this.wikiGroups();
@@ -590,12 +633,14 @@ public class StrinovaGrowthEditScreen extends Screen {
         int itemTextOverride = ui.itemTextColor != 0 ? ui.itemTextColor : 0xFF33465C;
         int priceDotColor = ui.priceColor != 0 ? ui.priceColor : COLOR_DIAMOND;
         for (int i = 0; i < 8; i++) {
-            int column = i / CATEGORY_ROWS;
+            int column = Math.min(1, i / CATEGORY_ROWS);
             int row = i % CATEGORY_ROWS;
-            int blockX = l.categoriesLeft + column * (l.categoryColumnWidth + l.categoryColumnGap);
-            int blockY = l.gridTop + row * (l.categoryBlockHeight + l.categoryRowGap);
-            int blockW = this.mapX(blockX + l.categoryColumnWidth) - this.mapX(blockX);
-            int blockH = this.mapY(blockY + l.categoryBlockHeight) - this.mapY(blockY);
+            int blockX = l.columnX[column];
+            int blockY = l.rowTops[row];
+            int blockWidth = l.columnW[column];
+            int blockHeight = l.rowHeights[row];
+            int blockW = this.mapX(blockX + blockWidth) - this.mapX(blockX);
+            int blockH = this.mapY(blockY + blockHeight) - this.mapY(blockY);
             int accent = PREVIEW_ACCENTS[i % PREVIEW_ACCENTS.length];
             // mock：第 0 类视为「本类已选」，其未选项灰显、刷新图标可用；其余类刷新图标半透明
             boolean mockLocked = i == 0;
@@ -608,34 +653,34 @@ public class StrinovaGrowthEditScreen extends Screen {
             }
             // 分类标题右上角刷新图标（绿色斜四边形 + 白色圆形箭头）
             if (blockW >= 24 && blockH >= 12) {
-                int iconX = this.mapX(blockX + l.categoryColumnWidth - 20);
+                int iconX = this.mapX(blockX + blockWidth - 20);
                 int iconY = this.mapY(blockY);
-                int iconW = Math.max(8, this.mapX(blockX + l.categoryColumnWidth) - iconX);
+                int iconW = Math.max(8, this.mapX(blockX + blockWidth) - iconX);
                 int iconH = Math.max(6, this.mapY(blockY + 14) - iconY);
                 this.drawMiniRefreshIcon(graphics, iconX, iconY, iconW, iconH, mockLocked);
             }
             int itemCount = i < groups.size() ? Math.min(2, groups.get(i).items().size()) : 2;
-            int itemsBlockHeight = l.itemRowHeight * itemCount
-                    + l.itemRowGap * Math.max(0, itemCount - 1);
+            int itemHeight = this.previewItemHeight(blockHeight);
+            int itemsBlockHeight = itemHeight * itemCount + 2 * Math.max(0, itemCount - 1);
             int itemsTop = blockY + ITEM_HEADER_HEIGHT
-                    + Math.max(0, (l.categoryBlockHeight - ITEM_HEADER_HEIGHT - itemsBlockHeight) / 2);
+                    + Math.max(0, (blockHeight - ITEM_HEADER_HEIGHT - itemsBlockHeight) / 2);
             for (int j = 0; j < itemCount; j++) {
-                int itemY = itemsTop + j * (l.itemRowHeight + l.itemRowGap);
-                this.fillVirtual(graphics, blockX, itemY, blockX + l.categoryColumnWidth,
-                        itemY + l.itemRowHeight, withOpacity(mockLocked ? 0x14000000 : 0x1CFFFFFF, l.opacity));
-                int itemH = this.mapY(itemY + l.itemRowHeight) - this.mapY(itemY);
+                int itemY = itemsTop + j * (itemHeight + 2);
+                this.fillVirtual(graphics, blockX, itemY, blockX + blockWidth,
+                        itemY + itemHeight, withOpacity(mockLocked ? 0x14000000 : 0x1CFFFFFF, l.opacity));
+                int itemH = this.mapY(itemY + itemHeight) - this.mapY(itemY);
                 if (itemH < 2 || blockW < 18) {
                     continue;
                 }
-                int barTop = itemY + Math.max(1, l.itemRowHeight / 2 - 1);
-                int barBottom = itemY + Math.max(2, l.itemRowHeight / 2 + 1);
+                int barTop = itemY + Math.max(1, itemHeight / 2 - 1);
+                int barBottom = itemY + Math.max(2, itemHeight / 2 + 1);
                 this.fillVirtual(graphics, blockX + 3, barTop,
-                        blockX + Math.max(8, l.categoryColumnWidth * 3 / 5), barBottom,
+                        blockX + Math.max(8, blockWidth * 3 / 5), barBottom,
                         mockLocked ? 0xFF46525E : withOpacity(itemTextOverride, 0.7F));
-                this.fillVirtual(graphics, blockX + l.categoryColumnWidth - 10,
-                        itemY + Math.max(1, l.itemRowHeight / 2 - 2),
-                        blockX + l.categoryColumnWidth - 6,
-                        itemY + Math.max(2, l.itemRowHeight / 2 + 2),
+                this.fillVirtual(graphics, blockX + blockWidth - 10,
+                        itemY + Math.max(1, itemHeight / 2 - 2),
+                        blockX + blockWidth - 6,
+                        itemY + Math.max(2, itemHeight / 2 + 2),
                         mockLocked ? 0xFF46525E : priceDotColor);
             }
         }
@@ -695,13 +740,24 @@ public class StrinovaGrowthEditScreen extends Screen {
     private void drawAwakeningsPreview(GuiGraphics graphics, StrinovaGrowthUi ui) {
         PreviewLayout l = this.preview;
         int cardGap = l.gap;
-        int cardWidth = Math.max(8, (l.awakenWidth - 2 * cardGap) / 3);
+        // 觉醒 2/3 卡片间隙加宽出「切换激活」按钮位置（与真实界面一致）
+        int toggleW = clamp(Math.round(l.awakenWidth * 0.16F), 16, 60);
+        int cardWidth = (l.awakenWidth - 3 * cardGap - toggleW) / 3;
+        if (cardWidth < 30) {
+            toggleW = Math.max(10, l.awakenWidth - 3 * cardGap - 3 * 30);
+            cardWidth = Math.max(8, (l.awakenWidth - 3 * cardGap - toggleW) / 3);
+        }
+        int card0X = l.awakenLeft;
+        int card1X = card0X + cardWidth + cardGap;
+        int toggleX = card1X + cardWidth + cardGap;
+        int card2X = toggleX + toggleW + cardGap;
+        int[] cardXs = {card0X, card1X, card2X};
         // 觉醒名称色 / 顶条：自定义 awakenNameColor 非 0 时同步示意
         int activeNameColor = ui.awakenNameColor != 0 ? ui.awakenNameColor : COLOR_GOLD;
         int inactiveNameColor = ui.awakenNameColor != 0
                 ? ((ui.awakenNameColor & 0x00FFFFFF) | 0xCC000000) : COLOR_TEXT_DIM;
         for (int i = 0; i < 3; i++) {
-            int x = l.awakenLeft + i * (cardWidth + cardGap);
+            int x = cardXs[i];
             this.fillVirtual(graphics, x, l.awakenTop, x + cardWidth, l.awakenTop + l.awakenHeight,
                     withOpacity(0xCC101823, ui.opacity));
             this.fillVirtual(graphics, x, l.awakenTop, x + cardWidth, l.awakenTop + 2,
@@ -717,10 +773,55 @@ public class StrinovaGrowthEditScreen extends Screen {
                         i == 0 ? activeNameColor : inactiveNameColor, false);
             }
         }
+        // 觉醒 2/3 二选一「切换激活」按钮（示意图内为可用态）
+        int toggleH = clamp(l.awakenHeight - 12, 14, 18);
+        int toggleY = l.awakenTop + (l.awakenHeight - toggleH) / 2;
+        this.drawMiniAwakenToggle(graphics, toggleX, toggleY, toggleW, toggleH);
+    }
+
+    /** 示意图里的迷你「切换激活」按钮（⇄ 图标 + 文案，宽度不足时只画图标）。 */
+    private void drawMiniAwakenToggle(GuiGraphics graphics, int x, int y, int width, int height) {
+        int mappedX = this.mapX(x);
+        int mappedY = this.mapY(y);
+        int mappedW = Math.max(8, this.mapX(x + width) - mappedX);
+        int mappedH = Math.max(6, this.mapY(y + height) - mappedY);
+        graphics.fill(mappedX, mappedY, mappedX + mappedW, mappedY + mappedH, 0x99101824);
+        graphics.fill(mappedX, mappedY, mappedX + mappedW, mappedY + 1, 0xFF57C785);
+        graphics.fill(mappedX, mappedY + mappedH - 1, mappedX + mappedW, mappedY + mappedH, 0xFF57C785);
+        graphics.fill(mappedX, mappedY, mappedX + 1, mappedY + mappedH, 0xFF57C785);
+        graphics.fill(mappedX + mappedW - 1, mappedY, mappedX + mappedW, mappedY + mappedH, 0xFF57C785);
+        String text = "切换激活";
+        int textW = this.font.width(text);
+        boolean showText = mappedW >= textW + 20;
+        int iconW = 9;
+        int contentW = showText ? iconW + 3 + textW : iconW;
+        int startX = mappedX + Math.max(2, (mappedW - contentW) / 2);
+        int centerY = mappedY + mappedH / 2;
+        this.drawMiniSwapIcon(graphics, startX, centerY - 3, COLOR_CYAN);
+        if (showText) {
+            graphics.drawString(this.font, text, startX + iconW + 3, centerY - 4, COLOR_CYAN, false);
+        } else if (mappedW >= 22) {
+            // 按钮较窄时缩放字号仍显示「切换激活」文案，示意与真实界面对应
+            float scale = Math.min(1.0F, (mappedW - 6.0F) / (iconW + 3 + textW));
+            graphics.pose().pushPose();
+            graphics.pose().translate(startX + iconW + 3.0F, centerY - 4.0F, 0.0F);
+            graphics.pose().scale(scale, scale, 1.0F);
+            graphics.drawString(this.font, text, 0, 0, COLOR_CYAN, false);
+            graphics.pose().popPose();
+        }
+    }
+
+    /** 迷你双向交换图标 ⇄（上右下左两个箭头）。 */
+    private void drawMiniSwapIcon(GuiGraphics graphics, int x, int y, int color) {
+        graphics.fill(x, y, x + 6, y + 1, color);
+        graphics.fill(x + 6, y - 1, x + 8, y + 2, color);
+        graphics.fill(x + 2, y + 5, x + 8, y + 6, color);
+        graphics.fill(x, y + 4, x + 2, y + 7, color);
     }
 
     // ==================== 边界与隐藏标注 ====================
 
+    /** 画 8 条可拖拽分割线：3 竖（立绘右边界 / 网络列分界 / 武器栏左边界）+ 5 横（标题栏底边 / 3 条行分隔 / 觉醒上边界）。 */
     private void drawBoundaries(GuiGraphics graphics) {
         PreviewLayout l = this.preview;
         int top = this.mapY(l.contentTop);
@@ -728,14 +829,34 @@ public class StrinovaGrowthEditScreen extends Screen {
         if (bottom <= top) {
             bottom = top + 1;
         }
+        // 竖线 1：立绘右边界
         if (l.showPortrait) {
             this.drawVerticalBoundary(graphics, this.mapX(l.portraitX + l.portraitWidth),
                     top, bottom, this.isBoundaryActive(DRAG_PORTRAIT));
         }
+        // 竖线 2：增幅网络左右列分隔线（列间距中线）
+        int splitX = this.mapX(l.categoriesLeft + l.columnW[0] + l.categoryColumnGap / 2);
+        this.drawVerticalBoundary(graphics, splitX, top, this.mapY(l.categoriesBottom),
+                this.isBoundaryActive(DRAG_NETWORK_SPLIT));
+        // 竖线 3：武器栏左边界
         if (l.showWeapons) {
             this.drawVerticalBoundary(graphics, this.mapX(l.weaponsX),
                     top, bottom, this.isBoundaryActive(DRAG_WEAPONS));
         }
+        // 横线 1：标题栏底边
+        if (l.showHeader) {
+            this.drawHorizontalBoundary(graphics, this.mapY(l.headerTop + l.headerHeight),
+                    this.mapX(l.innerLeft), this.mapX(l.innerRight),
+                    this.isBoundaryActive(DRAG_HEADER));
+        }
+        // 横线 2~4：增幅网络第 1/2、2/3、3/4 行分隔线
+        for (int row = 0; row < CATEGORY_ROWS - 1; row++) {
+            int y = this.mapY(l.rowTops[row] + l.rowHeights[row]);
+            this.drawHorizontalBoundary(graphics, y,
+                    this.mapX(l.categoriesLeft), this.mapX(l.categoriesRight),
+                    this.isBoundaryActive(DRAG_ROW_12 + row));
+        }
+        // 横线 5：觉醒区上边界
         if (l.showAwakenings) {
             this.drawHorizontalBoundary(graphics, this.mapY(l.awakenTop),
                     this.mapX(l.awakenLeft), this.mapX(l.awakenRight),
@@ -885,16 +1006,22 @@ public class StrinovaGrowthEditScreen extends Screen {
 
     // ==================== 交互（拖拽三条边界） ====================
 
-    /** 命中检测：鼠标靠近三条边界（±5px）时返回对应拖拽类型。 */
+    /** 命中检测：鼠标靠近 8 条分割线（±5px）时返回对应拖拽类型。 */
     private int hitBoundary(double mouseX, double mouseY) {
         PreviewLayout l = this.preview;
         int top = this.mapY(l.contentTop);
         int bottom = this.mapY(l.contentBottom);
+        // 竖线
         if (l.showPortrait) {
             int boundaryX = this.mapX(l.portraitX + l.portraitWidth);
             if (Math.abs(mouseX - boundaryX) <= 5.0D && mouseY >= top && mouseY <= bottom) {
                 return DRAG_PORTRAIT;
             }
+        }
+        int splitX = this.mapX(l.categoriesLeft + l.columnW[0] + l.categoryColumnGap / 2);
+        int gridBottom = this.mapY(l.categoriesBottom);
+        if (Math.abs(mouseX - splitX) <= 5.0D && mouseY >= top && mouseY <= gridBottom) {
+            return DRAG_NETWORK_SPLIT;
         }
         if (l.showWeapons) {
             int boundaryX = this.mapX(l.weaponsX);
@@ -902,6 +1029,24 @@ public class StrinovaGrowthEditScreen extends Screen {
                 return DRAG_WEAPONS;
             }
         }
+        // 横线：标题栏底边
+        if (l.showHeader) {
+            int boundaryY = this.mapY(l.headerTop + l.headerHeight);
+            if (Math.abs(mouseY - boundaryY) <= 5.0D
+                    && mouseX >= this.mapX(l.innerLeft) && mouseX <= this.mapX(l.innerRight)) {
+                return DRAG_HEADER;
+            }
+        }
+        // 横线：增幅网络 1/2、2/3、3/4 行分隔线
+        for (int row = 0; row < CATEGORY_ROWS - 1; row++) {
+            int boundaryY = this.mapY(l.rowTops[row] + l.rowHeights[row]);
+            if (Math.abs(mouseY - boundaryY) <= 5.0D
+                    && mouseX >= this.mapX(l.categoriesLeft)
+                    && mouseX <= this.mapX(l.categoriesRight)) {
+                return DRAG_ROW_12 + row;
+            }
+        }
+        // 横线：觉醒区上边界
         if (l.showAwakenings) {
             int boundaryY = this.mapY(l.awakenTop);
             if (Math.abs(mouseY - boundaryY) <= 5.0D
@@ -932,9 +1077,21 @@ public class StrinovaGrowthEditScreen extends Screen {
         StrinovaGrowthUi ui = StrinovaHudConfig.get().growthUi;
         this.dragStartRatio = switch (hit) {
             case DRAG_PORTRAIT -> ui.portraitWidthRatio;
+            case DRAG_NETWORK_SPLIT -> ui.networkSplitRatio;
             case DRAG_WEAPONS -> ui.weaponsWidthRatio;
-            default -> ui.awakenHeightRatio;
+            case DRAG_HEADER -> ui.headerHeightRatio;
+            case DRAG_AWAKENINGS -> ui.awakenHeightRatio;
+            default -> 0.0F;
         };
+        if (hit >= DRAG_ROW_12 && hit <= DRAG_ROW_34) {
+            // 行分隔线拖拽：备份起始权重 / 网络可用高度，拖动时相邻两行增减
+            for (int i = 0; i < CATEGORY_ROWS; i++) {
+                this.dragStartRowWeights[i] = weightAt(ui.networkRowWeights, i);
+            }
+            this.dragStartGridUsable = Math.max(1, this.preview.gridUsable);
+            this.dragStartTotalWeight = this.dragStartRowWeights[0] + this.dragStartRowWeights[1]
+                    + this.dragStartRowWeights[2] + this.dragStartRowWeights[3];
+        }
         return true;
     }
 
@@ -948,10 +1105,40 @@ public class StrinovaGrowthEditScreen extends Screen {
             switch (this.dragging) {
                 case DRAG_PORTRAIT -> ui.portraitWidthRatio = clampf(
                         (float) (this.dragStartRatio + deltaX / Math.max(1, this.width)), 0.08F, 0.32F);
+                case DRAG_NETWORK_SPLIT -> {
+                    double avail = Math.max(1.0D, this.preview.categoriesRight
+                            - this.preview.categoriesLeft - this.preview.categoryColumnGap);
+                    ui.networkSplitRatio = clampf(
+                            (float) (this.dragStartRatio + deltaX / avail), 0.20F, 0.80F);
+                }
                 case DRAG_WEAPONS -> ui.weaponsWidthRatio = clampf(
                         (float) (this.dragStartRatio - deltaX / Math.max(1, this.width)), 0.04F, 0.18F);
-                case DRAG_AWAKENINGS -> ui.awakenHeightRatio = clampf(
-                        (float) (this.dragStartRatio - deltaY / Math.max(1, this.height)), 0.10F, 0.35F);
+                case DRAG_HEADER -> {
+                    double ratio = (this.dragStartRatio * this.height + deltaY) / Math.max(1, this.height);
+                    ui.headerHeightRatio = clampf((float) ratio, 0.030F, 0.120F);
+                }
+                case DRAG_AWAKENINGS -> {
+                    double ratio = (this.dragStartRatio * this.height - deltaY) / Math.max(1, this.height);
+                    ui.awakenHeightRatio = clampf((float) ratio, 0.10F, 0.35F);
+                }
+                case DRAG_ROW_12, DRAG_ROW_23, DRAG_ROW_34 -> {
+                    int pair = this.dragging - DRAG_ROW_12;
+                    float deltaWeight = (float) (deltaY * this.dragStartTotalWeight
+                            / Math.max(1, this.dragStartGridUsable));
+                    float pairSum = this.dragStartRowWeights[pair] + this.dragStartRowWeights[pair + 1];
+                    float weightI = clampf(this.dragStartRowWeights[pair] + deltaWeight, 0.35F, 2.5F);
+                    float weightJ = pairSum - weightI;
+                    if (weightJ > 2.5F) {
+                        weightJ = 2.5F;
+                        weightI = pairSum - weightJ;
+                    }
+                    if (weightJ < 0.35F) {
+                        weightJ = 0.35F;
+                        weightI = pairSum - weightJ;
+                    }
+                    ui.networkRowWeights[pair] = clampf(weightI, 0.35F, 2.5F);
+                    ui.networkRowWeights[pair + 1] = clampf(weightJ, 0.35F, 2.5F);
+                }
                 default -> {
                     return false;
                 }
@@ -1133,12 +1320,16 @@ public class StrinovaGrowthEditScreen extends Screen {
         int categoriesTop;
         int categoriesRight;
         int categoriesBottom;
-        int gridTop;
-        int categoryColumnWidth;
+        /** 增幅网络列布局：0 左列 / 1 右列（networkSplitRatio 决定）。 */
+        final int[] columnX = new int[2];
+        final int[] columnW = new int[2];
+        /** 增幅网络 4 行实际 Y / 高度（networkRowWeights 归一化）。 */
+        final int[] rowTops = new int[CATEGORY_ROWS];
+        final int[] rowHeights = new int[CATEGORY_ROWS];
+        /** 行权重拖拽换算用的网络可用高度（不含行间距）。 */
+        int gridUsable;
         int categoryColumnGap;
         int categoryRowGap;
-        int categoryBlockHeight;
-        int itemRowHeight;
         int itemRowGap;
 
         boolean showAwakenings;
@@ -1164,10 +1355,13 @@ public class StrinovaGrowthEditScreen extends Screen {
             l.innerRight = Math.max(margin + 1, width - margin);
 
             l.headerTop = margin;
-            l.closeButtonSize = height >= 300 ? 20 : 18;
             l.showHeader = ui.showHeader && width >= 320;
-            l.headerHeight = l.showHeader ? (height >= 300 ? 28 : 22) : 0;
-            l.controlHeight = Math.max(l.headerHeight, l.closeButtonSize);
+            int baseClose = height >= 300 ? 20 : 18;
+            int headerRaw = clamp(Math.round(height * clampf(ui.headerHeightRatio, 0.030F, 0.120F)),
+                    10, Math.max(10, height / 3));
+            l.headerHeight = l.showHeader ? headerRaw : 0;
+            l.closeButtonSize = l.showHeader ? clamp(l.headerHeight - 4, 10, baseClose) : baseClose;
+            l.controlHeight = l.showHeader ? l.headerHeight : l.closeButtonSize;
             l.contentTop = l.headerTop + l.controlHeight + l.gap;
             // 内容区一直延伸到底部（立绘 / 武器栏满高）
             l.contentBottom = height - margin;
@@ -1237,27 +1431,79 @@ public class StrinovaGrowthEditScreen extends Screen {
                     ? Math.max(l.categoriesTop + 8, l.awakenTop - l.gap)
                     : l.contentBottom;
 
+            // 增幅网络列宽：左列 = (可用宽 - 列间距) × networkSplitRatio
             l.categoryColumnGap = clamp(Math.round(ui.columnGap), 0, 32);
-            int rowGapWanted = clamp(Math.round(ui.rowGap), 0, 32);
+            int availCol = Math.max(2, l.categoriesRight - l.categoriesLeft);
+            int colInner = Math.max(2, availCol - l.categoryColumnGap);
+            float split = clampf(ui.networkSplitRatio, 0.20F, 0.80F);
+            int minCol = Math.min(28, Math.max(8, colInner / 2));
+            int leftWidth = clamp(Math.round(colInner * split), minCol, Math.max(minCol, colInner - minCol));
+            l.columnX[0] = l.categoriesLeft;
+            l.columnW[0] = leftWidth;
+            l.columnX[1] = l.categoriesLeft + leftWidth + l.categoryColumnGap;
+            l.columnW[1] = Math.max(8, l.categoriesRight - l.columnX[1]);
+
+            // 4 行高度：按 networkRowWeights 归一化
             int gridAvail = Math.max(8, l.categoriesBottom - l.categoriesTop);
+            int rowGapWanted = clamp(Math.round(ui.rowGap), 0, 32);
             int rowGapEff = rowGapWanted;
-            int blockHeight = (gridAvail - rowGapEff * (CATEGORY_ROWS - 1)) / CATEGORY_ROWS;
-            if (blockHeight < 30 && rowGapEff > 2) {
+            int usable = gridAvail - rowGapEff * (CATEGORY_ROWS - 1);
+            if (usable < CATEGORY_ROWS * 24 && rowGapEff > 2) {
                 rowGapEff = Math.min(rowGapEff, 2);
-                blockHeight = (gridAvail - rowGapEff * (CATEGORY_ROWS - 1)) / CATEGORY_ROWS;
+                usable = gridAvail - rowGapEff * (CATEGORY_ROWS - 1);
             }
+            usable = Math.max(4, Math.min(usable, gridAvail));
             l.categoryRowGap = rowGapEff;
-            l.categoryColumnWidth = Math.max(40,
-                    (l.categoriesRight - l.categoriesLeft - l.categoryColumnGap) / 2);
-            l.categoryBlockHeight = clamp(blockHeight, 16, 120);
+            l.gridUsable = usable;
+            distributeRowHeights(usable, ui.networkRowWeights, l.rowHeights);
+            int cursor = l.categoriesTop;
+            for (int row = 0; row < CATEGORY_ROWS; row++) {
+                l.rowTops[row] = cursor;
+                cursor += l.rowHeights[row] + rowGapEff;
+            }
             l.itemRowGap = 2;
-            l.itemRowHeight = clamp(
-                    (l.categoryBlockHeight - ITEM_HEADER_HEIGHT - l.itemRowGap) / 2, 1, 36);
-            int gridHeight = l.categoryBlockHeight * CATEGORY_ROWS
-                    + l.categoryRowGap * (CATEGORY_ROWS - 1);
-            l.gridTop = l.categoriesTop
-                    + Math.max(0, (l.categoriesBottom - l.categoriesTop - gridHeight) / 2);
             return l;
         }
+    }
+
+    /** 把可用高度按 4 行权重归一化分配（与真实界面一致）。 */
+    private static void distributeRowHeights(int usable, float[] weights, int[] out) {
+        float total = 0.0F;
+        for (int i = 0; i < CATEGORY_ROWS; i++) {
+            total += weightAt(weights, i);
+        }
+        int remaining = usable;
+        for (int i = 0; i < CATEGORY_ROWS; i++) {
+            int height;
+            if (i == CATEGORY_ROWS - 1) {
+                height = remaining;
+            } else {
+                height = Math.max(4, Math.round(usable * weightAt(weights, i) / total));
+                int reserve = (CATEGORY_ROWS - 1 - i) * 4;
+                height = Math.min(height, Math.max(4, remaining - reserve));
+            }
+            out[i] = height;
+            remaining -= height;
+        }
+        if (out[CATEGORY_ROWS - 1] < 4) {
+            int deficit = 4 - out[CATEGORY_ROWS - 1];
+            out[CATEGORY_ROWS - 1] = 4;
+            for (int i = CATEGORY_ROWS - 2; i >= 0 && deficit > 0; i--) {
+                int take = Math.min(deficit, Math.max(0, out[i] - 4));
+                out[i] -= take;
+                deficit -= take;
+            }
+        }
+        int diff = usable - (out[0] + out[1] + out[2] + out[3]);
+        if (diff != 0) {
+            out[CATEGORY_ROWS - 1] = Math.max(4, out[CATEGORY_ROWS - 1] + diff);
+        }
+    }
+
+    private static float weightAt(float[] weights, int index) {
+        if (weights == null || index < 0 || index >= weights.length) {
+            return 1.0F;
+        }
+        return clampf(weights[index], 0.35F, 2.5F);
     }
 }

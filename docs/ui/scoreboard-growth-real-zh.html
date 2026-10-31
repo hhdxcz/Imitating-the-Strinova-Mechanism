@@ -1,0 +1,27 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8"><style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { width:900px; height:170px; overflow:hidden; }
+  body { background:#140d04; font-family:"Microsoft YaHei","Segoe UI",sans-serif; }
+  .wrap { width:900px; height:170px; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:10px;
+    background:linear-gradient(90deg,#2a1f0c 0%,#7a6222 22%,#8a6f28 50%,#7a6222 78%,#2a1f0c 100%); }
+  .title { font-size:17px; color:#F0DFB0; letter-spacing:2px; }
+  .row { display:flex; align-items:center; gap:9px; }
+  .shape { width:46px; height:46px; display:flex; align-items:center; justify-content:center; }
+  .shape span { font-size:27px; font-weight:800; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.55); }
+  .sq { background:#4FA3FF; border-radius:5px; }
+  .ci { background:#F2B21B; border-radius:50%; }
+  .tri { background:#4CAF50; clip-path:polygon(50% 0,100% 100%,0 100%); }
+  .tri span { padding-top:12px; font-size:23px; }
+  .gt { font-size:32px; font-weight:800; color:#F0DFB0; margin:0 2px; }
+  .star { width:52px; height:52px; background:#E8833A; display:flex; align-items:center;
+    justify-content:center; clip-path:polygon(50.0% 0.0%,58.0% 30.6%,85.4% 14.6%,69.4% 42.0%,100.0% 50.0%,69.4% 58.0%,85.4% 85.4%,58.0% 69.4%,50.0% 100.0%,42.0% 69.4%,14.6% 85.4%,30.6% 58.0%,0.0% 50.0%,30.6% 42.0%,14.6% 14.6%,42.0% 30.6%); }
+  .star span { font-size:26px; font-weight:800; color:#fff; }
+  </style></head><body><div class="wrap">
+    <div class="title">成长等级</div>
+    <div class="row">
+      <div class="shape sq"><span>4</span></div><div class="shape ci"><span>1</span></div><div class="shape tri"><span>0</span></div>
+      <div class="gt">&gt;</div>
+      <div class="star"><span>1</span></div>
+    </div>
+  </div></body></html>

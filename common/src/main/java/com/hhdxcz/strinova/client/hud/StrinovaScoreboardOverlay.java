@@ -425,29 +425,57 @@ public final class StrinovaScoreboardOverlay {
 
             if (visible("growth")) {
                 float growthScale = BASE_VALUE_TEXT_SCALE * rowScale * fontScale("growth");
-                // 本地玩家的成长等级取客户端实时加点状态（服务端不下发成长进度）
-                int growthLevel = entry.growthLevel();
-                boolean awakened = false;
-                if (entry.self() && StrinovaGrowthState.hasData()) {
-                    growthLevel = StrinovaGrowthState.growthLevel();
-                    awakened = StrinovaGrowthState.hasActiveAwakening();
+                int colStart = contentX + starts[3];
+                int colEnd = contentX + columnEnd(starts, contentW, 3);
+                int available = Math.max(24, colEnd - colStart - 3);
+                boolean selfData = entry.self() && StrinovaGrowthState.hasData();
+                if (!selfData) {
+                    // 其他玩家（或客户端无加点数据）：沿用原等级数字
+                    int growthColor = entry.growthLevel() >= 2 ? 0xFFDEB639 : 0xFF4B77DC;
+                    int chipBg = backgroundColor("growth", growthColor);
+                    int chipSize = Math.max(8, Math.round(10 * Math.min(2.0F, fontScale("growth"))));
+                    int chipY = rowY + (rowHeight - chipSize) / 2;
+                    int chipX = colStart;
+                    if (style("growth").centerH) {
+                        chipX = colStart + Math.max(0, (colEnd - colStart - chipSize) / 2);
+                    }
+                    painter.rect(chipX, chipY, chipSize, chipSize, chipBg);
+                    String levelText = String.valueOf(entry.growthLevel());
+                    float levelScale = 0.75F * growthScale;
+                    int levelWidth = Math.round(painter.textWidth(levelText) * levelScale);
+                    painter.textScaled(levelText, chipX + Math.max(1, (chipSize - levelWidth) / 2),
+                            chipY + Math.max(0, (chipSize - 9.0F * levelScale) / 2), levelScale,
+                            textColor("growth", 0xFF0A111C), false);
+                } else {
+                    // 蓝方块=武器网络点数 / 黄圆=主动+被动技能 / 绿三角=护甲+弦化
+                    int[] counts = {StrinovaGrowthState.purchasedWeapon(),
+                            StrinovaGrowthState.purchasedSkill(),
+                            StrinovaGrowthState.purchasedDefense()};
+                    int[] active = StrinovaGrowthState.activeAwakeningIndices();
+                    int slots = 3 + Math.max(1, active.length) + 1;
+                    int slot = Math.max(7, Math.min(16, available / slots));
+                    int shape = Math.max(6, slot - 2);
+                    int shapeY = rowY + (rowHeight - shape) / 2;
+                    int cx = colStart;
+                    if (style("growth").centerH) {
+                        int total = shape * 3 + 6 + Math.max(4, Math.round(painter.textWidth(">") * growthScale))
+                                + (active.length > 0 ? active.length * (slot + 2) : 0);
+                        cx = colStart + Math.max(0, (colEnd - colStart - total) / 2);
+                    }
+                    drawGrowthSquare(painter, cx, shapeY, shape, 0xFF4FA3FF, counts[0], growthScale);
+                    cx += shape + 2;
+                    drawGrowthCircle(painter, cx, shapeY, shape, 0xFFE8B54D, counts[1], growthScale);
+                    cx += shape + 2;
+                    drawGrowthTriangle(painter, cx, shapeY, shape, 0xFF57C785, counts[2], growthScale);
+                    cx += shape + 3;
+                    painter.textScaled(">", cx, textY, growthScale, 0xFF9AA8B8, false);
+                    cx += Math.max(4, Math.round(painter.textWidth(">") * growthScale)) + 2;
+                    for (int index : active) {
+                        drawEightPointStar(painter, cx, rowY + (rowHeight - slot) / 2, slot, 0xFFE8833A,
+                                index, growthScale);
+                        cx += slot + 2;
+                    }
                 }
-                int growthColor = (growthLevel >= 2 || awakened) ? 0xFFDEB639 : 0xFF4B77DC;
-                int chipBg = backgroundColor("growth", growthColor);
-                int chipSize = Math.max(8, Math.round(10 * Math.min(2.0F, fontScale("growth"))));
-                int chipY = rowY + (rowHeight - chipSize) / 2;
-                int chipX = contentX + starts[3];
-                if (style("growth").centerH) {
-                    int end = columnEnd(starts, contentW, 3);
-                    chipX = contentX + starts[3] + Math.max(0, (end - starts[3] - chipSize) / 2);
-                }
-                painter.rect(chipX, chipY, chipSize, chipSize, chipBg);
-                String levelText = String.valueOf(growthLevel);
-                float levelScale = 0.75F * growthScale;
-                int levelWidth = Math.round(painter.textWidth(levelText) * levelScale);
-                painter.textScaled(levelText, chipX + Math.max(1, (chipSize - levelWidth) / 2),
-                        chipY + Math.max(0, (chipSize - 9.0F * levelScale) / 2), levelScale,
-                        textColor("growth", 0xFF0A111C), false);
             }
 
             drawColumnValue(painter, "weapon", entry.weaponName() == null ? "" : entry.weaponName(),
@@ -498,6 +526,73 @@ public final class StrinovaScoreboardOverlay {
         int pingStart = anchors[anchors.length - 1] + Math.round(contentW * assistFraction);
         starts[8] = Math.max(starts[7] + 8, Math.min(contentW - 8, pingStart));
         return starts;
+    }
+
+    /** 成长等级：蓝色方块（武器网络点数）。 */
+    private static void drawGrowthSquare(StrinovaHudPainter painter, int x, int y, int size,
+                                         int color, int count, float scale) {
+        painter.rect(x, y, size, size, color);
+        drawShapeCount(painter, count, x, y, size, scale);
+    }
+
+    /** 成长等级：黄色圆（主动/被动技能点数）。 */
+    private static void drawGrowthCircle(StrinovaHudPainter painter, int x, int y, int size,
+                                         int color, int count, float scale) {
+        int radius = size / 2;
+        for (int dy = -radius; dy <= radius; dy++) {
+            int half = (int) Math.sqrt(Math.max(0, radius * radius - dy * dy));
+            painter.rect(x + radius - half, y + radius + dy, half * 2 + 1, 1, color);
+        }
+        drawShapeCount(painter, count, x, y, size, scale);
+    }
+
+    /** 成长等级：绿色三角（护甲/弦化点数）。 */
+    private static void drawGrowthTriangle(StrinovaHudPainter painter, int x, int y, int size,
+                                           int color, int count, float scale) {
+        int centerX = x + size / 2;
+        for (int dy = 0; dy < size; dy++) {
+            int half = (size / 2) * (dy + 1) / size;
+            painter.rect(centerX - half, y + dy, half * 2 + 1, 1, color);
+        }
+        drawShapeCount(painter, count, x, y, size, scale);
+    }
+
+    /** 在形状内部居中绘制数字。 */
+    private static void drawShapeCount(StrinovaHudPainter painter, int count, int x, int y,
+                                       int size, float scale) {
+        String text = String.valueOf(Math.max(0, count));
+        float numberScale = Math.min(0.8F * scale, size * 0.85F / 9.0F);
+        int width = Math.round(painter.textWidth(text) * numberScale);
+        painter.textScaled(text, x + Math.max(1, (size - width) / 2),
+                y + Math.max(0, (size - 9.0F * numberScale) / 2), numberScale, 0xFF0A111C, false);
+    }
+
+    /** 八芒星（已激活觉醒）：橙金色，星内数字为觉醒序号（1~3）。 */
+    private static void drawEightPointStar(StrinovaHudPainter painter, int x, int y, int size,
+                                           int color, int index, float scale) {
+        int radius = Math.max(3, size / 2);
+        int centerX = x + radius;
+        int centerY = y + radius;
+        // 8 根芒尖（每 45°，两像素宽）
+        for (int k = 0; k < 8; k++) {
+            double angle = Math.PI * 2.0 * k / 8.0;
+            int dx = (int) Math.round(Math.cos(angle) * radius);
+            int dy = (int) Math.round(Math.sin(angle) * radius);
+            painter.line(centerX, centerY, centerX + dx, centerY + dy, color);
+            painter.line(centerX + (dx > 0 ? 1 : dx < 0 ? -1 : 0), centerY,
+                    centerX + dx + (dx > 0 ? 1 : dx < 0 ? -1 : 0),
+                    centerY + dy, color);
+        }
+        // 中心小菱形 + 序号
+        for (int dy = -radius / 2; dy <= radius / 2; dy++) {
+            int half = radius / 2 - Math.abs(dy);
+            painter.rect(centerX - half, centerY + dy, half * 2 + 1, 1, color);
+        }
+        String text = String.valueOf(index);
+        float numberScale = Math.min(0.75F * scale, size * 0.8F / 9.0F);
+        int width = Math.round(painter.textWidth(text) * numberScale);
+        painter.textScaled(text, centerX - width / 2,
+                centerY - Math.round(4.5F * numberScale), numberScale, 0xFFFFFFFF, false);
     }
 
     private static int columnEnd(int[] starts, int contentW, int index) {

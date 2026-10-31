@@ -35,6 +35,14 @@ public final class StrinovaGrowthUi {
     /** 增幅网络行间距（px）。 */
     public float rowGap = 8.0F;
 
+    // ==================== 分割线（编辑器里全部可拖拽） ====================
+    /** 顶部标题栏高度 / 屏高。 */
+    public float headerHeightRatio = 0.055F;
+    /** 增幅网络左列宽度占比（0.2~0.8，右列取剩余）。 */
+    public float networkSplitRatio = 0.5F;
+    /** 增幅网络 4 行的高度权重（拖拽行分隔线时调整相邻两行）。 */
+    public float[] networkRowWeights = {1.0F, 1.0F, 1.0F, 1.0F};
+
     // ==================== 外观 ====================
     /** 卡片/面板不透明度（0.2~1.0）。 */
     public float opacity = 0.97F;
@@ -63,6 +71,9 @@ public final class StrinovaGrowthUi {
         awakenHeightRatio = defaults.awakenHeightRatio;
         columnGap = defaults.columnGap;
         rowGap = defaults.rowGap;
+        headerHeightRatio = defaults.headerHeightRatio;
+        networkSplitRatio = defaults.networkSplitRatio;
+        networkRowWeights = new float[]{1.0F, 1.0F, 1.0F, 1.0F};
         opacity = defaults.opacity;
         backgroundDim = defaults.backgroundDim;
         accentColor = defaults.accentColor;
@@ -78,6 +89,15 @@ public final class StrinovaGrowthUi {
         awakenHeightRatio = clampf(awakenHeightRatio, 0.10F, 0.35F);
         columnGap = clampf(columnGap, 0.0F, 32.0F);
         rowGap = clampf(rowGap, 0.0F, 32.0F);
+        headerHeightRatio = clampf(headerHeightRatio, 0.030F, 0.120F);
+        networkSplitRatio = clampf(networkSplitRatio, 0.20F, 0.80F);
+        if (networkRowWeights == null || networkRowWeights.length != 4) {
+            networkRowWeights = new float[]{1.0F, 1.0F, 1.0F, 1.0F};
+        } else {
+            for (int i = 0; i < 4; i++) {
+                networkRowWeights[i] = clampf(networkRowWeights[i], 0.35F, 2.5F);
+            }
+        }
         opacity = clampf(opacity, 0.20F, 1.0F);
         backgroundDim = clampf(backgroundDim, 0.0F, 0.80F);
     }
