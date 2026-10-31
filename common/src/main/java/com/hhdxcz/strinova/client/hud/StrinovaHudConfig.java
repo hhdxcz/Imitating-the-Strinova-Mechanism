@@ -54,6 +54,9 @@ public final class StrinovaHudConfig {
     /** 数据行高度（GUI 像素）。 */
     public int scoreboardRowHeight = 20;
 
+    /** 中间回合记录带「我方/敌方」单行高度（0 = 自动跟随数据行高）。 */
+    public int scoreboardRoundRowHeight = 0;
+
     /** 每个部件独立样式（可见性/字号/文字色/背景色）。 */
     public java.util.LinkedHashMap<String, ScoreboardComponentStyle> scoreboardComponents;
 
@@ -209,6 +212,7 @@ public final class StrinovaHudConfig {
         scoreboardOffsetY = clampf(scoreboardOffsetY, -400.0F, 400.0F);
         scoreboardTextScale = clampf(scoreboardTextScale, 0.6F, 1.8F);
         scoreboardRowHeight = clamp(scoreboardRowHeight, 14, 30);
+        scoreboardRoundRowHeight = clamp(scoreboardRoundRowHeight, 0, 24);
         if (scoreboardComponents == null) {
             scoreboardComponents = defaultScoreboardComponents();
         }
@@ -240,9 +244,11 @@ public final class StrinovaHudConfig {
     public String scoreboardValuesSummary() {
         return String.format(java.util.Locale.ROOT,
                 "scoreboardWidthRatio=%.3f, scoreboardHeightRatio=%.3f, scoreboardOffsetX=%.1f, "
-                        + "scoreboardOffsetY=%.1f, scoreboardTextScale=%.2f, scoreboardRowHeight=%d, columns=[%s]",
+                        + "scoreboardOffsetY=%.1f, scoreboardTextScale=%.2f, scoreboardRowHeight=%d, "
+                        + "scoreboardRoundRowHeight=%d, columns=[%s]",
                 scoreboardWidthRatio, scoreboardHeightRatio, scoreboardOffsetX,
-                scoreboardOffsetY, scoreboardTextScale, scoreboardRowHeight, columnWeightsText());
+                scoreboardOffsetY, scoreboardTextScale, scoreboardRowHeight,
+                scoreboardRoundRowHeight, columnWeightsText());
     }
 
     /** 列宽权重文本（如 name=0.20,kda=0.12,...）。 */

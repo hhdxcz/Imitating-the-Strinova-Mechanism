@@ -57,6 +57,7 @@ public class StrinovaScoreboardStyleScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         graphics.fill(0, 0, this.width, this.height, 0xC8000000);
         StrinovaScoreboardOverlay.renderPreview(graphics, new StrinovaProgrammaticPainter(graphics));
+        drawSelectionHighlight(graphics);
 
         hits.clear();
         drawTopBar(graphics);
@@ -110,7 +111,8 @@ public class StrinovaScoreboardStyleScreen extends Screen {
         StrinovaHudConfig config = StrinovaHudConfig.get();
         StrinovaHudConfig.ScoreboardComponentStyle style = config.scoreboardComponent(selectedKey);
         boolean columnKey = isColumnKey(selectedKey);
-        int areaTop = this.height - (columnKey ? 114 : 92);
+        boolean roundKey = isRoundKey(selectedKey);
+        int areaTop = this.height - (92 + (columnKey ? 22 : 0) + (roundKey ? 22 : 0));
         graphics.fill(0, areaTop, this.width, this.height, 0xE60B0F14);
         graphics.fill(0, areaTop, this.width, areaTop + 1, 0x44FFFFFF);
 
@@ -138,11 +140,30 @@ public class StrinovaScoreboardStyleScreen extends Screen {
             drawColumnWidthRow(graphics, rowY, config);
             rowY += 22;
         }
+        if (roundKey) {
+            drawRoundHeightRow(graphics, rowY, config);
+            rowY += 22;
+        }
         // 文字颜色
         drawColorRow(graphics, rowY, "文字色", 4, style.textColor);
         // 背景颜色
         rowY += 22;
         drawColorRow(graphics, rowY, "背景色", 5, style.backgroundColor);
+    }
+
+    private boolean isRoundKey(String key) {
+        return "rounds".equals(key) || "roundAlly".equals(key) || "roundEnemy".equals(key);
+    }
+
+    private void drawRoundHeightRow(GuiGraphics graphics, int y, StrinovaHudConfig config) {
+        graphics.drawString(this.font, "回合计行高", 8, y + 2, 0xFF9BAEBF, false);
+        int x = 8 + 64;
+        x = button(graphics, x, y - 2, 52, "行高-", 12, 0);
+        int height = StrinovaScoreboardOverlay.effectiveRoundRowHeight();
+        graphics.drawString(this.font, height + "px", x + 4, y + 2, 0xFFEAF2FA, false);
+        x += 36;
+        button(graphics, x, y - 2, 52, "行高+", 13, 0);
+        graphics.drawString(this.font, "（也可在布局编辑器拖中间三条边界线）", x + 56, y + 2, 0xFF7A8794, false);
     }
 
     private boolean isColumnKey(String key) {
@@ -170,6 +191,74 @@ public class StrinovaScoreboardStyleScreen extends Screen {
         x += 52;
         button(graphics, x, y - 2, 44, "列宽+", 11, 0);
         graphics.drawString(this.font, "（也可在布局编辑器里拖列头边界）", x + 52, y + 2, 0xFF7A8794, false);
+    }
+
+    /** 在预览上高亮当前选中的部件，方便知道自己在改哪里。 */
+    private void drawSelectionHighlight(GuiGraphics graphics) {
+        StrinovaScoreboardOverlay.Layout layout =
+                StrinovaScoreboardOverlay.computeLayoutPublic(this.width, this.height);
+        int[] rect = selectionRect(layout);
+        if (rect == null || rect[2] <= 0 || rect[3] <= 0) {
+            return;
+        }
+        int x = rect[0];
+        int y = rect[1];
+        int w = rect[2];
+        int h = rect[3];
+        graphics.fill(x, y, x + w, y + h, 0x2235D6E8);
+        graphics.fill(x, y, x + w, y + 2, 0xFF35D6E8);
+        graphics.fill(x, y + h - 2, x + w, y + h, 0xFF35D6E8);
+        graphics.fill(x, y, x + 2, y + h, 0xFF35D6E8);
+        graphics.fill(x + w - 2, y, x + w, y + h, 0xFF35D6E8);
+    }
+
+    private int[] selectionRect(StrinovaScoreboardOverlay.Layout layout) {
+        int left = layout.left();
+        int blockTop = layout.blockTop();
+        int enemyTop = layout.enemyTop();
+        int contentX = left + layout.sidebarWidth();
+        int contentW = layout.width() - layout.sidebarWidth() - 1;
+        int rowHeight = layout.rowHeight();
+        int headerHeight = layout.headerHeight();
+        int rowsTop = blockTop + headerHeight;
+        int rowsHeight = 5 * rowHeight;
+        int middleTop = layout.middleTop();
+        int middleHeight = layout.middleHeight();
+        if (selectedKey == null) {
+            return null;
+        }
+        return switch (selectedKey) {
+            case "panel" -> new int[]{left, blockTop, layout.width(), layout.height()};
+            case "sidebar" -> new int[]{left, blockTop, layout.sidebarWidth(), layout.blockHeight()};
+            case "header" -> new int[]{contentX, blockTop, contentW, headerHeight};
+            case "rows" -> new int[]{contentX, rowsTop, contentW, rowsHeight};
+            case "rounds" -> new int[]{left, middleTop, layout.width(), middleHeight};
+            case "roundAlly" -> new int[]{left, middleTop + 1, layout.width(), Math.max(2, middleHeight / 2 - 1)};
+            case "roundEnemy" -> new int[]{left, middleTop + middleHeight / 2, layout.width(),
+                    Math.max(2, middleHeight / 2)};
+            default -> columnRect(contentX, contentW, rowsTop, rowsHeight);
+        };
+    }
+
+    private int[] columnRect(int contentX, int contentW, int rowsTop, int rowsHeight) {
+        String[] keys = StrinovaHudConfig.SCOREBOARD_COLUMN_KEYS;
+        int[] anchors = StrinovaScoreboardOverlay.columnAnchors(contentW);
+        for (int i = 0; i < keys.length; i++) {
+            if (!keys[i].equals(selectedKey)) {
+                continue;
+            }
+            int start;
+            int end;
+            if (i >= 8) {
+                start = contentW - Math.max(28, contentW / 10);
+                end = contentW;
+            } else {
+                start = anchors[i];
+                end = anchors[i + 1];
+            }
+            return new int[]{contentX + start, rowsTop, Math.max(4, end - start), rowsHeight};
+        }
+        return null;
     }
 
     private void drawColorRow(GuiGraphics graphics, int y, String title, int action, int current) {
@@ -261,6 +350,14 @@ public class StrinovaScoreboardStyleScreen extends Screen {
             case 11 -> {
                 float weight = config.scoreboardColumnWeight(selectedKey);
                 config.setScoreboardColumnWeight(selectedKey, weight + 0.01F);
+            }
+            case 12 -> {
+                int height = StrinovaScoreboardOverlay.effectiveRoundRowHeight();
+                config.scoreboardRoundRowHeight = Math.max(6, height - 1);
+            }
+            case 13 -> {
+                int height = StrinovaScoreboardOverlay.effectiveRoundRowHeight();
+                config.scoreboardRoundRowHeight = Math.min(24, height + 1);
             }
             case 9 -> {
                 for (String key : StrinovaHudConfig.SCOREBOARD_COMPONENT_KEYS) {

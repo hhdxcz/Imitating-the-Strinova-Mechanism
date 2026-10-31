@@ -46,6 +46,8 @@ public class StrinovaScoreboardEditorScreen extends Screen {
     private boolean resizingRow;
     private double resizeStartY;
     private int resizeStartRowHeight;
+    private boolean resizingRoundRow;
+    private int resizeStartRoundRowHeight;
 
     public StrinovaScoreboardEditorScreen(@Nullable Screen parent) {
         super(Component.literal("计分板布局编辑器"));
@@ -213,6 +215,15 @@ public class StrinovaScoreboardEditorScreen extends Screen {
                 graphics.fill(contentX, rowY, contentX + contentW, rowY + 1, color);
             }
         }
+        // 中间回合记录带边界（上边/中线/下边，拖动能改我方/敌方行高）
+        int midTop = layout.middleTop();
+        int midH = layout.middleHeight();
+        int[] midLines = {midTop + 1, midTop + midH / 2, midTop + midH - 1};
+        for (int lineY : midLines) {
+            boolean hover = Math.abs(mouseY - lineY) <= 5;
+            graphics.fill(layout.left(), lineY, layout.left() + layout.width(), lineY + 1,
+                    hover ? 0xFF35D6E8 : 0x33FFFFFF);
+        }
     }
 
     @Override
@@ -257,6 +268,18 @@ public class StrinovaScoreboardEditorScreen extends Screen {
                     }
                 }
             }
+            // 中间回合记录带：上边/中线/下边都能拖动，调整我方/敌方单行高度
+            int middleTop = layout.middleTop();
+            int middleHeight = layout.middleHeight();
+            if (mouseX >= layout.left() && mouseX <= layout.left() + layout.width()
+                    && (Math.abs(mouseY - (middleTop + 1)) <= 5
+                    || Math.abs(mouseY - (middleTop + middleHeight / 2)) <= 5
+                    || Math.abs(mouseY - (middleTop + middleHeight - 1)) <= 5)) {
+                resizingRoundRow = true;
+                resizeStartY = mouseY;
+                resizeStartRoundRowHeight = StrinovaScoreboardOverlay.effectiveRoundRowHeight();
+                return true;
+            }
             int[] bounds = StrinovaScoreboardOverlay.panelBounds(this.width, this.height);
             if (mouseX >= bounds[0] && mouseX <= bounds[0] + bounds[2]
                     && mouseY >= bounds[1] && mouseY <= bounds[1] + bounds[3]) {
@@ -290,6 +313,11 @@ public class StrinovaScoreboardEditorScreen extends Screen {
             config.scoreboardRowHeight = Math.max(14, Math.min(30, newHeight));
             return true;
         }
+        if (resizingRoundRow && button == 0) {
+            int newHeight = (int) Math.round(resizeStartRoundRowHeight + (mouseY - resizeStartY));
+            config.scoreboardRoundRowHeight = Math.max(6, Math.min(24, newHeight));
+            return true;
+        }
         if (dragging && button == 0) {
             config.scoreboardOffsetX = clampf((float) (dragStartOffsetX + mouseX - dragStartMouseX), -600.0F, 600.0F);
             config.scoreboardOffsetY = clampf((float) (dragStartOffsetY + mouseY - dragStartMouseY), -400.0F, 400.0F);
@@ -304,6 +332,7 @@ public class StrinovaScoreboardEditorScreen extends Screen {
             dragging = false;
             resizingColumn = -1;
             resizingRow = false;
+            resizingRoundRow = false;
         }
         return super.mouseReleased(mouseX, mouseY, button);
     }

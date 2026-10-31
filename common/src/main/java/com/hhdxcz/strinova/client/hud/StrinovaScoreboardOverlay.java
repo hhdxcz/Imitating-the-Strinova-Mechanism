@@ -138,6 +138,15 @@ public final class StrinovaScoreboardOverlay {
         return buildLayout(screenWidth, screenHeight);
     }
 
+    /** 当前「我方/敌方」单行有效高度（0=自动时按数据行高推算）。 */
+    public static int effectiveRoundRowHeight() {
+        StrinovaHudConfig config = StrinovaHudConfig.get();
+        int rowHeight = Math.max(14, Math.min(30, config.scoreboardRowHeight));
+        return config.scoreboardRoundRowHeight > 0
+                ? Math.max(6, Math.min(24, config.scoreboardRoundRowHeight))
+                : Math.max(8, (rowHeight + 5) / 2);
+    }
+
     /** 供编辑器使用：计算完整面板布局。 */
     public static Layout computeLayoutPublic(int screenWidth, int screenHeight) {
         return buildLayout(screenWidth, screenHeight);
@@ -147,7 +156,10 @@ public final class StrinovaScoreboardOverlay {
         StrinovaHudConfig config = StrinovaHudConfig.get();
         int rowHeight = Math.max(14, Math.min(30, config.scoreboardRowHeight));
         int headerHeight = Math.max(12, rowHeight - 3);
-        int middleHeight = Math.max(16, rowHeight + 5);
+        int roundRowHeight = config.scoreboardRoundRowHeight > 0
+                ? Math.max(6, Math.min(24, config.scoreboardRoundRowHeight))
+                : Math.max(8, (rowHeight + 5) / 2);
+        int middleHeight = Math.max(14, roundRowHeight * 2 + 2);
         int blockHeight = headerHeight + ROW_COUNT * rowHeight + BOTTOM_PAD;
         int contentHeight = blockHeight * 2 + middleHeight;
 
@@ -183,7 +195,7 @@ public final class StrinovaScoreboardOverlay {
         painter.rect(left + 1, top, layout.width() - 2, 1, withAlpha(0xFFFFFF, 0x1E));
         painter.rect(left + 1, top + height - 1, layout.width() - 2, 1, withAlpha(0xFFFFFF, 0x1E));
 
-        int rowHeight = Math.max(8, height / 2);
+        int rowHeight = Math.max(6, (height - 2) / 2);
         painter.textScaled(Component.translatable("hud.strinova.match.allies").getString(),
                 left + 3, top + 1, 0.7F * textScale, textColor("roundAlly", ALLY_WIN), false);
         painter.textScaled(Component.translatable("hud.strinova.match.enemies").getString(),
