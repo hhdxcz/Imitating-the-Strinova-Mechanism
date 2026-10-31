@@ -2,6 +2,9 @@ package com.hhdxcz.strinova.client.hud;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.hhdxcz.strinova.StrinovaMod;
 import dev.architectury.platform.Platform;
 
@@ -9,6 +12,8 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * 客户端战斗 HUD 配置。
@@ -250,6 +255,106 @@ public final class StrinovaHudConfig {
                 scoreboardWidthRatio, scoreboardHeightRatio, scoreboardOffsetX,
                 scoreboardOffsetY, scoreboardTextScale, scoreboardRowHeight,
                 scoreboardRoundRowHeight, columnWeightsText());
+    }
+
+    /** 导出计分板全部自定义配置为 JSON（尺寸/位置/字号/行高/列宽/逐部件样式）。 */
+    public String scoreboardExportJson() {
+        sanitize();
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("_type", "strinova_scoreboard");
+        map.put("version", 1);
+        map.put("widthRatio", scoreboardWidthRatio);
+        map.put("heightRatio", scoreboardHeightRatio);
+        map.put("offsetX", scoreboardOffsetX);
+        map.put("offsetY", scoreboardOffsetY);
+        map.put("textScale", scoreboardTextScale);
+        map.put("rowHeight", scoreboardRowHeight);
+        map.put("roundRowHeight", scoreboardRoundRowHeight);
+        Map<String, Float> weights = new LinkedHashMap<>();
+        for (String key : SCOREBOARD_COLUMN_KEYS) {
+            weights.put(key, scoreboardColumnWeight(key));
+        }
+        map.put("columns", weights);
+        map.put("components", scoreboardComponents);
+        return GSON.toJson(map);
+    }
+
+    /** 从导出的 JSON 导入计分板配置；成功返回 true（不自动保存，由调用方决定）。 */
+    public boolean scoreboardImportJson(String json) {
+        if (json == null || json.isBlank()) {
+            return false;
+        }
+        try {
+            JsonElement root = JsonParser.parseString(json.trim());
+            if (!root.isJsonObject()) {
+                return false;
+            }
+            JsonObject object = root.getAsJsonObject();
+            if (object.has("widthRatio")) {
+                scoreboardWidthRatio = object.get("widthRatio").getAsFloat();
+            }
+            if (object.has("heightRatio")) {
+                scoreboardHeightRatio = object.get("heightRatio").getAsFloat();
+            }
+            if (object.has("offsetX")) {
+                scoreboardOffsetX = object.get("offsetX").getAsFloat();
+            }
+            if (object.has("offsetY")) {
+                scoreboardOffsetY = object.get("offsetY").getAsFloat();
+            }
+            if (object.has("textScale")) {
+                scoreboardTextScale = object.get("textScale").getAsFloat();
+            }
+            if (object.has("rowHeight")) {
+                scoreboardRowHeight = object.get("rowHeight").getAsInt();
+            }
+            if (object.has("roundRowHeight")) {
+                scoreboardRoundRowHeight = object.get("roundRowHeight").getAsInt();
+            }
+            if (object.has("columns") && object.get("columns").isJsonObject()) {
+                JsonObject columns = object.getAsJsonObject("columns");
+                for (String key : SCOREBOARD_COLUMN_KEYS) {
+                    if (columns.has(key)) {
+                        setScoreboardColumnWeight(key, columns.get(key).getAsFloat());
+                    }
+                }
+            }
+            if (object.has("components") && object.get("components").isJsonObject()) {
+                JsonObject components = object.getAsJsonObject("components");
+                for (String key : SCOREBOARD_COMPONENT_KEYS) {
+                    if (!components.has(key) || !components.get(key).isJsonObject()) {
+                        continue;
+                    }
+                    JsonObject comp = components.getAsJsonObject(key);
+                    ScoreboardComponentStyle style = scoreboardComponent(key);
+                    if (comp.has("visible")) {
+                        style.visible = comp.get("visible").getAsBoolean();
+                    }
+                    if (comp.has("fontScale")) {
+                        style.fontScale = comp.get("fontScale").getAsFloat();
+                    }
+                    if (comp.has("textColor")) {
+                        style.textColor = comp.get("textColor").getAsInt();
+                    }
+                    if (comp.has("backgroundColor")) {
+                        style.backgroundColor = comp.get("backgroundColor").getAsInt();
+                    }
+                    if (comp.has("centerH")) {
+                        style.centerH = comp.get("centerH").getAsBoolean();
+                    }
+                }
+            }
+            sanitize();
+            return true;
+        } catch (Exception e) {
+            StrinovaMod.LOGGER.warn("导入计分板配置失败: {}", e.toString());
+            return false;
+        }
+    }
+
+    /** 计分板导出文件的默认路径：config/strinova-scoreboard.json。 */
+    public static Path scoreboardExportPath() {
+        return Platform.getConfigFolder().resolve("strinova-scoreboard.json");
     }
 
     /** 列宽权重文本（如 name=0.20,kda=0.12,...）。 */

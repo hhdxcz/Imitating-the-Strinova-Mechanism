@@ -176,6 +176,8 @@ white（白色）<img src="docs/colors/white.png" width="18" height="18" align="
 | `/strinova_client scoreboard` | 玩家 | 计分板可视化编辑器（拖动移动、调宽度/高度/字体/行高，保存到客户端配置） |
 | `/strinova_client scoreboard style` | 玩家 | 计分板部件样式编辑（选中部件：可见性/单独字号/文字色/背景色） |
 | `/strinova_client scoreboard values` | 玩家 | 打印并复制当前计分板数值（便于反馈/写默认值） |
+| `/strinova_client scoreboard export` | 玩家 | 导出计分板全部自定义配置（JSON，写入 `config/strinova-scoreboard.json` 并复制到剪贴板） |
+| `/strinova_client scoreboard import` | 玩家 | 从剪贴板导入计分板配置并保存（用于换设备/分享） |
 | `/strinova_client hud test` | 玩家 | 触发演示命中/击杀反馈 |
 | `/strinova_client agent` | 玩家 | 超弦体选角界面 |
 | `/strinova_client growth` 或 `B` 键 | 玩家 | 弦能增幅网络（成长/加点；手持 TACZ 枪械时 B 让给 TACZ 开火模式，可在配置关闭让位） |

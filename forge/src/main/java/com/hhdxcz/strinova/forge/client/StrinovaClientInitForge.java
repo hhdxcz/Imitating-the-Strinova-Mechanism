@@ -140,6 +140,54 @@ public final class StrinovaClientInitForge {
                                             new com.hhdxcz.strinova.client.StrinovaScoreboardStyleScreen(client.screen)));
                                     return 1;
                                 }))
+                        .then(Commands.literal("export")
+                                .executes(ctx -> {
+                                    Minecraft client = Minecraft.getInstance();
+                                    com.hhdxcz.strinova.client.hud.StrinovaHudConfig config =
+                                            com.hhdxcz.strinova.client.hud.StrinovaHudConfig.get();
+                                    String json = config.scoreboardExportJson();
+                                    java.nio.file.Path path =
+                                            com.hhdxcz.strinova.client.hud.StrinovaHudConfig.scoreboardExportPath();
+                                    try {
+                                        java.nio.file.Files.createDirectories(path.getParent());
+                                        java.nio.file.Files.writeString(path, json, java.nio.charset.StandardCharsets.UTF_8);
+                                    } catch (Exception e) {
+                                        ctx.getSource().sendSuccess(() -> Component.literal("写入文件失败: " + e.getMessage()), false);
+                                    }
+                                    if (client.keyboardHandler != null) {
+                                        client.keyboardHandler.setClipboard(json);
+                                    }
+                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                            "已导出计分板配置（已复制到剪贴板）: " + path), false);
+                                    return 1;
+                                }))
+                        .then(Commands.literal("import")
+                                .executes(ctx -> {
+                                    Minecraft client = Minecraft.getInstance();
+                                    String clip = "";
+                                    try {
+                                        if (client.getWindow() != null) {
+                                            clip = org.lwjgl.glfw.GLFW.glfwGetClipboardString(
+                                                    client.getWindow().getWindow());
+                                        }
+                                    } catch (Throwable ignored) {
+                                    }
+                                    if (clip == null || clip.isBlank()) {
+                                        ctx.getSource().sendSuccess(() -> Component.literal(
+                                                "剪贴板为空：先执行 /strinova_client scoreboard export，或粘贴导出的 JSON 到剪贴板"), false);
+                                        return 0;
+                                    }
+                                    com.hhdxcz.strinova.client.hud.StrinovaHudConfig config =
+                                            com.hhdxcz.strinova.client.hud.StrinovaHudConfig.get();
+                                    if (config.scoreboardImportJson(clip)) {
+                                        config.save();
+                                        ctx.getSource().sendSuccess(() -> Component.literal("已导入并保存计分板配置"), false);
+                                        return 1;
+                                    }
+                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                            "导入失败：剪贴板内容不是有效的计分板配置 JSON"), false);
+                                    return 0;
+                                }))
                         .then(Commands.literal("values")
                                 .executes(ctx -> {
                                     Minecraft client = Minecraft.getInstance();
