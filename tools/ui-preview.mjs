@@ -93,6 +93,8 @@ const L = {
     awakening: '觉醒', activated: '已激活', inactive: '未激活',
     statHp: '生命', statArmor: '护甲', statSpeed: '移速',
     energy: '能量点', need: '需求', selected: '已选',
+    upgraded: '已升级', weaponHint: '现在可装备战术技能', map: '88区', mode: '爆破入侵',
+    notice: '进攻方无法选择欧泊角色',
     source: '数据来源：biligame 卡拉彼丘 wiki · 中文文本',
     selectTitle: '选择角色', phaseAlly: '我方进攻', phaseEnemy: '敌方防守', lock: '锁定角色',
     teammates: '队友', skills: '技能', skillLabels: { active: 'Q 主动', passive: 'P 被动', ultimate: 'X 终极', tactical: 'E 战术' },
@@ -105,6 +107,8 @@ const L = {
     awakening: 'Awakening', activated: 'Active', inactive: 'Inactive',
     statHp: 'HP', statArmor: 'Armor', statSpeed: 'Speed',
     energy: 'Energy', need: 'Requires', selected: 'Selected',
+    upgraded: 'Upgraded', weaponHint: 'Tactical Skill equippable', map: 'Area 88', mode: 'Demolition',
+    notice: 'Attackers cannot pick P.U.S agents',
     source: 'Source: Strinova Wiki (strinova.org) · English text',
     selectTitle: 'Select Agent', phaseAlly: 'Our Attack', phaseEnemy: 'Enemy Defense', lock: 'Lock Agent',
     teammates: 'Teammates', skills: 'Skills', skillLabels: { active: 'Q Active', passive: 'P Passive', ultimate: 'X Ultimate', tactical: 'E Tactical' },
@@ -134,161 +138,184 @@ function headerPattern(accent) {
 function growthHtml(agent, lang) {
   const t = L[lang];
   const accent = ROLE_COLORS[agent.role] || ROLE_EN[agent.role] || '#35D6E8';
-  const network = agent.network;
-  const left = network.slice(0, 4);
-  const right = network.slice(4);
-  const weaponName = agent.weapon.name;
-  const kindTag = (kind) => (kind === 'active' ? t.kindActive : kind === 'passive' ? t.kindPassive : '');
-  const block = (group) => `
-    <div class="nblock">
-      <div class="nhead"><span class="accent" style="background:${accent}"></span>
-        <span class="nlabel">${esc(group.label)}</span>
-        ${kindTag(group.kind) ? `<span class="nkind">${esc(kindTag(group.kind))}</span>` : ''}
-      </div>
-      <div class="nline" style="background:linear-gradient(90deg, ${accent}55, transparent)"></div>
-      <div class="nitems">
-        ${group.items.map((item) => `
-          <div class="nitem${item.cost > 330 ? ' dim' : ''}">
-            <span class="ntext">${esc(item.text)}</span>
-            <span class="ncost"><i class="gem"></i>${item.cost}</span>
-          </div>`).join('')}
-      </div>
-    </div>`;
+  const weaponCards = t.weaponSlots.map((slot, index) => {
+    const name = index === 0 ? agent.weapon.name : slot;
+    const iconClass = index === 0 ? 'rifle' : index === 1 ? 'pistol' : index === 2 ? 'knife' : 'grenade';
+    return `
+      <div class="wcard${index === 0 ? ' sel' : ''}">
+        <div class="wtop"><span class="wnum">${index + 1}</span><span class="wtype">${esc(slot)}</span></div>
+        <div class="wicon ${iconClass}"></div>
+        <div class="wname">${esc(name)}</div>
+        ${index >= 3 ? `<div class="whint">${esc(t.weaponHint)}</div>` : ''}
+      </div>`;
+  }).join('');
 
-  // 示例 tooltip：取第一个有 change 文案的项
+  const branches = agent.network.map((group) => {
+    const kind = group.kind;
+    const iconClass = kind === 'weapon' ? 'ico-diamond' : (kind === 'active' || kind === 'passive') ? 'ico-circle'
+      : kind === 'armor' ? 'ico-shield' : 'ico-triangle';
+    const color = kind === 'weapon' ? '#5A9BFF' : (kind === 'active' || kind === 'passive') ? '#E8B54D' : '#57C785';
+    return `
+      <div class="branch">
+        <div class="bhead"><i class="bicon ${iconClass}" style="background:${color}"></i><span>${esc(group.label)}</span></div>
+        <div class="bitems">
+          ${group.items.map((item, index) => {
+            const owned = group.slot === 1 && index === 0;
+            return `<div class="bitem${owned ? ' owned' : ''}">
+              <span class="btext">${esc(item.text)}</span>
+              ${owned
+                ? `<span class="bowned">${esc(t.upgraded)}</span>`
+                : `<span class="bprice"><em>${item.cost}</em><i class="gem"></i></span>`}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  const needShapes = (awakening) => {
+    const groups = [
+      [awakening.needWeapon, 'sq', '#4FA3FF'],
+      [awakening.needSkill, 'ci', '#FFD166'],
+      [awakening.needDefense, 'tri', '#54E0A0'],
+    ];
+    let html = '';
+    for (const [count, shape, color] of groups) {
+      for (let i = 0; i < count; i++) {
+        html += `<i class="needneed ${shape}" style="background:${color}"></i>`;
+      }
+    }
+    return html;
+  };
+  const awakenCards = agent.awakenings.map((awakening, index) => `
+    <div class="acard ${awakening.active ? 'on' : 'off'}">
+      <div class="atop">
+        <span class="alabel">${t.awakening}${index + 1}：</span>
+        <span class="aneed">${needShapes(awakening)}</span>
+        <span class="astatus">${awakening.active ? t.activated : t.inactive}</span>
+      </div>
+      <div class="aname">${esc(awakening.name)}</div>
+      <div class="adesc">${esc(awakening.desc)}</div>
+    </div>`).join('');
+
+  // 示例 tooltip：取第一个有 change 文案的项（中文模式）
   let tip = null;
-  outer:
-  for (let g = 0; g < network.length; g++) {
-    for (let i = 0; i < network[g].items.length; i++) {
-      const item = network[g].items[i];
-      if (item.change && lang === 'zh') { tip = { group: g, item: i, text: item.text, change: item.change, cost: item.cost }; break outer; }
+  if (lang === 'zh') {
+    outer:
+    for (const group of agent.network) {
+      for (const item of group.items) {
+        if (item.change) { tip = item; break outer; }
+      }
     }
   }
   const tipHtml = tip ? `
-    <div class="tooltip" style="left:26px; top:104px">
+    <div class="tooltip">
       <div class="tt-title">${esc(tip.text)}</div>
-      <div class="tt-cost"><i class="gem"></i>${tip.cost}</div>
+      <div class="tt-cost"><em>${tip.cost}</em><i class="gem"></i></div>
       <div class="tt-change">${esc(tip.change)}</div>
     </div>` : '';
 
   return `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><style>${BASE_CSS}
-  .head { position:absolute; left:16px; right:16px; top:14px; height:56px; ${headerPattern(accent)}
-    display:flex; align-items:center; padding:0 18px; gap:24px; }
+  .head { position:absolute; left:0; right:0; top:0; height:62px; display:flex; align-items:center;
+    padding:0 30px; background:linear-gradient(180deg, rgba(18,24,34,.97), rgba(12,18,26,.94)); }
+  .head::after { content:''; position:absolute; left:0; right:0; bottom:0; height:1px;
+    background:linear-gradient(90deg, rgba(53,214,232,.5), rgba(255,79,163,.4)); }
   .head .title { font-size:21px; font-weight:700; letter-spacing:.5px; }
-  .head .title em { font-style:normal; color:${accent}; }
-  .head .points { margin-left:auto; margin-right:auto; font-size:15px; color:#FFD166; }
-  .head .points b { font-size:20px; margin-left:6px; }
-  .head .ready { font-size:14px; color:#35D6E8; }
-  .head .close { width:34px; height:34px; border:1px solid #40546a; color:#9AA8B8;
-    display:flex; align-items:center; justify-content:center; font-size:16px; }
-  .main { position:absolute; left:16px; right:16px; top:84px; bottom:214px; display:flex; gap:16px; }
-  .portrait { width:262px; flex:none; position:relative; overflow:hidden;
-    background:linear-gradient(160deg, ${accent}55 0%, #101a26 55%, #0A1018 100%);
-    border:1px solid ${accent}44; }
-  .portrait .giant { position:absolute; left:50%; top:44%; transform:translate(-50%,-50%);
-    font-size:220px; font-weight:800; color:${accent}88; line-height:1; }
-  .portrait .edge { position:absolute; left:0; right:0; top:0; height:3px; background:${accent}; }
-  .portrait .pname { position:absolute; left:0; right:0; bottom:92px; text-align:center;
-    font-size:24px; font-weight:700; letter-spacing:1px; }
-  .portrait .role { position:absolute; left:50%; transform:translateX(-50%); bottom:60px;
-    padding:2px 12px; font-size:13px; color:#0A111C; background:${accent}; font-weight:700; }
-  .portrait .identity { position:absolute; left:8px; right:8px; bottom:40px; text-align:center;
-    font-size:12px; color:#9AA8B8; }
-  .portrait .stats { position:absolute; left:6px; right:6px; bottom:14px; text-align:center;
-    font-size:12px; color:#7f8c9a; letter-spacing:.4px; }
-  .network { flex:1; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(4,1fr); grid-auto-flow:column; gap:12px 14px; }
-  .nblock { background:rgba(16,24,35,.78); border:1px solid rgba(53,214,232,.16); padding:8px 10px 8px; }
-  .nhead { display:flex; align-items:center; gap:7px; }
-  .nhead .accent { width:3px; height:14px; display:inline-block; }
-  .nlabel { font-size:15px; font-weight:700; }
-  .nkind { margin-left:auto; font-size:11px; color:#5E6874; }
-  .nline { height:1px; margin:5px 0 6px; }
-  .nitems { display:flex; flex-direction:column; gap:5px; }
-  .nitem { display:flex; align-items:center; height:27px; padding:0 8px;
-    background:linear-gradient(90deg, rgba(255,255,255,.055), rgba(0,0,0,.12)); }
-  .nitem.dim { opacity:.55; }
-  .ntext { font-size:13px; color:#DCE6F0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .ncost { margin-left:auto; font-size:13px; color:#4FA3FF; display:flex; align-items:center; gap:5px; }
+  .head .title em { font-style:normal; color:${accent}; margin-left:4px; }
+  .head .points { position:absolute; left:50%; transform:translateX(-50%); font-size:17px;
+    color:#EAF2FA; display:flex; align-items:center; gap:7px; }
+  .head .points b { font-size:23px; color:#fff; font-weight:800; }
+  .head .ready { margin-left:auto; font-size:15px; color:#C8D4E0; }
+  .head .close { width:38px; height:38px; margin-left:22px; display:flex; align-items:center;
+    justify-content:center; font-size:23px; color:#EAF2FA; border:1px solid rgba(255,255,255,.28); }
+  .main { position:absolute; left:18px; right:18px; top:80px; bottom:206px; display:flex; gap:16px; }
+  .portrait { width:252px; flex:none; position:relative; overflow:hidden;
+    background:linear-gradient(165deg, ${accent}66 0%, #0e1621 58%, #080d14 100%);
+    border:1px solid rgba(255,255,255,.14); }
+  .portrait .giant { position:absolute; left:50%; top:40%; transform:translate(-50%,-50%);
+    font-size:190px; font-weight:800; color:rgba(255,255,255,.14); line-height:1; }
+  .portrait .pname { position:absolute; left:14px; bottom:66px; font-size:30px; font-weight:800;
+    letter-spacing:2px; text-shadow:0 2px 12px #000; }
+  .portrait .rolechip { position:absolute; left:14px; bottom:40px; display:flex; align-items:center;
+    gap:6px; font-size:14px; font-weight:700; color:#EAF2FA; }
+  .portrait .rolechip i { width:12px; height:12px; background:${accent}; transform:rotate(45deg); display:inline-block; }
+  .portrait .stats { position:absolute; left:14px; right:10px; bottom:16px; font-size:12px;
+    color:#9AA8B8; letter-spacing:.5px; }
+  .network { flex:1; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(4,1fr);
+    grid-auto-flow:column; gap:10px 22px; }
+  .branch { padding:2px 2px 6px; }
+  .bhead { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+  .bicon { width:14px; height:14px; flex:none; display:inline-block; }
+  .ico-diamond { transform:rotate(45deg) scale(.82); }
+  .ico-circle { border-radius:50%; }
+  .ico-shield { clip-path:polygon(50% 0, 100% 18%, 100% 62%, 50% 100%, 0 62%, 0 18%); }
+  .ico-triangle { clip-path:polygon(50% 0, 100% 100%, 0 100%); }
+  .bhead span { font-size:15px; font-weight:700; letter-spacing:.3px; }
+  .bitems { display:flex; flex-direction:column; }
+  .bitem { height:31px; display:flex; align-items:center; padding:0 10px;
+    border-top:1px solid rgba(255,255,255,.055); background:rgba(0,0,0,.22); }
+  .bitem:last-child { border-bottom:1px solid rgba(255,255,255,.055); }
+  .btext { font-size:13px; color:#D8E2EC; }
+  .bprice { margin-left:auto; display:flex; align-items:center; gap:6px; }
+  .bprice em { font-style:normal; font-size:14px; font-weight:700; color:#FF8A7A; }
+  .bowned { margin-left:auto; font-size:12.5px; color:#B4C0CC; }
+  .bitem.owned { background:rgba(120,170,220,.16); }
   .gem { width:9px; height:9px; background:#4FA3FF; display:inline-block; transform:rotate(45deg); }
-  .weapons { width:176px; flex:none; background:rgba(12,18,26,.9); border-left:1px solid rgba(53,214,232,.2);
-    padding:8px; display:flex; flex-direction:column; gap:8px; }
-  .wslot { flex:1; display:flex; align-items:center; gap:8px; padding:0 8px;
-    background:rgba(255,255,255,.035); border:1px solid transparent; position:relative; }
-  .wslot.active { background:rgba(53,214,232,.14); border-color:rgba(53,214,232,.55); }
-  .wicon { width:26px; height:26px; flex:none; position:relative; }
-  .wicon::before { content:''; position:absolute; inset:6px 2px; background:${accent}; opacity:.85;
-    clip-path:polygon(0 35%, 78% 35%, 78% 45%, 100% 45%, 100% 58%, 72% 58%, 72% 80%, 52% 80%, 52% 58%, 0 58%); }
-  .wslot.grenade .wicon::before { clip-path:polygon(50% 15%, 88% 50%, 50% 85%, 12% 50%); inset:4px; }
-  .wslot.knife .wicon::before { clip-path:polygon(8% 92%, 78% 12%, 92% 26%, 22% 100%); inset:2px; }
-  .wname { font-size:12px; color:#C8D4E0; max-width:96px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .wkey { position:absolute; right:6px; bottom:4px; font-size:10px; color:#7f8c9a; }
-  .wtype { font-size:10px; color:#6f7d8b; }
-  .awaken { position:absolute; left:16px; right:16px; bottom:16px; height:186px; display:flex; gap:14px; }
-  .acard { flex:1; background:rgba(16,24,35,.82); border:1px solid rgba(255,209,102,.22); position:relative;
-    padding:12px 14px; }
-  .acard.on { border-color:rgba(255,209,102,.75); box-shadow:inset 0 0 26px rgba(255,209,102,.08); }
-  .acard .no { font-size:12px; color:#9AA8B8; letter-spacing:1px; }
-  .acard .aname { font-size:17px; font-weight:700; color:${'#FFD166'}; margin:3px 0 2px; }
-  .acard.off .aname { color:#EAF2FA; }
-  .acard .astatus { position:absolute; right:14px; top:12px; font-size:12px; color:#54E0A0; }
-  .acard.off .astatus { color:#5E6874; }
-  .acard .adesc { font-size:12.5px; line-height:1.55; color:#B4C0CC; margin-top:6px;
+  .weapons { width:186px; flex:none; display:flex; flex-direction:column; gap:8px; }
+  .wcard { flex:1; position:relative; background:rgba(255,255,255,.045);
+    border:1px solid rgba(255,255,255,.14); padding:5px 7px; }
+  .wcard.sel { border-color:rgba(53,214,232,.75); background:rgba(53,214,232,.12); }
+  .wtop { display:flex; align-items:center; gap:6px; font-size:11px; color:#9AA8B8; }
+  .wnum { font-weight:700; color:#C8D4E0; }
+  .wicon { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); width:74px; height:34px; }
+  .wicon::before { content:''; position:absolute; inset:0; background:#C8D4E0; opacity:.9; }
+  .wicon.rifle::before { clip-path:polygon(0 42%, 78% 42%, 78% 30%, 92% 30%, 92% 55%, 70% 55%, 70% 78%, 46% 78%, 46% 55%, 0 55%); }
+  .wicon.pistol::before { clip-path:polygon(4% 34%, 78% 34%, 78% 45%, 96% 45%, 96% 56%, 72% 56%, 72% 82%, 50% 82%, 50% 56%, 4% 56%); }
+  .wicon.knife::before { clip-path:polygon(2% 92%, 72% 4%, 90% 22%, 20% 100%); }
+  .wicon.grenade::before { clip-path:polygon(50% 12%, 92% 52%, 50% 92%, 8% 52%); }
+  .wname { position:absolute; left:7px; bottom:5px; font-size:12px; color:#D8E2EC;
+    max-width:126px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .whint { position:absolute; left:5px; right:3px; bottom:4px; font-size:10px; color:#FF6B6B;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wcard:has(.whint) .wname { display:none; }
+  .awaken { position:absolute; left:18px; right:18px; bottom:14px; height:182px; display:flex; gap:16px; }
+  .acard { flex:1; padding:11px 14px; background:rgba(255,255,255,.045);
+    border:1px solid rgba(255,255,255,.10); position:relative; }
+  .acard.on { border-color:rgba(255,209,102,.7); background:rgba(255,209,102,.07); }
+  .atop { display:flex; align-items:center; gap:8px; font-size:12px; color:#C8D4E0; }
+  .aneed { display:flex; align-items:center; gap:4px; margin-left:2px; }
+  .needneed { width:9px; height:9px; display:inline-block; }
+  .needneed.sq { border-radius:1px; }
+  .needneed.ci { border-radius:50%; }
+  .needneed.tri { clip-path:polygon(50% 0, 100% 100%, 0 100%); }
+  .astatus { margin-left:auto; font-size:11.5px; color:#7f8c9a; }
+  .acard.on .astatus { color:#54E0A0; }
+  .aname { font-size:16px; font-weight:800; margin:6px 0 5px; color:#EAF2FA; }
+  .acard.on .aname { color:#FFD166; }
+  .adesc { font-size:12.5px; line-height:1.55; color:#B4C0CC;
     display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-  .dots { position:absolute; right:14px; top:36px; display:flex; gap:5px; }
-  .dot { width:20px; height:18px; display:flex; align-items:center; justify-content:center;
-    font-size:11px; font-weight:700; color:#0A111C; }
-  .dot.met { background:#4FA3FF; } .dot.met.y { background:#FFD166; } .dot.met.g { background:#54E0A0; }
-  .dot.miss { background:rgba(86,98,110,.35); color:#B4C0CC; }
-  .tooltip { position:absolute; z-index:9; width:248px; background:#0C121A; border:1px solid #2A3542;
-    padding:9px 11px; box-shadow:0 6px 26px rgba(0,0,0,.6); }
+  .tooltip { position:absolute; left:24px; top:96px; width:250px; background:#0C121A;
+    border:1px solid #2A3542; padding:9px 11px; box-shadow:0 6px 26px rgba(0,0,0,.6); z-index:9; }
   .tooltip .tt-title { font-size:14px; font-weight:700; }
-  .tooltip .tt-cost { font-size:13px; color:#4FA3FF; margin:5px 0 6px; display:flex; align-items:center; gap:6px; }
+  .tooltip .tt-cost { font-size:13px; color:#FF8A7A; margin:5px 0 6px; display:flex; align-items:center; gap:6px; }
   .tooltip .tt-change { font-size:12.5px; line-height:1.6; color:#9FD0E8; border-top:1px solid #22303e; padding-top:6px; }
   </style></head><body><div class="screen">
     <div class="head">
-      <div class="title">${t.growthTitle} <em>· ${esc(agent.name)}</em></div>
-      <div class="points">${t.points}<b>330</b></div>
-      <div class="ready">${t.ready} 00:25</div>
-      <div class="close">${t.close}</div>
+      <div class="title">${t.growthTitle}<em>· ${esc(agent.name)}</em></div>
+      <div class="points">${t.points}：<i class="gem" style="width:11px;height:11px"></i><b>330</b></div>
+      <div class="ready">${t.ready}：00:13</div>
+      <div class="close">✕</div>
     </div>
     <div class="main">
       <div class="portrait">
-        <div class="edge"></div>
-        <div class="giant">${esc((agent.name || '?').slice(0, 1))}</div>
+        <div class="giant">${esc(agent.name.slice(0, 1))}</div>
         <div class="pname">${esc(agent.name)}</div>
-        <div class="role">${esc(agent.role)}</div>
-        <div class="identity">${esc(agent.identity || '')}</div>
+        <div class="rolechip"><i></i>${esc(agent.role)}</div>
         <div class="stats">${t.statHp} ${agent.stats.hp}　${t.statArmor} ${agent.stats.armor}　${t.statSpeed} ${agent.stats.moveSpeed}</div>
       </div>
-      <div class="network">
-        ${left.concat(right).map(block).join('')}
-      </div>
-      <div class="weapons">
-        ${t.weaponSlots.map((slot, index) => `
-          <div class="wslot ${index === 0 ? 'active' : index === 2 ? 'knife' : index === 1 ? '' : 'grenade'}">
-            <div class="wicon"></div>
-            <div>
-              <div class="wname">${index === 0 ? esc(weaponName) : esc(slot)}</div>
-              <div class="wtype">${index === 0 ? esc(agent.weapon.type) : ''}</div>
-            </div>
-            <div class="wkey">${index + 1}</div>
-          </div>`).join('')}
-      </div>
+      <div class="network">${branches}</div>
+      <div class="weapons">${weaponCards}</div>
     </div>
-    <div class="awaken">
-      ${agent.awakenings.map((awakening, index) => `
-        <div class="acard ${awakening.active ? 'on' : 'off'}">
-          <div class="no">${t.awakening} ${index + 1}</div>
-          <div class="aname">${esc(awakening.name)}</div>
-          <div class="astatus">${awakening.active ? t.activated : t.inactive}</div>
-          <div class="dots">
-            ${[[awakening.needWeapon, 'met'], [awakening.needSkill, 'met y'], [awakening.needDefense, 'met g']]
-              .filter(([need]) => need > 0)
-              .map(([need, cls]) => `<div class="dot ${cls}">${need}</div>`).join('')}
-          </div>
-          <div class="adesc">${esc(awakening.desc)}</div>
-        </div>`).join('')}
-    </div>
+    <div class="awaken">${awakenCards}</div>
     ${tipHtml}
     <div class="source">${t.source}</div>
   </div></body></html>`;
@@ -308,141 +335,187 @@ function selectHtml(agent, lang) {
       role: lang === 'en' ? ((overlay && overlay.role) || item.role) : item.role,
     };
   }));
-  const allAgents = zh.agents.map((item) => lang === 'en' ? ((en && en.agents.find((agent2) => agent2.id === item.id) || {}).name || item.name) : item.name);
+  const allAgents = zh.agents.map((item) => lang === 'en'
+    ? ((en && en.agents.find((agent2) => agent2.id === item.id) || {}).name || item.name)
+    : item.name);
   const skillOrder = ['active', 'passive', 'ultimate', 'tactical'];
   const keyLetters = ['Q', 'P', 'X', 'E'];
   const selected = agent.skills.active;
+  const weaponTypeLabels = t.weaponSlots;
+
   return `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><style>${BASE_CSS}
-  .phasebar { position:absolute; left:16px; right:16px; top:14px; height:60px; display:flex; align-items:stretch; gap:10px; }
-  .slab { width:340px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700;
-    letter-spacing:1px; clip-path:polygon(0 0, 100% 0, 94% 100%, 0 100%); }
-  .slab.ally { background:linear-gradient(90deg, #BC3B47, rgba(188,59,71,.55)); }
-  .slab.enemy { background:linear-gradient(270deg, #4B77DC, rgba(75,119,220,.55)); clip-path:polygon(6% 0, 100% 0, 100% 100%, 0 100%); }
-  .phasebar .center { flex:1; background:rgba(10,16,24,.92); border:1px solid rgba(53,214,232,.28);
-    display:flex; align-items:center; justify-content:center; gap:26px; }
-  .phasebar .center .mode { font-size:15px; color:#9AA8B8;letter-spacing:1px; }
-  .phasebar .center .timer { font-size:26px; font-weight:800; color:#35D6E8; letter-spacing:2px; }
-  .main { position:absolute; left:16px; right:16px; top:90px; bottom:158px; display:flex; gap:14px; }
-  .team { width:196px; flex:none; display:flex; flex-direction:column; gap:8px; }
-  .team .thead { font-size:12px; color:#9AA8B8; letter-spacing:1px; padding:2px 4px; }
-  .mate { flex:1; display:flex; align-items:center; gap:9px; padding:0 10px; background:rgba(16,24,35,.8);
-    border-left:3px solid ${accent}88; }
-  .mate.me { border-left-color:#FFD24A; background:rgba(40,36,20,.55); }
-  .mate .avatar { width:30px; height:30px; background:#1b2635; border:1px solid rgba(255,255,255,.18);
-    display:flex; align-items:center; justify-content:center; font-size:14px; color:#DCE6F0; }
-  .mate .mname { font-size:13px; color:#DCE6F0; }
-  .mate .mrole { font-size:11px; color:#6f7d8b; }
-  .center { flex:1; position:relative; overflow:hidden; border:1px solid rgba(53,214,232,.16);
-    background:linear-gradient(170deg, ${accent}33 0%, #0b121b 60%, #05080D 100%); }
-  .center .giant { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%);
-    font-size:270px; font-weight:800; color:rgba(255,255,255,.075); line-height:1; }
-  .center .intro { position:absolute; left:34px; right:34px; bottom:112px; font-size:14px; line-height:1.7;
-    color:#C6D2DE; text-shadow:0 2px 12px #000; }
-  .center .intro .quote { margin-top:8px; font-size:13px; color:#8fa0b1; font-style:italic; }
-  .center .namebar { position:absolute; left:0; right:0; bottom:0; height:86px; padding:10px 20px;
-    background:linear-gradient(0deg, rgba(5,8,13,.96), rgba(5,8,13,.35)); border-top:1px solid ${accent}66; }
-  .center .namebar .an { font-size:34px; font-weight:800; letter-spacing:2px; }
-  .center .namebar .roleline { font-size:13px; color:${accent}; margin-top:2px; letter-spacing:1px; }
-  .center .p1 { position:absolute; left:16px; top:14px; font-size:13px; font-weight:800; color:#FFD24A;
-    border:1px solid #FFD24A; padding:1px 7px; }
-  .right { width:404px; flex:none; background:rgba(12,18,26,.94); border:1px solid rgba(53,214,232,.2);
-    padding:14px 16px; position:relative; }
-  .rolechip { display:flex; align-items:center; gap:10px; }
-  .chip { padding:2px 12px; background:${accent}; color:#0A111C; font-size:13px; font-weight:800; letter-spacing:1px; }
-  .faction { font-size:13px; color:#9AA8B8; }
-  .identity { margin-top:8px; font-size:13px; color:#C6D2DE; }
-  .identity b { color:#6f7d8b; font-weight:400; }
-  .skills { margin-top:14px; display:flex; align-items:center; gap:8px; }
-  .skills .lab { font-size:12px; color:#9AA8B8; letter-spacing:1px; margin-right:2px; }
-  .scard { width:58px; height:58px; border:1px solid rgba(53,214,232,.35); background:rgba(10,17,25,.9);
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0 2px; }
-  .scard.sel { background:${accent}33; border-color:${accent}; }
-  .scard .k { font-size:16px; font-weight:800; color:#DCE6F0; }
+  .map { position:absolute; left:24px; top:20px; display:flex; align-items:center; gap:9px; z-index:6; }
+  .mapicon { width:34px; height:34px; border:1px solid rgba(255,255,255,.4);
+    background:rgba(255,255,255,.12); }
+  .map b { display:block; font-size:15px; letter-spacing:1px; text-shadow:0 1px 6px #000; }
+  .map span { font-size:12px; color:#D8E2EC; opacity:.85; text-shadow:0 1px 6px #000; }
+  .phasebar { position:absolute; left:152px; right:96px; top:16px; height:56px; display:flex; z-index:3; }
+  .slab { width:330px; display:flex; align-items:center; justify-content:center; font-size:17px;
+    font-weight:800; letter-spacing:2px; color:#fff; text-shadow:0 2px 8px #000; }
+  .slab.ally { background:linear-gradient(90deg, #A8323D, rgba(168,50,61,.15)); clip-path:polygon(0 0, 100% 0, 93% 100%, 0 100%); }
+  .slab.enemy { background:linear-gradient(270deg, #3B5FA8, rgba(59,95,168,.15)); clip-path:polygon(7% 0, 100% 0, 100% 100%, 0 100%); margin-left:auto; }
+  .phasecenter { flex:1; margin:0 8px; background:rgba(12,18,26,.86); border:1px solid rgba(255,255,255,.18);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+  .phasebar .center .row1 { font-size:14px; color:#D8E2EC; letter-spacing:2px; }
+  .phasebar .row2 { display:flex; align-items:baseline; gap:28px; }
+  .phasebar .timer { font-size:25px; font-weight:800; color:#fff; letter-spacing:2px; }
+  .phasebar .score { font-size:17px; color:#FF8A7A; }
+  .phasebar .score.enemy { color:#6FA0FF; }
+  .gear { position:absolute; right:28px; top:24px; width:30px; height:30px; border:1px solid rgba(255,255,255,.45);
+    border-radius:50%; z-index:3; display:flex; align-items:center; justify-content:center; font-size:15px; color:#EAF2FA; }
+  .team { position:absolute; left:26px; top:96px; width:224px; display:flex; flex-direction:column; gap:12px; z-index:3; }
+  .mate { display:flex; align-items:center; gap:10px; min-height:44px; }
+  .mate .avatar { width:40px; height:40px; flex:none; background:rgba(20,30,42,.9);
+    border:1px solid rgba(255,255,255,.35); display:flex; align-items:center; justify-content:center;
+    font-size:17px; color:#EAF2FA; }
+  .mate.me .avatar { border-color:#FFD24A; box-shadow:0 0 0 1px #FFD24A55; }
+  .mate .mname { font-size:15px; line-height:1.25; color:#fff; text-shadow:0 1px 8px #000; font-weight:700; }
+  .mate.me .mname { color:#FFD24A; }
+  .mate .mrole { font-size:11.5px; line-height:1.2; margin-top:2px; color:#C8D4E0; text-shadow:0 1px 6px #000; }
+  .mate .arrow { width:18px; height:9px; margin-top:4px; opacity:.7;
+    background:#EAF2FA; clip-path:polygon(0 0, 100% 50%, 0 100%); }
+  .center { position:absolute; left:264px; right:432px; top:88px; bottom:156px;
+    overflow:hidden; }
+  .center .giant { position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
+    font-size:280px; font-weight:800; color:rgba(255,255,255,.10); line-height:1; }
+  .center .intro { position:absolute; left:26px; right:26px; bottom:86px; font-size:14px; line-height:1.65;
+    color:#fff; text-shadow:0 2px 10px #000; }
+  .center .intro .quote { margin-top:5px; font-size:12.5px; color:#E6EEF6; opacity:.9; font-style:italic; }
+  .center .namebar { position:absolute; left:0; right:0; bottom:0; height:74px; padding:8px 20px;
+    background:linear-gradient(0deg, rgba(5,8,13,.92), rgba(5,8,13,.15)); }
+  .center .namebar .an { font-size:32px; font-weight:900; letter-spacing:2px; color:#fff; text-shadow:0 2px 10px #000; }
+  .center .namebar .roleline { font-size:13px; color:#FFD24A; letter-spacing:1px; }
+  .center .p1 { position:absolute; left:420px; top:-4px; font-size:10px; font-weight:800; color:#FFD24A;
+    background:#2A2318; border:1px solid #FFD24A; padding:1px 5px; display:none; }
+  .right { position:absolute; right:26px; top:88px; bottom:156px; width:390px;
+    background:linear-gradient(180deg, rgba(16,22,30,.92), rgba(10,14,20,.9));
+    border:1px solid rgba(255,255,255,.16); padding:0; display:flex; flex-direction:column; }
+  .rhead { display:flex; align-items:center; gap:10px; height:56px; padding:0 12px;
+    background:linear-gradient(90deg, rgba(120,86,20,.55), rgba(20,16,10,.25));
+    border-bottom:1px solid rgba(255,209,102,.45); }
+  .rhead .ricon { width:26px; height:26px; background:#FFD24A; transform:rotate(45deg); flex:none; }
+  .rhead .rrole { font-size:13px; color:#FFD24A; letter-spacing:1px; }
+  .rhead .rname { margin-left:auto; font-size:27px; font-weight:900; color:#fff; letter-spacing:2px;
+    text-shadow:0 2px 10px #000; }
+  .rbody { padding:10px 12px; display:flex; flex-direction:column; flex:1; min-height:0; }
+  .identity { font-size:12.5px; color:#C8D4E0; }
+  .identity b { color:#7f8c9a; font-weight:400; }
+  .skills { margin-top:10px; display:flex; gap:8px; }
+  .scard { width:52px; height:52px; border:1px solid rgba(255,255,255,.28); background:rgba(0,0,0,.35);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; position:relative; }
+  .scard.sel { border-color:${accent}; background:${accent}33; }
+  .scard .k { font-size:15px; font-weight:800; color:#EAF2FA; }
   .scard.sel .k { color:${accent}; }
-  .scard .sname { font-size:9px; line-height:1.1; color:#8fa0b1; max-width:54px; text-align:center;
+  .scard .sname { font-size:8.5px; color:#9AA8B8; max-width:48px; text-align:center; line-height:1.1;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  .skilldetail { margin-top:10px; border-left:3px solid ${accent}; padding:2px 0 2px 10px; }
-  .skilldetail .sl { font-size:13px; font-weight:700; color:${accent}; }
-  .skilldetail .sd { font-size:12.5px; line-height:1.55; color:#B4C0CC; margin-top:4px;
+  .qline { margin-top:10px; font-size:14px; font-weight:800; color:#fff; }
+  .qline em { font-style:normal; color:#FFD24A; }
+  .qdesc { margin-top:4px; font-size:12.5px; line-height:1.55; color:#C8D4E0;
     display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-  .tabs { display:flex; gap:6px; margin-top:14px; }
+  .wpanel { margin-top:12px; }
+  .wmain { height:92px; position:relative; border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.05); margin-bottom:6px; }
+  .wmain .wtag { position:absolute; left:6px; top:4px; font-size:10.5px; color:#9AA8B8; }
+  .wmain .wicon { position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); width:186px; height:42px; }
+  .wmain .wicon::before { content:''; position:absolute; inset:0; background:#DCE6F0; opacity:.92;
+    clip-path:polygon(0 42%, 76% 42%, 76% 30%, 92% 30%, 92% 55%, 68% 55%, 68% 78%, 44% 78%, 44% 55%, 0 55%); }
+  .wmain .wname { position:absolute; left:6px; bottom:4px; font-size:12px; color:#EAF2FA; }
+  .wmain .wtype { position:absolute; right:6px; bottom:4px; font-size:11px; color:#9AA8B8; }
+  .wgrid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .wcell { height:66px; position:relative; border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.04); }
+  .wcell .wtag { position:absolute; left:5px; top:3px; font-size:10px; color:#9AA8B8; }
+  .wcell .wicon { position:absolute; left:50%; top:56%; transform:translate(-50%,-50%); width:64px; height:26px; }
+  .wcell .wicon::before { content:''; position:absolute; inset:0; background:#C8D4E0; opacity:.9; }
+  .wcell .wicon.pistol::before { clip-path:polygon(4% 34%, 78% 34%, 78% 45%, 96% 45%, 96% 56%, 72% 56%, 72% 82%, 50% 82%, 50% 56%, 4% 56%); }
+  .wcell .wicon.knife::before { clip-path:polygon(2% 92%, 72% 4%, 90% 22%, 20% 100%); }
+  .wcell .wicon.grenade::before { clip-path:polygon(50% 12%, 92% 52%, 50% 92%, 8% 52%); }
+  .wcell .wname { position:absolute; left:5px; bottom:3px; font-size:10.5px; color:#C8D4E0; }
+  .tabs { display:flex; gap:4px; margin-top:auto; padding-top:8px; }
   .tab { flex:1; height:26px; display:flex; align-items:center; justify-content:center; font-size:12.5px;
-    border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.06); color:#9AA8B8; }
-  .tab.on { background:${accent}CC; border-color:${accent}; color:#0A111C; font-weight:700; }
-  .wrow { display:flex; align-items:center; gap:10px; height:36px; margin-top:6px;
-    background:rgba(255,255,255,.045); padding:0 10px; }
-  .wrow .wicon { width:22px; height:22px; position:relative; }
-  .wrow .wicon::before { content:''; position:absolute; inset:5px 1px; background:${accent}bb;
-    clip-path:polygon(0 35%, 78% 35%, 78% 45%, 100% 45%, 100% 58%, 72% 58%, 72% 80%, 52% 80%, 52% 58%, 0 58%); }
-  .wrow.grenade .wicon::before { clip-path:polygon(50% 15%, 88% 50%, 50% 85%, 12% 50%); inset:4px; }
-  .wrow.knife .wicon::before { clip-path:polygon(8% 92%, 78% 12%, 92% 26%, 22% 100%); inset:2px; }
-  .wrow .wname { font-size:13px; color:#DCE6F0; }
-  .wrow .wtype { margin-left:auto; font-size:11px; color:#7f8c9a; }
-  .lockbtn { position:absolute; right:16px; bottom:16px; height:72px; width:404px; background:${accent};
-    color:#0A111C; font-size:19px; font-weight:800; letter-spacing:4px; display:flex; align-items:center;
-    justify-content:center; border:1px solid #00000055; }
-  .grid { position:absolute; left:16px; bottom:16px; height:72px; display:grid;
-    grid-template-columns:repeat(12, 1fr); grid-template-rows:1fr 1fr; gap:5px 6px; width:1150px; }
-  .wdesc { margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,.12);
-    font-size:12px; line-height:1.65; color:#8fa0b1; }
-  .wdesc b { display:block; color:#C6D2DE; font-size:12.5px; margin-bottom:4px; }
-  .cell { background:rgba(16,24,35,.85); border:1px solid rgba(255,255,255,.09); display:flex;
-    align-items:center; justify-content:center; font-size:14px; color:#C6D2DE; position:relative; }
-  .cell.sel { border-color:${accent}; background:${accent}33; color:#fff; font-weight:700; }
-  .cell.sel::before { content:'P1'; position:absolute; left:3px; top:1px; font-size:8px; color:#FFD24A; }
+    border:1px solid rgba(255,255,255,.25); background:rgba(0,0,0,.35); color:#C8D4E0; }
+  .tab.on { background:#EAF2FA; color:#10161e; font-weight:800; }
+  .lockbtn { position:absolute; left:264px; right:432px; bottom:124px; height:30px; z-index:4;
+    background:linear-gradient(90deg, rgba(170,40,48,.92), rgba(120,24,30,.92)); color:#fff;
+    font-size:15px; font-weight:800; letter-spacing:4px; display:flex; align-items:center;
+    justify-content:center; border:1px solid rgba(255,255,255,.25); }
+  .grid { position:absolute; left:26px; right:432px; bottom:20px; height:92px; display:grid;
+    grid-template-columns:repeat(12, 1fr); grid-template-rows:1fr 1fr; gap:5px 6px; }
+  .cell { background:rgba(10,16,24,.82); border:1px solid rgba(255,255,255,.16); display:flex;
+    align-items:center; justify-content:center; font-size:15px; color:#D8E2EC; position:relative; }
+  .cell.sel { border-color:#FFD24A; background:rgba(60,52,26,.7); color:#fff; font-weight:800; }
+  .cell.sel::before { content:'P1'; position:absolute; left:2px; top:0; font-size:8px; color:#FFD24A; }
+  .notice { position:absolute; left:264px; right:432px; bottom:4px; text-align:center;
+    font-size:11px; color:#FFB4B4; text-shadow:0 1px 6px #000; }
   </style></head><body><div class="screen">
+    <div class="map"><div class="mapicon"></div><div><b>${t.map}</b><span>${t.mode}</span></div></div>
     <div class="phasebar">
       <div class="slab ally">${t.phaseAlly}</div>
-      <div class="center"><span class="mode">${t.selectTitle}</span><span class="timer">00:24</span></div>
+      <div class="phasecenter">
+        <div class="row1">${t.selectTitle}</div>
+        <div class="row2"><span class="score">00</span><span class="timer">00:16</span><span class="score enemy">00</span></div>
+      </div>
       <div class="slab enemy">${t.phaseEnemy}</div>
     </div>
-    <div class="main">
-      <div class="team">
-        <div class="thead">${t.teammates}</div>
-        ${teammate.map((mate, index) => `
-          <div class="mate ${index === 0 ? 'me' : ''}">
-            <div class="avatar">${esc(mate.name.slice(0, 1))}</div>
-            <div><div class="mname">${esc(mate.name)}</div><div class="mrole">${esc(mate.role)}</div></div>
-          </div>`).join('')}
+    <div class="gear">⚙</div>
+    <div class="team">
+      ${teammate.map((mate, index) => `
+        <div class="mate${index === 0 ? ' me' : ''}">
+          <div class="avatar">${esc(mate.name.slice(0, 1))}</div>
+          <div>
+            <div class="mname">${esc(mate.name)}</div>
+            <div class="mrole">${esc(mate.role)}</div>
+            <div class="arrow"></div>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div class="center">
+      <div class="giant">${esc(agent.name.slice(0, 1))}</div>
+      <div class="intro">${esc(agent.intro)}<div class="quote">「${esc(agent.quote)}」</div></div>
+      <div class="namebar">
+        <div class="an">${esc(agent.name)}</div>
+        <div class="roleline">${esc(agent.role)} · ${esc(agent.faction)}</div>
       </div>
-      <div class="center">
-        <div class="giant">${esc(agent.name.slice(0, 1))}</div>
-        <div class="p1">${t.p1}</div>
-        <div class="intro">${esc(agent.intro)}<div class="quote">「${esc(agent.quote)}」</div></div>
-        <div class="namebar">
-          <div class="an">${esc(agent.name)}</div>
-          <div class="roleline">${esc(agent.role)} · ${esc(agent.faction)}</div>
-        </div>
-      </div>
-      <div class="right">
-        <div class="rolechip"><span class="chip">${esc(agent.role)}</span><span class="faction">${esc(agent.faction)}</span></div>
+      <div class="p1">${t.p1}</div>
+    </div>
+    <div class="right">
+      <div class="rhead"><div class="ricon"></div><div class="rrole">${esc(agent.role)}</div>
+        <div class="rname">${esc(agent.name)}</div></div>
+      <div class="rbody">
         <div class="identity"><b>${t.identity} ·</b> ${esc(agent.identity || '')}</div>
         <div class="skills">
-          <span class="lab">${t.skills}</span>
           ${skillOrder.map((key, index) => `
-            <div class="scard ${index === 0 ? 'sel' : ''}">
+            <div class="scard${index === 0 ? ' sel' : ''}">
               <div class="k">${keyLetters[index]}</div>
               <div class="sname">${esc(agent.skills[key].name)}</div>
             </div>`).join('')}
         </div>
-        <div class="skilldetail">
-          <div class="sl">${esc(t.skillLabels.active)} · ${esc(selected.name)}</div>
-          <div class="sd">${esc(selected.desc)}</div>
+        <div class="qline"><em>${esc(t.skillLabels.active)}</em> ${esc(selected.name)}</div>
+        <div class="qdesc">${esc(selected.desc)}</div>
+        <div class="wpanel">
+          <div class="wmain">
+            <span class="wtag">1 ${esc(weaponTypeLabels[0])}</span>
+            <div class="wicon"></div>
+            <span class="wname">${esc(agent.weapon.name)}</span>
+            <span class="wtype">${esc(agent.weapon.type)}</span>
+          </div>
+          <div class="wgrid">
+            ${[1, 2, 3, 4].map((index) => `
+              <div class="wcell">
+                <span class="wtag">${index + 1} ${esc(weaponTypeLabels[index])}${index >= 3 ? ' ' + (index - 2) : ''}</span>
+                <div class="wicon ${index === 1 ? 'pistol' : index === 2 ? 'knife' : 'grenade'}"></div>
+                <span class="wname">${esc(weaponTypeLabels[index])}</span>
+              </div>`).join('')}
+          </div>
         </div>
         <div class="tabs"><div class="tab on">${t.weaponTab}</div><div class="tab">${t.appearanceTab}</div></div>
-        ${t.weaponSlots.map((slot, index) => `
-          <div class="wrow ${index === 0 ? '' : index === 2 ? 'knife' : index === 1 ? '' : 'grenade'}">
-            <div class="wicon"></div>
-            <div class="wname">${index === 0 ? esc(agent.weapon.name) : esc(slot)}</div>
-            <div class="wtype">${index === 0 ? esc(agent.weapon.type) : ''}</div>
-          </div>`).join('')}
-        <div class="wdesc"><b>${esc(agent.weapon.name)} · ${esc(agent.weapon.type)}</b>${esc(agent.weapon.desc)}</div>
       </div>
     </div>
     <div class="lockbtn">${t.lock}</div>
     <div class="grid">
       ${allAgents.map((name, index) => `<div class="cell${index === 0 ? ' sel' : ''}">${esc(name.slice(0, 1))}</div>`).join('')}
     </div>
+    <div class="notice">${t.notice}</div>
     <div class="source">${t.source}</div>
   </div></body></html>`;
 }

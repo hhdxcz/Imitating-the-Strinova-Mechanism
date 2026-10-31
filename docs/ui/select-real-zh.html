@@ -8,183 +8,236 @@ body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; color: #EAF2FA; b
 .source { position: absolute; left: 16px; bottom: 2px; font-size: 10px; color: #8fa0b1; letter-spacing: .3px;
     background: rgba(5,8,13,.9); border-left: 2px solid rgba(53,214,232,.55); padding: 2px 8px; z-index: 20; }
 
-  .phasebar { position:absolute; left:16px; right:16px; top:14px; height:60px; display:flex; align-items:stretch; gap:10px; }
-  .slab { width:340px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700;
-    letter-spacing:1px; clip-path:polygon(0 0, 100% 0, 94% 100%, 0 100%); }
-  .slab.ally { background:linear-gradient(90deg, #BC3B47, rgba(188,59,71,.55)); }
-  .slab.enemy { background:linear-gradient(270deg, #4B77DC, rgba(75,119,220,.55)); clip-path:polygon(6% 0, 100% 0, 100% 100%, 0 100%); }
-  .phasebar .center { flex:1; background:rgba(10,16,24,.92); border:1px solid rgba(53,214,232,.28);
-    display:flex; align-items:center; justify-content:center; gap:26px; }
-  .phasebar .center .mode { font-size:15px; color:#9AA8B8;letter-spacing:1px; }
-  .phasebar .center .timer { font-size:26px; font-weight:800; color:#35D6E8; letter-spacing:2px; }
-  .main { position:absolute; left:16px; right:16px; top:90px; bottom:158px; display:flex; gap:14px; }
-  .team { width:196px; flex:none; display:flex; flex-direction:column; gap:8px; }
-  .team .thead { font-size:12px; color:#9AA8B8; letter-spacing:1px; padding:2px 4px; }
-  .mate { flex:1; display:flex; align-items:center; gap:9px; padding:0 10px; background:rgba(16,24,35,.8);
-    border-left:3px solid #4B77DC88; }
-  .mate.me { border-left-color:#FFD24A; background:rgba(40,36,20,.55); }
-  .mate .avatar { width:30px; height:30px; background:#1b2635; border:1px solid rgba(255,255,255,.18);
-    display:flex; align-items:center; justify-content:center; font-size:14px; color:#DCE6F0; }
-  .mate .mname { font-size:13px; color:#DCE6F0; }
-  .mate .mrole { font-size:11px; color:#6f7d8b; }
-  .center { flex:1; position:relative; overflow:hidden; border:1px solid rgba(53,214,232,.16);
-    background:linear-gradient(170deg, #4B77DC33 0%, #0b121b 60%, #05080D 100%); }
-  .center .giant { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%);
-    font-size:270px; font-weight:800; color:rgba(255,255,255,.075); line-height:1; }
-  .center .intro { position:absolute; left:34px; right:34px; bottom:112px; font-size:14px; line-height:1.7;
-    color:#C6D2DE; text-shadow:0 2px 12px #000; }
-  .center .intro .quote { margin-top:8px; font-size:13px; color:#8fa0b1; font-style:italic; }
-  .center .namebar { position:absolute; left:0; right:0; bottom:0; height:86px; padding:10px 20px;
-    background:linear-gradient(0deg, rgba(5,8,13,.96), rgba(5,8,13,.35)); border-top:1px solid #4B77DC66; }
-  .center .namebar .an { font-size:34px; font-weight:800; letter-spacing:2px; }
-  .center .namebar .roleline { font-size:13px; color:#4B77DC; margin-top:2px; letter-spacing:1px; }
-  .center .p1 { position:absolute; left:16px; top:14px; font-size:13px; font-weight:800; color:#FFD24A;
-    border:1px solid #FFD24A; padding:1px 7px; }
-  .right { width:404px; flex:none; background:rgba(12,18,26,.94); border:1px solid rgba(53,214,232,.2);
-    padding:14px 16px; position:relative; }
-  .rolechip { display:flex; align-items:center; gap:10px; }
-  .chip { padding:2px 12px; background:#4B77DC; color:#0A111C; font-size:13px; font-weight:800; letter-spacing:1px; }
-  .faction { font-size:13px; color:#9AA8B8; }
-  .identity { margin-top:8px; font-size:13px; color:#C6D2DE; }
-  .identity b { color:#6f7d8b; font-weight:400; }
-  .skills { margin-top:14px; display:flex; align-items:center; gap:8px; }
-  .skills .lab { font-size:12px; color:#9AA8B8; letter-spacing:1px; margin-right:2px; }
-  .scard { width:58px; height:58px; border:1px solid rgba(53,214,232,.35); background:rgba(10,17,25,.9);
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0 2px; }
-  .scard.sel { background:#4B77DC33; border-color:#4B77DC; }
-  .scard .k { font-size:16px; font-weight:800; color:#DCE6F0; }
+  .map { position:absolute; left:24px; top:20px; display:flex; align-items:center; gap:9px; z-index:6; }
+  .mapicon { width:34px; height:34px; border:1px solid rgba(255,255,255,.4);
+    background:rgba(255,255,255,.12); }
+  .map b { display:block; font-size:15px; letter-spacing:1px; text-shadow:0 1px 6px #000; }
+  .map span { font-size:12px; color:#D8E2EC; opacity:.85; text-shadow:0 1px 6px #000; }
+  .phasebar { position:absolute; left:152px; right:96px; top:16px; height:56px; display:flex; z-index:3; }
+  .slab { width:330px; display:flex; align-items:center; justify-content:center; font-size:17px;
+    font-weight:800; letter-spacing:2px; color:#fff; text-shadow:0 2px 8px #000; }
+  .slab.ally { background:linear-gradient(90deg, #A8323D, rgba(168,50,61,.15)); clip-path:polygon(0 0, 100% 0, 93% 100%, 0 100%); }
+  .slab.enemy { background:linear-gradient(270deg, #3B5FA8, rgba(59,95,168,.15)); clip-path:polygon(7% 0, 100% 0, 100% 100%, 0 100%); margin-left:auto; }
+  .phasecenter { flex:1; margin:0 8px; background:rgba(12,18,26,.86); border:1px solid rgba(255,255,255,.18);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+  .phasebar .center .row1 { font-size:14px; color:#D8E2EC; letter-spacing:2px; }
+  .phasebar .row2 { display:flex; align-items:baseline; gap:28px; }
+  .phasebar .timer { font-size:25px; font-weight:800; color:#fff; letter-spacing:2px; }
+  .phasebar .score { font-size:17px; color:#FF8A7A; }
+  .phasebar .score.enemy { color:#6FA0FF; }
+  .gear { position:absolute; right:28px; top:24px; width:30px; height:30px; border:1px solid rgba(255,255,255,.45);
+    border-radius:50%; z-index:3; display:flex; align-items:center; justify-content:center; font-size:15px; color:#EAF2FA; }
+  .team { position:absolute; left:26px; top:96px; width:224px; display:flex; flex-direction:column; gap:12px; z-index:3; }
+  .mate { display:flex; align-items:center; gap:10px; min-height:44px; }
+  .mate .avatar { width:40px; height:40px; flex:none; background:rgba(20,30,42,.9);
+    border:1px solid rgba(255,255,255,.35); display:flex; align-items:center; justify-content:center;
+    font-size:17px; color:#EAF2FA; }
+  .mate.me .avatar { border-color:#FFD24A; box-shadow:0 0 0 1px #FFD24A55; }
+  .mate .mname { font-size:15px; line-height:1.25; color:#fff; text-shadow:0 1px 8px #000; font-weight:700; }
+  .mate.me .mname { color:#FFD24A; }
+  .mate .mrole { font-size:11.5px; line-height:1.2; margin-top:2px; color:#C8D4E0; text-shadow:0 1px 6px #000; }
+  .mate .arrow { width:18px; height:9px; margin-top:4px; opacity:.7;
+    background:#EAF2FA; clip-path:polygon(0 0, 100% 50%, 0 100%); }
+  .center { position:absolute; left:264px; right:432px; top:88px; bottom:156px;
+    overflow:hidden; }
+  .center .giant { position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
+    font-size:280px; font-weight:800; color:rgba(255,255,255,.10); line-height:1; }
+  .center .intro { position:absolute; left:26px; right:26px; bottom:86px; font-size:14px; line-height:1.65;
+    color:#fff; text-shadow:0 2px 10px #000; }
+  .center .intro .quote { margin-top:5px; font-size:12.5px; color:#E6EEF6; opacity:.9; font-style:italic; }
+  .center .namebar { position:absolute; left:0; right:0; bottom:0; height:74px; padding:8px 20px;
+    background:linear-gradient(0deg, rgba(5,8,13,.92), rgba(5,8,13,.15)); }
+  .center .namebar .an { font-size:32px; font-weight:900; letter-spacing:2px; color:#fff; text-shadow:0 2px 10px #000; }
+  .center .namebar .roleline { font-size:13px; color:#FFD24A; letter-spacing:1px; }
+  .center .p1 { position:absolute; left:420px; top:-4px; font-size:10px; font-weight:800; color:#FFD24A;
+    background:#2A2318; border:1px solid #FFD24A; padding:1px 5px; display:none; }
+  .right { position:absolute; right:26px; top:88px; bottom:156px; width:390px;
+    background:linear-gradient(180deg, rgba(16,22,30,.92), rgba(10,14,20,.9));
+    border:1px solid rgba(255,255,255,.16); padding:0; display:flex; flex-direction:column; }
+  .rhead { display:flex; align-items:center; gap:10px; height:56px; padding:0 12px;
+    background:linear-gradient(90deg, rgba(120,86,20,.55), rgba(20,16,10,.25));
+    border-bottom:1px solid rgba(255,209,102,.45); }
+  .rhead .ricon { width:26px; height:26px; background:#FFD24A; transform:rotate(45deg); flex:none; }
+  .rhead .rrole { font-size:13px; color:#FFD24A; letter-spacing:1px; }
+  .rhead .rname { margin-left:auto; font-size:27px; font-weight:900; color:#fff; letter-spacing:2px;
+    text-shadow:0 2px 10px #000; }
+  .rbody { padding:10px 12px; display:flex; flex-direction:column; flex:1; min-height:0; }
+  .identity { font-size:12.5px; color:#C8D4E0; }
+  .identity b { color:#7f8c9a; font-weight:400; }
+  .skills { margin-top:10px; display:flex; gap:8px; }
+  .scard { width:52px; height:52px; border:1px solid rgba(255,255,255,.28); background:rgba(0,0,0,.35);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; position:relative; }
+  .scard.sel { border-color:#4B77DC; background:#4B77DC33; }
+  .scard .k { font-size:15px; font-weight:800; color:#EAF2FA; }
   .scard.sel .k { color:#4B77DC; }
-  .scard .sname { font-size:9px; line-height:1.1; color:#8fa0b1; max-width:54px; text-align:center;
+  .scard .sname { font-size:8.5px; color:#9AA8B8; max-width:48px; text-align:center; line-height:1.1;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  .skilldetail { margin-top:10px; border-left:3px solid #4B77DC; padding:2px 0 2px 10px; }
-  .skilldetail .sl { font-size:13px; font-weight:700; color:#4B77DC; }
-  .skilldetail .sd { font-size:12.5px; line-height:1.55; color:#B4C0CC; margin-top:4px;
+  .qline { margin-top:10px; font-size:14px; font-weight:800; color:#fff; }
+  .qline em { font-style:normal; color:#FFD24A; }
+  .qdesc { margin-top:4px; font-size:12.5px; line-height:1.55; color:#C8D4E0;
     display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-  .tabs { display:flex; gap:6px; margin-top:14px; }
+  .wpanel { margin-top:12px; }
+  .wmain { height:92px; position:relative; border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.05); margin-bottom:6px; }
+  .wmain .wtag { position:absolute; left:6px; top:4px; font-size:10.5px; color:#9AA8B8; }
+  .wmain .wicon { position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); width:186px; height:42px; }
+  .wmain .wicon::before { content:''; position:absolute; inset:0; background:#DCE6F0; opacity:.92;
+    clip-path:polygon(0 42%, 76% 42%, 76% 30%, 92% 30%, 92% 55%, 68% 55%, 68% 78%, 44% 78%, 44% 55%, 0 55%); }
+  .wmain .wname { position:absolute; left:6px; bottom:4px; font-size:12px; color:#EAF2FA; }
+  .wmain .wtype { position:absolute; right:6px; bottom:4px; font-size:11px; color:#9AA8B8; }
+  .wgrid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .wcell { height:66px; position:relative; border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.04); }
+  .wcell .wtag { position:absolute; left:5px; top:3px; font-size:10px; color:#9AA8B8; }
+  .wcell .wicon { position:absolute; left:50%; top:56%; transform:translate(-50%,-50%); width:64px; height:26px; }
+  .wcell .wicon::before { content:''; position:absolute; inset:0; background:#C8D4E0; opacity:.9; }
+  .wcell .wicon.pistol::before { clip-path:polygon(4% 34%, 78% 34%, 78% 45%, 96% 45%, 96% 56%, 72% 56%, 72% 82%, 50% 82%, 50% 56%, 4% 56%); }
+  .wcell .wicon.knife::before { clip-path:polygon(2% 92%, 72% 4%, 90% 22%, 20% 100%); }
+  .wcell .wicon.grenade::before { clip-path:polygon(50% 12%, 92% 52%, 50% 92%, 8% 52%); }
+  .wcell .wname { position:absolute; left:5px; bottom:3px; font-size:10.5px; color:#C8D4E0; }
+  .tabs { display:flex; gap:4px; margin-top:auto; padding-top:8px; }
   .tab { flex:1; height:26px; display:flex; align-items:center; justify-content:center; font-size:12.5px;
-    border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.06); color:#9AA8B8; }
-  .tab.on { background:#4B77DCCC; border-color:#4B77DC; color:#0A111C; font-weight:700; }
-  .wrow { display:flex; align-items:center; gap:10px; height:36px; margin-top:6px;
-    background:rgba(255,255,255,.045); padding:0 10px; }
-  .wrow .wicon { width:22px; height:22px; position:relative; }
-  .wrow .wicon::before { content:''; position:absolute; inset:5px 1px; background:#4B77DCbb;
-    clip-path:polygon(0 35%, 78% 35%, 78% 45%, 100% 45%, 100% 58%, 72% 58%, 72% 80%, 52% 80%, 52% 58%, 0 58%); }
-  .wrow.grenade .wicon::before { clip-path:polygon(50% 15%, 88% 50%, 50% 85%, 12% 50%); inset:4px; }
-  .wrow.knife .wicon::before { clip-path:polygon(8% 92%, 78% 12%, 92% 26%, 22% 100%); inset:2px; }
-  .wrow .wname { font-size:13px; color:#DCE6F0; }
-  .wrow .wtype { margin-left:auto; font-size:11px; color:#7f8c9a; }
-  .lockbtn { position:absolute; right:16px; bottom:16px; height:72px; width:404px; background:#4B77DC;
-    color:#0A111C; font-size:19px; font-weight:800; letter-spacing:4px; display:flex; align-items:center;
-    justify-content:center; border:1px solid #00000055; }
-  .grid { position:absolute; left:16px; bottom:16px; height:72px; display:grid;
-    grid-template-columns:repeat(12, 1fr); grid-template-rows:1fr 1fr; gap:5px 6px; width:1150px; }
-  .wdesc { margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,.12);
-    font-size:12px; line-height:1.65; color:#8fa0b1; }
-  .wdesc b { display:block; color:#C6D2DE; font-size:12.5px; margin-bottom:4px; }
-  .cell { background:rgba(16,24,35,.85); border:1px solid rgba(255,255,255,.09); display:flex;
-    align-items:center; justify-content:center; font-size:14px; color:#C6D2DE; position:relative; }
-  .cell.sel { border-color:#4B77DC; background:#4B77DC33; color:#fff; font-weight:700; }
-  .cell.sel::before { content:'P1'; position:absolute; left:3px; top:1px; font-size:8px; color:#FFD24A; }
+    border:1px solid rgba(255,255,255,.25); background:rgba(0,0,0,.35); color:#C8D4E0; }
+  .tab.on { background:#EAF2FA; color:#10161e; font-weight:800; }
+  .lockbtn { position:absolute; left:264px; right:432px; bottom:124px; height:30px; z-index:4;
+    background:linear-gradient(90deg, rgba(170,40,48,.92), rgba(120,24,30,.92)); color:#fff;
+    font-size:15px; font-weight:800; letter-spacing:4px; display:flex; align-items:center;
+    justify-content:center; border:1px solid rgba(255,255,255,.25); }
+  .grid { position:absolute; left:26px; right:432px; bottom:20px; height:92px; display:grid;
+    grid-template-columns:repeat(12, 1fr); grid-template-rows:1fr 1fr; gap:5px 6px; }
+  .cell { background:rgba(10,16,24,.82); border:1px solid rgba(255,255,255,.16); display:flex;
+    align-items:center; justify-content:center; font-size:15px; color:#D8E2EC; position:relative; }
+  .cell.sel { border-color:#FFD24A; background:rgba(60,52,26,.7); color:#fff; font-weight:800; }
+  .cell.sel::before { content:'P1'; position:absolute; left:2px; top:0; font-size:8px; color:#FFD24A; }
+  .notice { position:absolute; left:264px; right:432px; bottom:4px; text-align:center;
+    font-size:11px; color:#FFB4B4; text-shadow:0 1px 6px #000; }
   </style></head><body><div class="screen">
+    <div class="map"><div class="mapicon"></div><div><b>88区</b><span>爆破入侵</span></div></div>
     <div class="phasebar">
       <div class="slab ally">我方进攻</div>
-      <div class="center"><span class="mode">选择角色</span><span class="timer">00:24</span></div>
+      <div class="phasecenter">
+        <div class="row1">选择角色</div>
+        <div class="row2"><span class="score">00</span><span class="timer">00:16</span><span class="score enemy">00</span></div>
+      </div>
       <div class="slab enemy">敌方防守</div>
     </div>
-    <div class="main">
-      <div class="team">
-        <div class="thead">队友</div>
-        
-          <div class="mate me">
-            <div class="avatar">米</div>
-            <div><div class="mname">米雪儿·李</div><div class="mrole">守护</div></div>
+    <div class="gear">⚙</div>
+    <div class="team">
+      
+        <div class="mate me">
+          <div class="avatar">米</div>
+          <div>
+            <div class="mname">米雪儿·李</div>
+            <div class="mrole">守护</div>
+            <div class="arrow"></div>
           </div>
-          <div class="mate ">
-            <div class="avatar">信</div>
-            <div><div class="mname">信</div><div class="mrole">守护</div></div>
-          </div>
-          <div class="mate ">
-            <div class="avatar">心</div>
-            <div><div class="mname">心夏</div><div class="mrole">支援</div></div>
-          </div>
-          <div class="mate ">
-            <div class="avatar">伊</div>
-            <div><div class="mname">伊薇特</div><div class="mrole">控场</div></div>
-          </div>
-          <div class="mate ">
-            <div class="avatar">芙</div>
-            <div><div class="mname">芙拉薇娅</div><div class="mrole">突击</div></div>
-          </div>
-      </div>
-      <div class="center">
-        <div class="giant">米</div>
-        <div class="p1">P1</div>
-        <div class="intro">欧泊小队新锐搜查官，努力守望着美好的理想乡。<div class="quote">「打起精神来，游戏还没有结束呢！」</div></div>
-        <div class="namebar">
-          <div class="an">米雪儿·李</div>
-          <div class="roleline">守护 · 欧泊</div>
         </div>
+        <div class="mate">
+          <div class="avatar">信</div>
+          <div>
+            <div class="mname">信</div>
+            <div class="mrole">守护</div>
+            <div class="arrow"></div>
+          </div>
+        </div>
+        <div class="mate">
+          <div class="avatar">心</div>
+          <div>
+            <div class="mname">心夏</div>
+            <div class="mrole">支援</div>
+            <div class="arrow"></div>
+          </div>
+        </div>
+        <div class="mate">
+          <div class="avatar">伊</div>
+          <div>
+            <div class="mname">伊薇特</div>
+            <div class="mrole">控场</div>
+            <div class="arrow"></div>
+          </div>
+        </div>
+        <div class="mate">
+          <div class="avatar">芙</div>
+          <div>
+            <div class="mname">芙拉薇娅</div>
+            <div class="mrole">突击</div>
+            <div class="arrow"></div>
+          </div>
+        </div>
+    </div>
+    <div class="center">
+      <div class="giant">米</div>
+      <div class="intro">欧泊小队新锐搜查官，努力守望着美好的理想乡。<div class="quote">「打起精神来，游戏还没有结束呢！」</div></div>
+      <div class="namebar">
+        <div class="an">米雪儿·李</div>
+        <div class="roleline">守护 · 欧泊</div>
       </div>
-      <div class="right">
-        <div class="rolechip"><span class="chip">守护</span><span class="faction">欧泊</span></div>
+      <div class="p1">P1</div>
+    </div>
+    <div class="right">
+      <div class="rhead"><div class="ricon"></div><div class="rrole">守护</div>
+        <div class="rname">米雪儿·李</div></div>
+      <div class="rbody">
         <div class="identity"><b>身份 ·</b> 萌新搜查官</div>
         <div class="skills">
-          <span class="lab">技能</span>
           
             <div class="scard sel">
               <div class="k">Q</div>
               <div class="sname">喵喵卫士</div>
             </div>
-            <div class="scard ">
+            <div class="scard">
               <div class="k">P</div>
               <div class="sname">猫踪喵迹</div>
             </div>
-            <div class="scard ">
+            <div class="scard">
               <div class="k">X</div>
               <div class="sname">火力大喵</div>
             </div>
-            <div class="scard ">
+            <div class="scard">
               <div class="k">E</div>
               <div class="sname">陷阱喵喵</div>
             </div>
         </div>
-        <div class="skilldetail">
-          <div class="sl">Q 主动 · 喵喵卫士</div>
-          <div class="sd">部署喵喵卫士，自动攻击一定范围内的敌人，并使其减速</div>
+        <div class="qline"><em>Q 主动</em> 喵喵卫士</div>
+        <div class="qdesc">部署喵喵卫士，自动攻击一定范围内的敌人，并使其减速</div>
+        <div class="wpanel">
+          <div class="wmain">
+            <span class="wtag">1 主武器</span>
+            <div class="wicon"></div>
+            <span class="wname">警探</span>
+            <span class="wtype">自动步枪</span>
+          </div>
+          <div class="wgrid">
+            
+              <div class="wcell">
+                <span class="wtag">2 副武器</span>
+                <div class="wicon pistol"></div>
+                <span class="wname">副武器</span>
+              </div>
+              <div class="wcell">
+                <span class="wtag">3 近战武器</span>
+                <div class="wicon knife"></div>
+                <span class="wname">近战武器</span>
+              </div>
+              <div class="wcell">
+                <span class="wtag">4 战术道具 1</span>
+                <div class="wicon grenade"></div>
+                <span class="wname">战术道具</span>
+              </div>
+              <div class="wcell">
+                <span class="wtag">5 战术道具 2</span>
+                <div class="wicon grenade"></div>
+                <span class="wname">战术道具</span>
+              </div>
+          </div>
         </div>
         <div class="tabs"><div class="tab on">武器选择</div><div class="tab">外观选择</div></div>
-        
-          <div class="wrow ">
-            <div class="wicon"></div>
-            <div class="wname">警探</div>
-            <div class="wtype">自动步枪</div>
-          </div>
-          <div class="wrow ">
-            <div class="wicon"></div>
-            <div class="wname">副武器</div>
-            <div class="wtype"></div>
-          </div>
-          <div class="wrow knife">
-            <div class="wicon"></div>
-            <div class="wname">近战武器</div>
-            <div class="wtype"></div>
-          </div>
-          <div class="wrow grenade">
-            <div class="wicon"></div>
-            <div class="wname">战术道具</div>
-            <div class="wtype"></div>
-          </div>
-          <div class="wrow grenade">
-            <div class="wicon"></div>
-            <div class="wname">战术道具</div>
-            <div class="wtype"></div>
-          </div>
-        <div class="wdesc"><b>警探 · 自动步枪</b>满足以猛烈的火力压制战场的需求，其精准度和射速的平衡性也相当出色。配备1.25倍瞄准镜。</div>
       </div>
     </div>
     <div class="lockbtn">锁定角色</div>
     <div class="grid">
       <div class="cell sel">米</div><div class="cell">信</div><div class="cell">心</div><div class="cell">伊</div><div class="cell">芙</div><div class="cell">忧</div><div class="cell">蕾</div><div class="cell">千</div><div class="cell">明</div><div class="cell">拉</div><div class="cell">梅</div><div class="cell">令</div><div class="cell">香</div><div class="cell">艾</div><div class="cell">珐</div><div class="cell">玛</div><div class="cell">诺</div><div class="cell">奥</div><div class="cell">玛</div><div class="cell">绯</div><div class="cell">星</div><div class="cell">白</div><div class="cell">加</div><div class="cell">汐</div>
     </div>
+    <div class="notice">进攻方无法选择欧泊角色</div>
     <div class="source">数据来源：biligame 卡拉彼丘 wiki · 中文文本</div>
   </div></body></html>

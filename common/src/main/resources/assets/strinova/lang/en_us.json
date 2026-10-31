@@ -239,5 +239,7 @@
   "config.strinova.growth.selected": "Selected",
   "config.strinova.growth.stat.hp": "HP",
   "config.strinova.growth.stat.armor": "Armor",
-  "config.strinova.growth.stat.speed": "Speed"
+  "config.strinova.growth.stat.speed": "Speed",
+  "config.strinova.growth.upgraded": "Upgraded",
+  "config.strinova.growth.weapon_hint": "Tactical Skill equippable"
 }

@@ -222,10 +222,12 @@ public class StrinovaGrowthScreen extends Screen {
 
         int textY = this.headerTop + (this.headerHeight - 9) / 2;
 
-        // 中央能量点（价格购买后实时刷新）
+        // 中央能量点（价格购买后实时刷新），左侧蓝色宝石与游戏一致
         Component points = Component.translatable("config.strinova.growth.points",
                 StrinovaGrowthState.energyPoints());
+        int pointsWidth = this.font.width(points);
         graphics.drawCenteredString(this.font, points, this.width / 2, textY, COLOR_GOLD);
+        drawDiamond(graphics, this.width / 2 - pointsWidth / 2 - 9, textY + 4, 4, COLOR_DIAMOND);
 
         // 左侧标题 + 角色名（空间不足时截断角色名部分）
         Component title = titleLine(this.agent);
@@ -371,17 +373,9 @@ public class StrinovaGrowthScreen extends Screen {
                                 int blockX, int blockY, int energy, int mouseX, int mouseY) {
         int accent = CATEGORY_ACCENTS[categoryIndex % CATEGORY_ACCENTS.length];
         int titleY = blockY + 1;
-        graphics.fill(blockX, titleY + 1, blockX + 2, titleY + 8, accent);
-        String kindLabel = kindLabel(category.kind());
-        int kindWidth = kindLabel.isEmpty() ? 0 : this.font.width(kindLabel) + 4;
-        graphics.drawString(this.font, truncate(category.label(), this.categoryColumnWidth - 6 - kindWidth),
-                blockX + 6, titleY, COLOR_TEXT, false);
-        if (!kindLabel.isEmpty()) {
-            graphics.drawString(this.font, kindLabel,
-                    blockX + this.categoryColumnWidth - this.font.width(kindLabel),
-                    titleY, COLOR_TEXT_DISABLED, false);
-        }
-        graphics.fill(blockX, titleY + 10, blockX + this.categoryColumnWidth, titleY + 11, accent & 0x55FFFFFF);
+        drawBranchIcon(graphics, category.kind(), category.slot(), blockX, titleY - 1, 12, accent);
+        graphics.drawString(this.font, truncate(category.label(), this.categoryColumnWidth - 20),
+                blockX + 16, titleY, COLOR_TEXT, false);
 
         List<StrinovaGrowthState.UpgradeItem> items = category.items();
         int itemsBlockHeight = this.itemRowHeight * items.size() + this.itemRowGap * Math.max(0, items.size() - 1);
@@ -422,9 +416,9 @@ public class StrinovaGrowthScreen extends Screen {
             graphics.fill(x, y, x + 2, y + height, purchased ? COLOR_CYAN : 0x80FFFFFF);
         }
 
-        String statusText = Component.translatable("config.strinova.growth.activated").getString();
+        String statusText = Component.translatable("config.strinova.growth.upgraded").getString();
         int statusWidth = purchased
-                ? this.font.width(statusText) + 14
+                ? this.font.width(statusText) + 6
                 : this.font.width(String.valueOf(item.cost())) + 13;
         int nameWidth = Math.max(16, width - 12 - statusWidth);
         int textY = y + Math.max(1, (height - 9) / 2);
@@ -436,15 +430,14 @@ public class StrinovaGrowthScreen extends Screen {
         if (purchased) {
             int textRight = x + width - 6;
             graphics.drawString(this.font, statusText,
-                    textRight - this.font.width(statusText), textY, COLOR_SUCCESS, false);
-            drawCheck(graphics, textRight - this.font.width(statusText) - 11, textY, COLOR_SUCCESS);
+                    textRight - this.font.width(statusText), textY, 0xFFB4C0CC, false);
         } else {
             int diamondX = x + width - 8;
-            drawDiamond(graphics, diamondX, textY + 4, 3, COLOR_DIAMOND);
+            drawDiamond(graphics, diamondX, textY + 4, 4, COLOR_DIAMOND);
             String price = String.valueOf(item.cost());
             graphics.drawString(this.font, price,
                     diamondX - 8 - this.font.width(price), textY,
-                    affordable ? COLOR_DIAMOND : COLOR_TEXT_DISABLED, false);
+                    affordable ? 0xFFFF8A7A : COLOR_TEXT_DISABLED, false);
         }
     }
 
@@ -457,15 +450,16 @@ public class StrinovaGrowthScreen extends Screen {
         graphics.fill(panelLeft, this.weaponsY, panelLeft + 1, this.contentBottom, COLOR_BORDER);
 
         List<StrinovaHudState.WeaponSlot> slots = StrinovaHudState.getWeaponSlots();
+        int panelWidth = this.innerRight - this.weaponsX;
         int slotGap = 3;
         int available = this.contentBottom - this.weaponsY - 8 - (WEAPON_SLOT_COUNT - 1) * slotGap;
-        int slotHeight = clamp(available / WEAPON_SLOT_COUNT, 16, 44);
+        int slotHeight = clamp(available / WEAPON_SLOT_COUNT, 18, 48);
         int totalHeight = WEAPON_SLOT_COUNT * slotHeight + (WEAPON_SLOT_COUNT - 1) * slotGap;
         int startY = this.weaponsY + 4
                 + Math.max(0, (this.contentBottom - this.weaponsY - 8 - totalHeight) / 2);
+        String hint = Component.translatable("config.strinova.growth.weapon_hint").getString();
         for (int i = 0; i < WEAPON_SLOT_COUNT; i++) {
             int slotY = startY + i * (slotHeight + slotGap);
-            // 槽位数据来自 StrinovaHudState（mock 或后续同步），缺失时用占位名称
             StrinovaHudState.WeaponSlot slot = i < slots.size() ? slots.get(i) : null;
             boolean selected = slot != null && slot.selected();
             String name = slot == null || slot.name() == null ? "" : slot.name();
@@ -477,40 +471,56 @@ public class StrinovaGrowthScreen extends Screen {
             }
             int slotRight = this.innerRight - 4;
             graphics.fill(this.weaponsX, slotY, slotRight, slotY + slotHeight,
-                    selected ? 0x66203548 : 0x330B121A);
+                    selected ? 0x66203548 : 0x2A0B121A);
+            graphics.fill(this.weaponsX, slotY, slotRight, slotY + 1, selected ? COLOR_CYAN : 0x22FFFFFF);
             if (selected) {
-                graphics.fill(this.weaponsX, slotY, slotRight, slotY + 1, COLOR_CYAN);
                 graphics.fill(this.weaponsX, slotY + slotHeight - 1, slotRight, slotY + slotHeight, COLOR_CYAN);
                 graphics.fill(this.weaponsX, slotY, this.weaponsX + 1, slotY + slotHeight, COLOR_CYAN);
                 graphics.fill(slotRight - 1, slotY, slotRight, slotY + slotHeight, COLOR_CYAN);
             }
 
-            int iconSize = Math.max(8, Math.min(this.weaponsWidth - 24, slotHeight - 6));
-            int iconX = this.weaponsX + 4;
-            int iconY = slotY + (slotHeight - iconSize) / 2;
-            drawWeaponIcon(graphics, i, iconX, iconY, iconSize, selected ? COLOR_CYAN : COLOR_TEXT_DIM);
+            // 顶部：序号 + 槽位类型（对齐真实 UI 的「1 主武器」）
+            String slotLabel = Component.translatable(WEAPON_SLOT_KEYS[i]).getString();
+            graphics.drawString(this.font, String.valueOf(i + 1), this.weaponsX + 4, slotY + 3,
+                    selected ? COLOR_CYAN : COLOR_TEXT_DIM, false);
+            graphics.drawString(this.font, truncate(slotLabel, Math.max(10, panelWidth - 20)),
+                    this.weaponsX + 14, slotY + 3, COLOR_TEXT_DISABLED, false);
 
-            // 数字键帽 1~5
-            int keySize = Math.min(13, slotHeight - 2);
-            int keyX = slotRight - keySize - 3;
-            int keyY = slotY + (slotHeight - keySize) / 2;
-            graphics.fill(keyX, keyY, keyX + keySize, keyY + keySize, 0x44FFFFFF);
-            graphics.drawString(this.font, String.valueOf(i + 1),
-                    keyX + (keySize - 6) / 2, keyY + (keySize - 9) / 2, COLOR_TEXT_DIM, false);
+            // 居中武器图标
+            int iconSize = Math.max(8, Math.min(panelWidth - 26, slotHeight - 18));
+            int iconX = this.weaponsX + (panelWidth - iconSize) / 2;
+            int iconY = slotY + 12 + Math.max(0, (slotHeight - 14 - iconSize) / 2);
+            drawWeaponIcon(graphics, i, iconX, iconY, iconSize,
+                    selected ? COLOR_CYAN : (i == 0 ? 0xFFC8D4E0 : COLOR_TEXT_DIM));
 
-            if (!this.compactWeapons) {
-                int textX = iconX + iconSize + 6;
-                int textMax = keyX - textX - 4;
+            if (this.compactWeapons || slotHeight < 26) {
+                continue;
+            }
+            int bottomY = slotY + slotHeight - 10;
+            if (i >= 3) {
+                // 战术道具槽：真实 UI 显示「现在可装备战术技能」
+                graphics.drawString(this.font, truncate(hint, panelWidth - 8),
+                        this.weaponsX + 4, bottomY, 0xFFFF6B6B, false);
+            } else {
                 boolean hasName = name != null && !name.isEmpty();
                 String label = hasName
                         ? name
                         : Component.translatable("hud.strinova.weapon.none").getString();
-                graphics.drawString(this.font, truncate(label, Math.max(12, textMax)),
-                        textX, slotY + (slotHeight - 9) / 2,
+                graphics.drawString(this.font, truncate(label, panelWidth - 8),
+                        this.weaponsX + 4, bottomY,
                         hasName ? (selected ? COLOR_TEXT : COLOR_TEXT_DIM) : COLOR_TEXT_DISABLED, false);
             }
         }
     }
+
+    /** 武器槽类型 lang key（与选角界面共用）。 */
+    private static final String[] WEAPON_SLOT_KEYS = {
+            "config.strinova.agent.weapon_primary",
+            "config.strinova.agent.weapon_secondary",
+            "config.strinova.agent.weapon_melee",
+            "config.strinova.agent.weapon_gadget",
+            "config.strinova.agent.weapon_gadget"
+    };
 
     /** 程序化绘制武器几何图标：0 主武器（长枪）、1 副武器（手枪）、2 近战（斜刃）、3+ 战术道具（菱形手雷）。 */
     private static void drawWeaponIcon(GuiGraphics graphics, int index, int x, int y, int size, int color) {
@@ -646,16 +656,10 @@ public class StrinovaGrowthScreen extends Screen {
         }
     }
 
-    /** 分支类型小标签（仅主动 / 被动技能分支显示，避免与技能名标题重复）。 */
-    private static String kindLabel(String kind) {
-        return switch (kind == null ? "" : kind) {
-            case "active" -> Component.translatable("config.strinova.growth.kind.active").getString();
-            case "passive" -> Component.translatable("config.strinova.growth.kind.passive").getString();
-            default -> "";
-        };
-    }
-
-    /** 在觉醒卡右上角绘制三色需求（蓝=武器 / 黄=技能 / 绿=防御），满足需求时点亮。 */
+    /**
+     * 在觉醒卡右上角绘制三色需求（对齐游戏）：蓝=武器网络方块、黄=技能网络圆点、绿=防御网络三角；
+     * 每种形状重复「需求数量」次，已满足的需求点亮。
+     */
     private static void drawAwakeningNeeds(GuiGraphics graphics, StrinovaGrowthState.Awakening awakening,
                                            int right, int top) {
         int[] needs = {awakening.needWeapon(), awakening.needSkill(), awakening.needDefense()};
@@ -663,19 +667,90 @@ public class StrinovaGrowthScreen extends Screen {
         int[] owned = {StrinovaGrowthState.purchasedWeapon(),
                 StrinovaGrowthState.purchasedSkill(),
                 StrinovaGrowthState.purchasedDefense()};
-        int box = 10;
-        int gap = 2;
-        for (int i = 0; i < needs.length; i++) {
-            int x = right - (needs.length - i) * (box + gap) + gap;
+        int shape = 9;
+        int gap = 3;
+        int x = right;
+        for (int i = 2; i >= 0; i--) {
             boolean met = needs[i] > 0 && owned[i] >= needs[i];
-            int color = met ? colors[i] : 0x3356626E;
-            graphics.fill(x, top, x + box, top + box, color);
-            if (needs[i] > 0) {
-                String text = String.valueOf(needs[i]);
-                graphics.drawString(net.minecraft.client.Minecraft.getInstance().font, text,
-                        x + (box - net.minecraft.client.Minecraft.getInstance().font.width(text)) / 2,
-                        top + 1, met ? 0xFF0A111C : 0xFFB4C0CC, false);
+            int color = met ? colors[i] : 0x4456626E;
+            for (int k = 0; k < needs[i]; k++) {
+                x -= shape;
+                switch (i) {
+                    case 0 -> drawFilledSquare(graphics, x, top, shape, color);
+                    case 1 -> drawFilledCircle(graphics, x, top, shape, color);
+                    default -> drawFilledTriangle(graphics, x, top, shape, color);
+                }
+                x -= gap;
             }
+        }
+    }
+
+    /** 分支类型图标（对齐游戏）：武器=蓝菱形、主动/被动=金圆、护甲=绿盾、弦化=绿三角。 */
+    private static void drawBranchIcon(GuiGraphics graphics, String kind, int slot,
+                                       int x, int y, int size, int fallback) {
+        String type = kind == null ? "" : kind;
+        int color;
+        switch (type) {
+            case "weapon" -> color = slot % 2 == 0 ? 0xFF5A9BFF : 0xFF4FA3FF;
+            case "active", "passive" -> color = 0xFFE8B54D;
+            case "armor" -> color = 0xFF57C785;
+            case "string" -> color = 0xFF57C785;
+            default -> color = fallback;
+        }
+        switch (type) {
+            case "active", "passive" -> drawFilledCircle(graphics, x, y, size, color);
+            case "armor" -> drawFilledShield(graphics, x, y, size, color);
+            case "string" -> drawFilledTriangle(graphics, x, y, size, color);
+            default -> drawFilledDiamond(graphics, x, y, size, color);
+        }
+    }
+
+    /** 实心菱形。 */
+    private static void drawFilledDiamond(GuiGraphics graphics, int x, int y, int size, int color) {
+        int centerX = x + size / 2;
+        int centerY = y + size / 2;
+        int radius = size / 2;
+        for (int dy = -radius; dy <= radius; dy++) {
+            int half = radius - Math.abs(dy);
+            graphics.fill(centerX - half, centerY + dy, centerX + half + 1, centerY + dy + 1, color);
+        }
+    }
+
+    /** 实心圆（按行近似）。 */
+    private static void drawFilledCircle(GuiGraphics graphics, int x, int y, int size, int color) {
+        int radius = size / 2;
+        int centerX = x + radius;
+        int centerY = y + radius;
+        for (int dy = -radius; dy <= radius; dy++) {
+            int half = (int) Math.sqrt(Math.max(0, radius * radius - dy * dy));
+            graphics.fill(centerX - half, centerY + dy, centerX + half + 1, centerY + dy + 1, color);
+        }
+    }
+
+    /** 实心方块。 */
+    private static void drawFilledSquare(GuiGraphics graphics, int x, int y, int size, int color) {
+        graphics.fill(x, y, x + size, y + size, color);
+    }
+
+    /** 实心盾形（顶部平、底部收尖）。 */
+    private static void drawFilledShield(GuiGraphics graphics, int x, int y, int size, int color) {
+        int centerX = x + size / 2;
+        int topY = y + 1;
+        int bottomY = y + size - 1;
+        int width = size;
+        graphics.fill(centerX - width / 2, topY, centerX + width / 2, topY + 2, color);
+        for (int dy = 2; dy < bottomY - topY; dy++) {
+            int half = width / 2 - (dy * (width / 2)) / Math.max(1, bottomY - topY);
+            graphics.fill(centerX - half, topY + dy, centerX + half, topY + dy + 1, color);
+        }
+    }
+
+    /** 实心倒三角。 */
+    private static void drawFilledTriangle(GuiGraphics graphics, int x, int y, int size, int color) {
+        int centerX = x + size / 2;
+        for (int dy = 0; dy < size; dy++) {
+            int half = (size / 2) * (dy + 1) / size;
+            graphics.fill(centerX - half, y + dy, centerX + half + 1, y + dy + 1, color);
         }
     }
 
