@@ -217,6 +217,9 @@ public final class StrinovaClientInitForge {
                                             + " held=" + com.hhdxcz.strinova.client.hud.StrinovaTaczCompat.heldItemId(player)
                                             + " cam=" + (client.options == null ? "?" : client.options.getCameraType())
                                             + " screen=" + (client.screen != null)
+                                            + " hud=" + com.hhdxcz.strinova.client.hud.StrinovaHudConfig.get().hudEnabled
+                                            + " scoreboard=" + com.hhdxcz.strinova.client.hud.StrinovaHudConfig.get().scoreboardEnabled
+                                            + " yahei=" + com.hhdxcz.strinova.client.hud.StrinovaSystemFontRenderer.isReady()
                                             + " " + uuidState), false);
                             return 1;
                         }));

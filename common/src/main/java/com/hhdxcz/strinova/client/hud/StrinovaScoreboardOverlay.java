@@ -101,7 +101,8 @@ public final class StrinovaScoreboardOverlay {
             return false;
         }
         StrinovaHudConfig config = StrinovaHudConfig.get();
-        if (!config.hudEnabled || !config.scoreboardEnabled) {
+        // 计分板独立于 HUD 总开关：即使关闭了血甲/技能等 HUD，按 TAB 仍应显示计分板
+        if (!config.scoreboardEnabled) {
             return false;
         }
         if (!com.hhdxcz.strinova.StrinovaMod.isEnabled() && !StrinovaHudMockData.isEnabled()) {

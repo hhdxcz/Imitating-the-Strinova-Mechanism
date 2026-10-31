@@ -130,6 +130,14 @@ public final class StrinovaCommonConfig {
                 StrinovaMod.LOGGER.info("Migrated legacy Strinova config: modEnabled -> true");
                 save(sanitized);
             }
+            if (sanitized.configVersion < 2) {
+                // v2：B 键不再默认让位给 TACZ（避免对局中按 B 打不开增幅网络）；
+                // TACZ 的开火模式可用 G 键切换。
+                sanitized.growthKeyYieldToTacz = false;
+                sanitized.configVersion = 2;
+                StrinovaMod.LOGGER.info("Migrated Strinova config: B 键恢复为增幅网络（TACZ 开火模式请用 G）");
+                save(sanitized);
+            }
             return sanitized;
         } catch (Exception e) {
             StrinovaMod.LOGGER.error("Failed to read config, using defaults", e);
@@ -245,7 +253,7 @@ public final class StrinovaCommonConfig {
     // 配置数据对象：包含所有可配置的字段
     public static final class ConfigData {
         /** 配置结构版本：0/缺失 = 旧版配置（曾默认关闭），加载时自动迁移为启用。 */
-        public int configVersion = 1;
+        public int configVersion = 2;
         public boolean modEnabled = true;
         public int defaultExtraJumps = 1;
         public double paperDamageReduction = 0.4D;
@@ -254,7 +262,7 @@ public final class StrinovaCommonConfig {
         public boolean thirdPersonCompatBypass = true;
         public boolean tpsExitFlyOnAction = true;
         /** 手持 TACZ 枪械时，把「弦能增幅网络」的默认 B 键让给 TACZ 的切换开火模式。 */
-        public boolean growthKeyYieldToTacz = true;
+        public boolean growthKeyYieldToTacz = false;
         public String wallBlacklistCsv = "";
         public double defaultSyncOffsetX = 0.0D;
         public double defaultSyncOffsetY = 0.0D;

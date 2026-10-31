@@ -78,6 +78,11 @@ public final class StrinovaHudRenderer {
             }
         }
         StrinovaHudConfig config = StrinovaHudConfig.get();
+        // TAB 计分板优先：即使 HUD 总开关关闭，按住 TAB 也要能显示计分板
+        if (StrinovaScoreboardOverlay.isActive(minecraft)) {
+            StrinovaScoreboardOverlay.render(graphics, new StrinovaProgrammaticPainter(graphics));
+            return;
+        }
         if (!config.hudEnabled) {
             return;
         }
@@ -92,11 +97,6 @@ public final class StrinovaHudRenderer {
             return;
         }
         syncFromPlayer(minecraft, serverMatch);
-        // TAB 计分板：按住 TAB 时只画计分板，隐藏其它 HUD，避免血甲/技能栏/武器栏压在面板上
-        if (StrinovaScoreboardOverlay.isActive(minecraft)) {
-            StrinovaScoreboardOverlay.render(graphics, new StrinovaProgrammaticPainter(graphics));
-            return;
-        }
         renderAll(graphics, config);
     }
 
