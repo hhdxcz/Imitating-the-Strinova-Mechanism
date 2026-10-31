@@ -5,11 +5,13 @@ import com.hhdxcz.strinova.collision.StrinovaCompoundCollision;
 import com.hhdxcz.strinova.net.StrinovaNetwork;
 import com.hhdxcz.strinova.paper.WaPaperState;
 import com.hhdxcz.strinova.gameplay.StrinovaAirJumpClientState;
+import com.hhdxcz.strinova.client.StrinovaClientProfileSync;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.client.Minecraft;
@@ -49,6 +51,8 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
         StrinovaHudConfig.load();
         StrinovaHudRenderer.register();
         StrinovaKeyBindings.register();
+        // 客户端 tick：进世界首帧 / 选角或成长变化后上报 C2S_PROFILE（角色 + 成长等级）
+        ClientTickEvents.END_CLIENT_TICK.register(client -> StrinovaClientProfileSync.tick());
         // H4：客户端加入服务器时把本地完整碰撞配置上报给服务端
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             if (client.player != null) {
@@ -60,6 +64,7 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
             StrinovaAirJumpClientState.clearAll();
             StrinovaCollisionBoxTuning.clearAll();
             StrinovaCompoundCollision.clearAll();
+            StrinovaClientProfileSync.reset();
             com.hhdxcz.strinova.client.StrinovaClientNotices.reset();
         });
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {

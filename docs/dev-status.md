@@ -51,6 +51,8 @@
 - S2C 同步 `s2c_match_state`（500ms 节流 + 登录单发），客户端写 MatchState/ScoreboardState/HudState；
 - 命令：`/strinova match start|stop|status`（OP 2）；
 - 平台钩子：伤害吸收（先纸片减伤）、死亡去重（Tag）、登录/登出/重生、server tick 广播。
+- **TACZ / 命中部位（v1.2.3）**：护甲吸收对所有伤害通用（含 TACZ 子弹）；爆头通过反射探测 `DamageSource` / 直接实体 / NBT 标记（探测失败安全回退 false）；`KillEvent.headshot` 真实；真实伤害数字（S2C 附带 `DamageEvent`：amount/headshot/mitigated）；弹药 HUD 继续通过 `StrinovaTaczCompat` 读取 TACZ 弹匣/备弹。
+- **对局真实数据（v1.2.3）**：新增 C2S `c2s_profile`（选角 id + 成长等级，服务端校验后缓存到 `StrinovaPlayerProfile`）；S2C 计分板条目新增 `agentName`、真实 `growthLevel`、输出分（累计真实伤害）、技能分（非枪械伤害）、真实 `ping`（`ServerPlayer.latency`）与伤害事件列表；计分板角色名不再空白，成长等级/输出分/技能分为真实数据。
 
 ### 5. wiki 文本数据层（本次新增）
 - 契约：`docs/wiki-research/wiki-data-schema.md`；
@@ -61,12 +63,10 @@
 
 ## 已知 TODO / 下一阶段
 
-1. **选角锁定下发服务端**：目前锁定只写客户端配置，计分板角色名仍空白；
-2. **枪械/命中部位系统**：TACZ 伤害接入护甲、爆头、弹药 HUD（`KillEvent.headshot` 仍为 false）；
-3. **炸弹/目标点系统**：回合记录里「炸弹爆炸/拆除」只有数据 key，尚未产生；
-4. **对局 UI 数据**：成长等级/输出分/技能分目前为 KDA 派生或占位；
-5. **英文数据补缺**：8 个老角色（米雪儿·李/信/心夏/伊薇特/芙拉薇娅/忧雾/蕾欧娜/千代）的战术技能英文描述在英文 wiki 模块数据中缺失（运行时回退中文）；英文无逐项「属性变化」明细（悬停文案沿用中文）；
-6. **数据校验自动化**：把 `node tools/en-wiki-sync.mjs` 与中文 validator 挂到 CI，防止 wiki 更新后数据漂移。
+1. **炸弹/目标点系统**：回合记录里「炸弹爆炸/拆除」只有数据 key，尚未产生；
+2. **英文数据补缺**：8 个老角色（米雪儿·李/信/心夏/伊薇特/芙拉薇娅/忧雾/蕾欧娜/千代）的战术技能英文描述在英文 wiki 模块数据中缺失（运行时回退中文）；英文无逐项「属性变化」明细（悬停文案沿用中文）；
+3. **数据校验自动化**：把 `node tools/en-wiki-sync.mjs` 与中文 validator 挂到 CI，防止 wiki 更新后数据漂移；
+4. **选角以服务端为准**：当前由客户端上报选角（服务端仅校验并展示），如需开局前服务端准入/改选，需要新增服务端选角流程。
 
 ## 约定
 

@@ -579,6 +579,8 @@ public class StrinovaAgentSelectScreen extends Screen {
             config.selectedAgentId = agent.id();
             config.save();
             this.lockedAgentId = agent.id();
+            // 选角锁定后立即上报服务端（C2S_PROFILE），TAB 计分板/头像才能拿到角色名
+            StrinovaClientProfileSync.markDirty();
         }
         this.backToParent();
     }

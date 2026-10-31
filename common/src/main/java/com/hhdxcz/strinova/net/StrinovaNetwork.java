@@ -12,8 +12,11 @@ import com.hhdxcz.strinova.gameplay.StrinovaCombatManager;
 import com.hhdxcz.strinova.gameplay.StrinovaDoubleJump;
 import com.hhdxcz.strinova.gameplay.StrinovaFlyRuntime;
 import com.hhdxcz.strinova.gameplay.StrinovaMatchManager;
+import com.hhdxcz.strinova.gameplay.StrinovaPlayerProfile;
 import com.hhdxcz.strinova.paper.WaPaperState;
 import com.hhdxcz.strinova.paper.StrinovaWallBlacklist;
+import dev.architectury.event.events.common.LifecycleEvent;
+import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.networking.NetworkManager;
 import io.netty.buffer.Unpooled;
 import net.minecraft.core.BlockPos;
@@ -43,6 +46,7 @@ public final class StrinovaNetwork {
     public static final ResourceLocation C2S_SET_FLY = new ResourceLocation(StrinovaMod.MOD_ID, "c2s_set_fly");
     public static final ResourceLocation C2S_IMPORT_WALL_BLACKLIST = new ResourceLocation(StrinovaMod.MOD_ID, "c2s_import_wall_blacklist");
     public static final ResourceLocation C2S_COLLISION_CONFIG = new ResourceLocation(StrinovaMod.MOD_ID, "c2s_collision_config");
+    public static final ResourceLocation C2S_PROFILE = new ResourceLocation(StrinovaMod.MOD_ID, "c2s_profile");
 
     // 服务端到客户端数据包标识
     public static final ResourceLocation S2C_WALL_SYNC = new ResourceLocation(StrinovaMod.MOD_ID, "s2c_wall_sync");
@@ -61,6 +65,10 @@ public final class StrinovaNetwork {
     // 碰撞配置同步字段上限，防止恶意客户端发送超大包
     private static final int MAX_COLLISION_PARTS = 64;
     private static final int MAX_PART_NAME_LENGTH = 64;
+    // 单个对局状态包最多携带的伤害事件数（防止一次包体过大；伤害数字只需最近几发）
+    private static final int MAX_DAMAGE_EVENTS_PER_PACKET = 64;
+    // 伤害事件最大年龄：超过 2 秒的命中不再推送（避免对局开始/上一局残留事件弹旧飘字）
+    private static final long MAX_DAMAGE_EVENT_AGE_MS = 2000L;
 
     // 一个玩家的完整碰撞配置：碰撞类型、分体部件、两套微调参数
     private record CollisionConfig(
@@ -70,6 +78,10 @@ public final class StrinovaNetwork {
             StrinovaCollisionBoxTuning.Tuning syncTuning,
             StrinovaCollisionBoxTuning.Tuning flyTuning
     ) {
+    }
+
+    // 伤害数字载荷（网络层用；时间戳由客户端 HUD 收到时生成）
+    private record DamageNumberPayload(float amount, boolean headshot, boolean mitigated) {
     }
 
     private StrinovaNetwork() {
@@ -298,6 +310,41 @@ public final class StrinovaNetwork {
                 broadcastCollisionConfig(server, playerId);
             });
         });
+
+        // 接收客户端上报的选角 / 成长等级（服务端校验角色 id、clamp 成长等级，不信任客户端）
+        NetworkManager.registerReceiver(NetworkManager.Side.C2S, C2S_PROFILE, (buf, context) -> {
+            var p = context.getPlayer();
+            if (!(p instanceof ServerPlayer player)) {
+                return;
+            }
+            String reportedAgentId;
+            int reportedGrowthLevel;
+            try {
+                reportedAgentId = buf.readUtf(64);
+                reportedGrowthLevel = buf.readInt();
+            } catch (RuntimeException e) {
+                // 超长 / 截断的恶意包：丢弃，不写档案
+                StrinovaMod.LOGGER.warn("Rejected invalid profile payload from {}: {}",
+                        player.getName().getString(), e.getMessage());
+                return;
+            }
+            final String agentId = reportedAgentId == null ? "" : reportedAgentId;
+            final int growthLevel = reportedGrowthLevel;
+            context.queue(() -> {
+                if (!StrinovaPlayerProfile.set(player.getUUID(), agentId, growthLevel)) {
+                    StrinovaMod.LOGGER.warn("Rejected unknown agent id '{}' reported by {}",
+                            agentId, player.getName().getString());
+                }
+            });
+        });
+
+        // 玩家退出时清理其档案；服务器停止时整体清空（避免同一 JVM 切换存档后残留旧档案）
+        PlayerEvent.PLAYER_QUIT.register(player -> {
+            if (player != null) {
+                StrinovaPlayerProfile.remove(player.getUUID());
+            }
+        });
+        LifecycleEvent.SERVER_STOPPING.register(server -> StrinovaPlayerProfile.removeAll());
     }
 
     // 检测玩家前方是否有固体方块（用于贴墙判定）
@@ -553,6 +600,8 @@ public final class StrinovaNetwork {
             for (int i = 0; i < playerCount; i++) {
                 UUID playerId = buf.readUUID();
                 String name = buf.readUtf(64);
+                // 角色名（服务端由 C2S_PROFILE 档案下发；未选角为空串）
+                String agentName = buf.readUtf(64);
                 boolean ally = buf.readBoolean();
                 int kills = buf.readInt();
                 int deaths = buf.readInt();
@@ -569,7 +618,7 @@ public final class StrinovaNetwork {
                 int assistScore = buf.readInt();
                 int ping = buf.readInt();
                 boolean self = localId != null && localId.equals(playerId);
-                entries.add(new StrinovaScoreboardState.Entry(name, "", ally, self,
+                entries.add(new StrinovaScoreboardState.Entry(name, agentName, ally, self,
                         kills, deaths, assists, health, armor,
                         alive ? StrinovaScoreboardState.Status.ALIVE : StrinovaScoreboardState.Status.DEAD,
                         ultimatePoints, Math.max(1, ultimateMax), growthLevel, weaponName,
@@ -580,6 +629,16 @@ public final class StrinovaNetwork {
                     selfUltimate = ultimatePoints;
                     selfUltimateMax = Math.max(1, ultimateMax);
                 }
+            }
+
+            // 伤害数字事件（服务端只发「本地玩家造成的命中」）：在 players 列表之后追加读取
+            int damageEventCount = Math.min(MAX_DAMAGE_EVENTS_PER_PACKET, Math.max(0, buf.readVarInt()));
+            List<DamageNumberPayload> damageNumbers = new ArrayList<>(damageEventCount);
+            for (int i = 0; i < damageEventCount; i++) {
+                float amount = buf.readFloat();
+                boolean headshot = buf.readBoolean();
+                boolean mitigated = buf.readBoolean();
+                damageNumbers.add(new DamageNumberPayload(amount, headshot, mitigated));
             }
 
             float finalSelfHealth = selfHealth;
@@ -605,6 +664,10 @@ public final class StrinovaNetwork {
                 }
                 for (StrinovaHudState.KillFeedEntry event : killEvents) {
                     StrinovaHudState.pushKillFeed(event.killer(), event.weapon(), event.victim(), event.headshot());
+                }
+                // 伤害数字：飘字时间戳在客户端主线程生成，避免网络线程与渲染线程竞争
+                for (DamageNumberPayload number : damageNumbers) {
+                    StrinovaHudState.pushDamageNumber(number.amount(), number.headshot(), number.mitigated());
                 }
             });
         });
@@ -800,6 +863,18 @@ public final class StrinovaNetwork {
         NetworkManager.sendToServer(C2S_COLLISION_CONFIG, buf);
     }
 
+    // 客户端把自己的选角 / 成长等级上报给服务端（服务端会再做校验与 clamp）
+    public static void sendProfile(String agentId, int growthLevel) {
+        String safeAgentId = agentId == null ? "" : agentId;
+        if (safeAgentId.length() > 64) {
+            safeAgentId = safeAgentId.substring(0, 64);
+        }
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        buf.writeUtf(safeAgentId, 64);
+        buf.writeInt(StrinovaPlayerProfile.clampGrowthLevel(growthLevel));
+        NetworkManager.sendToServer(C2S_PROFILE, buf);
+    }
+
     // 向所有在线玩家广播某玩家的完整碰撞配置
     public static void broadcastCollisionConfig(MinecraftServer server, UUID playerId) {
         if (server == null || playerId == null) {
@@ -901,14 +976,41 @@ public final class StrinovaNetwork {
         if (target == null || server == null) {
             return;
         }
+        // 伤害数字：只把「造成伤害的玩家自己」的命中事件发给他，且对局未激活时不 drain（避免丢事件）
+        List<StrinovaCombatManager.DamageEvent> damageEvents = List.of();
+        if (StrinovaMatchManager.isActive()) {
+            try {
+                List<StrinovaCombatManager.DamageEvent> drained =
+                        StrinovaCombatManager.drainDamageEvents(target.getUUID());
+                if (drained != null && !drained.isEmpty()) {
+                    // 只保留最近 2 秒的命中：丢弃对局开始前/上一局残留的旧事件，避免开局弹旧飘字
+                    long now = System.currentTimeMillis();
+                    List<StrinovaCombatManager.DamageEvent> fresh = new ArrayList<>(drained.size());
+                    for (StrinovaCombatManager.DamageEvent event : drained) {
+                        if (event == null) {
+                            continue;
+                        }
+                        long age = event.timeMs() <= 0L ? 0L : now - event.timeMs();
+                        if (age <= MAX_DAMAGE_EVENT_AGE_MS) {
+                            fresh.add(event);
+                        }
+                    }
+                    damageEvents = fresh;
+                }
+            } catch (Throwable t) {
+                StrinovaMod.LOGGER.warn("Failed to drain damage events for {}: {}",
+                        target.getUUID(), t.toString());
+            }
+        }
         FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-        writeMatchState(buf, server, kills);
+        writeMatchState(buf, server, kills, damageEvents);
         NetworkManager.sendToPlayer(target, S2C_MATCH_STATE, buf);
     }
 
-    // 写入对局快照：对局信息 + 击杀事件 + 所有在线玩家战斗数据
+    // 写入对局快照：对局信息 + 击杀事件 + 所有在线玩家战斗数据 + 目标玩家本人的伤害数字事件
     private static void writeMatchState(FriendlyByteBuf buf, MinecraftServer server,
-                                        List<StrinovaCombatManager.KillEvent> kills) {
+                                        List<StrinovaCombatManager.KillEvent> kills,
+                                        List<StrinovaCombatManager.DamageEvent> damageEvents) {
         boolean active = StrinovaMatchManager.isActive();
         buf.writeBoolean(active);
         if (!active) {
@@ -951,6 +1053,8 @@ public final class StrinovaNetwork {
                     : player.getMainHandItem().getHoverName().getString();
             buf.writeUUID(playerId);
             buf.writeUtf(player.getGameProfile().getName(), 64);
+            // 角色名：由客户端 C2S_PROFILE 上报 -> StrinovaPlayerProfile（未选角为空串）
+            buf.writeUtf(StrinovaPlayerProfile.agentName(playerId), 64);
             buf.writeBoolean(StrinovaMatchManager.isAlly(playerId));
             buf.writeInt(state.kills());
             buf.writeInt(state.deaths());
@@ -961,11 +1065,27 @@ public final class StrinovaNetwork {
             buf.writeInt(state.ultimateMax());
             buf.writeBoolean(!player.isDeadOrDying() && player.isAlive());
             buf.writeUtf(weaponName, 64);
-            buf.writeInt(1);
-            buf.writeInt(state.kills() * 100);
-            buf.writeInt(state.ultimatePoints() * 50);
+            // 成长等级：客户端上报的增幅网络等级（默认 1，clamp 0~9）
+            buf.writeInt(StrinovaPlayerProfile.growthLevel(playerId));
+            // 输出分 / 技能分：服务端真实统计（StrinovaCombatManager）
+            buf.writeInt(StrinovaCombatManager.damageDealt(playerId));
+            buf.writeInt(StrinovaCombatManager.skillDamage(playerId));
+            // 协作分保留 KDA 派生值
             buf.writeInt(state.assists() * 75);
-            buf.writeInt(0);
+            // PING：玩家真实网络延迟（毫秒，1.20.1 ServerPlayer.latency 由 keep-alive 维护）
+            buf.writeInt(Math.max(0, player.latency));
+        }
+
+        // 伤害数字事件（只包含接收者本人造成的命中）：在 players 列表之后追加
+        // 客户端读取顺序必须与此一致：varint count -> {float amount, boolean headshot, boolean mitigated} × count
+        List<StrinovaCombatManager.DamageEvent> safeEvents = damageEvents == null ? List.of() : damageEvents;
+        int damageEventCount = Math.min(MAX_DAMAGE_EVENTS_PER_PACKET, safeEvents.size());
+        buf.writeVarInt(damageEventCount);
+        for (int i = 0; i < damageEventCount; i++) {
+            StrinovaCombatManager.DamageEvent event = safeEvents.get(i);
+            buf.writeFloat(event.amount());
+            buf.writeBoolean(event.headshot());
+            buf.writeBoolean(event.mitigated());
         }
     }
 

@@ -1284,6 +1284,8 @@ public class StrinovaGrowthScreen extends Screen {
         if (toggleRect != null && insideRect(mouseX, mouseY, toggleRect)) {
             if (StrinovaGrowthState.canToggleAwakenings()) {
                 StrinovaGrowthState.toggleAwakenings();
+                // 切换激活后成长等级可能变化，标记待上报服务端
+                StrinovaClientProfileSync.markDirty();
             }
             return true;
         }
@@ -1291,7 +1293,9 @@ public class StrinovaGrowthScreen extends Screen {
         for (int categoryIndex = 0; categoryIndex < categories.size(); categoryIndex++) {
             int[] iconRect = this.refreshIconRect(categoryIndex);
             if (iconRect != null && insideRect(mouseX, mouseY, iconRect)) {
-                StrinovaGrowthState.refundCategory(categoryIndex);
+                if (StrinovaGrowthState.refundCategory(categoryIndex)) {
+                    StrinovaClientProfileSync.markDirty();
+                }
                 return true;
             }
         }
@@ -1302,8 +1306,8 @@ public class StrinovaGrowthScreen extends Screen {
             for (int itemIndex = 0; itemIndex < items.size(); itemIndex++) {
                 int[] rect = this.itemRect(categoryIndex, itemIndex);
                 if (rect != null && insideRect(mouseX, mouseY, rect)) {
-                    if (!locked) {
-                        StrinovaGrowthState.purchase(categoryIndex, itemIndex);
+                    if (!locked && StrinovaGrowthState.purchase(categoryIndex, itemIndex)) {
+                        StrinovaClientProfileSync.markDirty();
                     }
                     return true;
                 }

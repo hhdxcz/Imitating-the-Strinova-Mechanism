@@ -107,7 +107,9 @@ public class StrinovaModFabric implements ModInitializer {
                 return;
             }
             victim.addTag(STRINOVA_DEATH_TAG);
-            StrinovaCombatManager.recordDeath(victim, source == null ? null : source.getEntity());
+            // 兜底路径同样用 DamageSource 反射探测爆头（拿不到来源/探测失败时为 false）
+            StrinovaCombatManager.recordDeath(victim, source == null ? null : source.getEntity(),
+                    StrinovaCombatManager.isHeadshotDamageSource(source));
         });
     }
 

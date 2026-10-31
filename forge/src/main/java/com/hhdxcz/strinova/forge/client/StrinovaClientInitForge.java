@@ -5,6 +5,7 @@ import com.hhdxcz.strinova.collision.StrinovaCompoundCollision;
 import com.hhdxcz.strinova.net.StrinovaNetwork;
 import com.hhdxcz.strinova.paper.WaPaperState;
 import com.hhdxcz.strinova.gameplay.StrinovaAirJumpClientState;
+import com.hhdxcz.strinova.client.StrinovaClientProfileSync;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.Commands;
@@ -13,6 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
+import net.minecraftforge.event.TickEvent;
 import com.hhdxcz.strinova.client.StrinovaAgentSelectScreen;
 import com.hhdxcz.strinova.client.StrinovaGrowthScreen;
 import com.hhdxcz.strinova.client.StrinovaCollisionMenuScreen;
@@ -59,6 +61,8 @@ public final class StrinovaClientInitForge {
         // H4：客户端加入服务器时把本地完整碰撞配置上报给服务端
         MinecraftForge.EVENT_BUS.addListener(StrinovaClientInitForge::onClientLogin);
         MinecraftForge.EVENT_BUS.addListener(StrinovaClientInitForge::onClientLogout);
+        // 客户端 tick：进世界首帧 / 选角或成长变化后上报 C2S_PROFILE（角色 + 成长等级）
+        MinecraftForge.EVENT_BUS.addListener(StrinovaClientInitForge::onClientTick);
     }
 
     private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
@@ -317,6 +321,14 @@ public final class StrinovaClientInitForge {
         StrinovaAirJumpClientState.clearAll();
         StrinovaCollisionBoxTuning.clearAll();
         StrinovaCompoundCollision.clearAll();
+        StrinovaClientProfileSync.reset();
         com.hhdxcz.strinova.client.StrinovaClientNotices.reset();
+    }
+
+    // 客户端 tick（END 阶段）：档案同步只在每 tick 结束时检查一次，避免同一 tick 重复发包
+    private static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) {
+            StrinovaClientProfileSync.tick();
+        }
     }
 }

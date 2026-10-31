@@ -175,6 +175,9 @@ public class StrinovaModForge {
             return;
         }
         victim.addTag(STRINOVA_DEATH_TAG);
-        StrinovaCombatManager.recordDeath(victim, event.getSource() == null ? null : event.getSource().getEntity());
+        // 兜底路径同样用 DamageSource 反射探测爆头（拿不到来源/探测失败时为 false）
+        var deathSource = event.getSource();
+        StrinovaCombatManager.recordDeath(victim, deathSource == null ? null : deathSource.getEntity(),
+                StrinovaCombatManager.isHeadshotDamageSource(deathSource));
     }
 }

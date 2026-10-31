@@ -75,7 +75,8 @@ public abstract class PlayerMixin {
                 && !serverSelf.isInvulnerableTo(source)
                 && !serverSelf.isDamageSourceBlocked(source)) {
             Entity attacker = source.getEntity();
-            result = StrinovaCombatManager.handleIncomingDamage(serverSelf, attacker, result);
+            // 传 DamageSource：CombatManager 据此判定爆头、区分枪械/技能伤害并产生伤害数字事件
+            result = StrinovaCombatManager.handleIncomingDamage(serverSelf, attacker, source, result);
         }
         if (result < 0.0F) {
             result = 0.0F;
@@ -106,7 +107,9 @@ public abstract class PlayerMixin {
             return;
         }
         self.addTag("strinova$death_recorded");
-        StrinovaCombatManager.recordDeath(self, source == null ? null : source.getEntity());
+        // 用致命伤害的 DamageSource 反射探测爆头（探测失败返回 false，不影响 KDA 结算）
+        StrinovaCombatManager.recordDeath(self, source == null ? null : source.getEntity(),
+                StrinovaCombatManager.isHeadshotDamageSource(source));
     }
 
     @Inject(method = "isFallFlying()Z", at = @At("RETURN"), cancellable = true)

@@ -2,7 +2,11 @@ package com.hhdxcz.strinova.client.hud;
 
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
@@ -10,6 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SwordItem;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Locale;
 
@@ -74,6 +79,167 @@ public final class StrinovaTaczCompat {
         ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         String path = id == null || id.getPath() == null ? "" : id.getPath().toLowerCase(Locale.ROOT);
         return path.contains("gun") || path.contains("pistol") || path.contains("rifle") || path.contains("shotgun");
+    }
+
+    /** 是否 TACZ 子弹实体：类名/包名含 tacz 或 Bullet（TACZ 的 EntityKineticBullet 同时含两者），实体类型 id 兜底。 */
+    public static boolean isTaczBullet(Entity entity) {
+        if (entity == null) {
+            return false;
+        }
+        try {
+            for (Class<?> clazz = entity.getClass(); clazz != null && clazz != Object.class; clazz = clazz.getSuperclass()) {
+                String className = clazz.getName().toLowerCase(Locale.ROOT);
+                if (className.contains("tacz") || className.contains("bullet")) {
+                    return true;
+                }
+            }
+            ResourceLocation typeId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
+            if (typeId != null) {
+                String id = typeId.toString().toLowerCase(Locale.ROOT);
+                if (id.startsWith("tacz:") || id.contains("bullet")) {
+                    return true;
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
+    }
+
+    /** 爆头探测用的常见方法名（TACZ/附属模组不同版本命名不一致，逐个尝试）。 */
+    private static final String[] HEADSHOT_METHODS = {"isHeadshot", "getHeadshot", "isHeadShot", "getHeadShot",
+            "isHeadshotHit", "isHeadShotHit"};
+
+    /** 爆头探测用的常见字段名。 */
+    private static final String[] HEADSHOT_FIELDS = {"headshot", "headShot", "isHeadshot", "isHeadShot",
+            "head_shot", "headshotHit"};
+
+    /** 爆头 NBT / scoreboard tag 的键名片段（统一小写匹配）。 */
+    private static final String[] HEADSHOT_KEY_PARTS = {"headshot", "head_shot", "isheadshot"};
+
+    /**
+     * 反射探测实体上是否携带爆头标记（供 StrinovaCombatManager 判定伤害数字/击杀事件）：
+     * <ol>
+     *   <li>方法：isHeadshot()/getHeadshot()/isHeadShot() 等，返回 Boolean.TRUE 视为爆头；</li>
+     *   <li>字段：headshot/headShot/isHeadshot 等（含父类层级），值为 Boolean.TRUE 视为爆头；</li>
+     *   <li>NBT：Forge persistentData（反射调用，Fabric 无此方法时跳过）+ 实体存档 NBT，
+     *       键名含 headshot/isheadshot 且布尔为 true 视为爆头（嵌套最多 3 层）；</li>
+     *   <li>scoreboard tag：tag 名含爆头标记。</li>
+     * </ol>
+     * TACZ/附属模组 API 未知，任何反射异常都被吞掉，找不到或出错统一返回 false —— 绝不崩溃。
+     */
+    public static boolean probeHeadshot(Entity entity) {
+        if (entity == null) {
+            return false;
+        }
+        try {
+            // 1) 方法探测
+            for (String name : HEADSHOT_METHODS) {
+                try {
+                    Method method = entity.getClass().getMethod(name);
+                    method.setAccessible(true);
+                    Object value = method.invoke(entity);
+                    if (value instanceof Boolean flag && flag) {
+                        return true;
+                    }
+                } catch (NoSuchMethodException ignored) {
+                } catch (Throwable ignored) {
+                }
+            }
+            // 2) 字段探测（含父类，部分模组把标记放在子弹父类里）
+            for (Class<?> clazz = entity.getClass(); clazz != null && clazz != Object.class; clazz = clazz.getSuperclass()) {
+                for (String name : HEADSHOT_FIELDS) {
+                    try {
+                        Field field = clazz.getDeclaredField(name);
+                        field.setAccessible(true);
+                        Object value = field.get(entity);
+                        if (value instanceof Boolean flag && flag) {
+                            return true;
+                        }
+                    } catch (NoSuchFieldException ignored) {
+                    } catch (Throwable ignored) {
+                    }
+                }
+            }
+            // 3) NBT 探测：Forge persistentData 优先，再用实体存档 NBT 兜底
+            //    （存活实体序列化开销大且不会带子弹爆头标记，跳过存档 NBT 序列化）
+            if (probeHeadshotTag(persistentDataTag(entity), 0)) {
+                return true;
+            }
+            if (!(entity instanceof LivingEntity) && probeHeadshotTag(savedTag(entity), 0)) {
+                return true;
+            }
+            // 4) scoreboard tag 探测
+            for (String tag : entity.getTags()) {
+                if (tag != null && isHeadshotKey(tag.toLowerCase(Locale.ROOT))) {
+                    return true;
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
+    }
+
+    // Forge 的 Entity#getPersistentData()（Fabric 没有该方法 → 反射失败返回 null）
+    private static CompoundTag persistentDataTag(Entity entity) {
+        try {
+            Method method = entity.getClass().getMethod("getPersistentData");
+            method.setAccessible(true);
+            Object value = method.invoke(entity);
+            return value instanceof CompoundTag tag ? tag : null;
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    // 实体存档 NBT（saveWithoutId 是原版 API，两个平台都有）
+    private static CompoundTag savedTag(Entity entity) {
+        try {
+            CompoundTag tag = new CompoundTag();
+            entity.saveWithoutId(tag);
+            return tag;
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    // 递归扫描 NBT：布尔键为 true 且键名含爆头标记即命中；嵌套 compound/list 最多下探 3 层
+    private static boolean probeHeadshotTag(CompoundTag tag, int depth) {
+        if (tag == null || depth > 3) {
+            return false;
+        }
+        try {
+            for (String key : tag.getAllKeys()) {
+                if (key == null) {
+                    continue;
+                }
+                String lower = key.toLowerCase(Locale.ROOT);
+                if (tag.contains(key, Tag.TAG_BYTE) && tag.getBoolean(key) && isHeadshotKey(lower)) {
+                    return true;
+                }
+                if (tag.contains(key, Tag.TAG_COMPOUND) && probeHeadshotTag(tag.getCompound(key), depth + 1)) {
+                    return true;
+                }
+                if (tag.contains(key, Tag.TAG_LIST)) {
+                    var list = tag.getList(key, Tag.TAG_COMPOUND);
+                    for (int i = 0; i < list.size(); i++) {
+                        if (probeHeadshotTag(list.getCompound(i), depth + 1)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
+    }
+
+    private static boolean isHeadshotKey(String lowerKey) {
+        for (String part : HEADSHOT_KEY_PARTS) {
+            if (lowerKey.contains(part)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** 读取 TACZ 枪械当前弹匣子弹数（反射 IGun API → NBT 兜底 → 0）。 */

@@ -204,3 +204,28 @@ players: [uuid, name, ally, kills, deaths, assists,
 ### 8.4 仍为占位（后续接战斗系统时填充）
 
 武器/弹药/技能冷却（暂无枪械系统，HUD 显示未装备/空槽）、角色名（服务端不知道客户端选角）、倒地/救援状态、经济/购买；计分板的输出分/技能分/协作分为 KDA 派生值，`KillEvent.headshot` 暂为 false。
+
+---
+
+## 9. v1.2.3 协议更新（选角下发 / 真实战斗数据）
+
+### 9.1 新增 C2S：`c2s_profile`
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| agentId | utf64 | 当前锁定角色 id（可空 = 未选角） |
+| growthLevel | int | 客户端成长等级（0~9），服务端 clamp |
+
+服务端校验 agentId 必须在 `StrinovaAgentRoster` 中，非法整包忽略；缓存到 `StrinovaPlayerProfile`（玩家退出/服务器停止时清理）。
+
+### 9.2 S2C `s2c_match_state` 变更
+
+- 玩家条目 `name` 之后新增 `agentName`（utf64，服务端由 profile 映射为角色展示名，未选角为空串）；
+- `growthLevel` 改为档案真实值（默认 1）；
+- `damageScore` = 累计真实伤害（护甲吸收后）；`skillScore` = 非枪械伤害；`ping` = `ServerPlayer.latency`；
+- `players` 列表后追加命中事件列表 `varint count × {float amount, boolean headshot, boolean mitigated}`（每个接收者只收到自己命中造成的事件，仅对局进行中、最近 2s、最多 64 条），客户端用于伤害数字（爆头/减伤样式）。
+
+### 9.3 命中部位
+
+- 护甲吸收在 `PlayerMixin.hurt` 统一入口，对所有伤害（含 TACZ 子弹）生效；
+- 爆头：`StrinovaCombatManager.isHeadshotDamageSource` 反射探测 `DamageSource`/直接实体/实体持久化 NBT 的常见标记（方法/字段/键名），无标记安全回退 `false`，不影响 KDA 结算。
