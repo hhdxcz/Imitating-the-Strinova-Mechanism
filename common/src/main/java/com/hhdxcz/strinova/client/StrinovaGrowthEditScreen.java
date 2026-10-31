@@ -761,10 +761,7 @@ public class StrinovaGrowthEditScreen extends Screen {
             int dividerX = this.mapX(x0 + Math.round(totalW * i / 3.0F));
             graphics.fill(dividerX, mappedY + 2, dividerX + 1, mappedY + mappedH - 2, 0x33EAF2FA);
         }
-        // 顶部条带：按钮跟随当前（mock）选择，显示在下次点击会激活的那一格上方
-        int topStrip = clamp(Math.round(totalH * 0.26F), 16, 24);
-        int stripY = this.mapY(y0 + topStrip);
-        graphics.fill(mappedX + 2, stripY, mappedX + mappedW - 2, stripY + 1, 0x22EAF2FA);
+        // 「⇄ 切换激活」绝对定位在目标卡（下次点击会激活的那一格）右上角
         int mockSelected = StrinovaGrowthState.hasData()
                 ? StrinovaGrowthState.selectedAwakening23() : 3;
         int targetColumn = mockSelected == 3 ? 1 : 2; // 觉醒2=1, 觉醒3=2
@@ -772,33 +769,41 @@ public class StrinovaGrowthEditScreen extends Screen {
         int targetRight = x0 + Math.round(totalW * (targetColumn + 1) / 3.0F);
         int targetCellW = Math.max(1, targetRight - targetLeft);
         int toggleW = targetCellW >= 170 ? clamp(Math.round(targetCellW * 0.30F), 44, 60) : 16;
-        int toggleX = targetLeft + (targetCellW - toggleW) / 2;
-        int toggleY = y0 + Math.max(1, (topStrip - 14) / 2);
-        // 三份内容示意（mock：第 1 个已激活、其余未激活），统一从条带下方开始
+        int toggleX = Math.max(targetLeft + 3, targetRight - toggleW - 5);
+        int toggleY = y0 + 5;
+        // 三份内容示意（mock：第 1 个已激活、其余未激活），从卡片顶部开始；仅目标卡首行右侧预留按钮宽度
         List<StrinovaWikiData.Awakening> source = (this.wiki == null || this.wiki.awakenings() == null)
                 ? List.of() : this.wiki.awakenings();
         int activeNameColor = ui.awakenNameColor != 0 ? ui.awakenNameColor : COLOR_GOLD;
         int inactiveNameColor = ui.awakenNameColor != 0
                 ? ((ui.awakenNameColor & 0x00FFFFFF) | 0xCC000000) : COLOR_TEXT_DIM;
-        int contentTop = y0 + topStrip + 2;
+        int contentTop = y0 + 5;
         for (int i = 0; i < 3; i++) {
             int cellLeft = x0 + Math.round(totalW * i / 3.0F);
             int cellRight = x0 + Math.round(totalW * (i + 1) / 3.0F);
+            int firstRowReserve = (i == targetColumn) ? toggleW + 8 : 0;
             this.drawAwakeningCellPreview(graphics, source, i, cellLeft, cellRight, contentTop,
-                    activeNameColor, inactiveNameColor);
+                    firstRowReserve, activeNameColor, inactiveNameColor);
         }
-        // 「⇄ 切换激活」画在目标列上方居中
+        // 「⇄ 切换激活」画在目标卡右上角
         this.drawMiniAwakenToggle(graphics, toggleX, toggleY, toggleW, 14);
     }
 
     /** 示意图里的一份觉醒：需求图标行 → 「觉醒N：」+ 圆角徽章 → 名称 → 描述。 */
     private void drawAwakeningCellPreview(GuiGraphics graphics, List<StrinovaWikiData.Awakening> source,
                                           int index, int cellLeft, int cellRight, int contentTop,
+                                          int firstRowReserve,
                                           int activeNameColor, int inactiveNameColor) {
         PreviewLayout l = this.preview;
         int mappedX = this.mapX(cellLeft) + 2;
         int mappedRight = this.mapX(cellRight) - 2;
         int maxW = Math.max(8, mappedRight - mappedX);
+        // 目标卡首行右侧给按钮预留宽度（其他卡 maxW 不变）
+        int mappedRightFirst = mappedRight;
+        if (firstRowReserve > 0) {
+            mappedRightFirst = Math.min(mappedRight, this.mapX(cellRight - firstRowReserve) - 2);
+        }
+        int maxFirstW = Math.max(8, mappedRightFirst - mappedX);
         int top = this.mapY(contentTop);
         int bottom = this.mapY(l.awakenTop + l.awakenHeight) - 2;
         boolean active = index == 0; // 示意图 mock 状态
@@ -807,13 +812,13 @@ public class StrinovaGrowthEditScreen extends Screen {
         int needS = src == null ? 1 : Math.max(0, src.needSkill());
         int needD = src == null ? 1 : Math.max(0, src.needDefense());
         int total = Math.max(1, needW + needS + needD);
-        int shape = clamp(maxW / (total + 1), 3, 6);
+        int shape = clamp(maxFirstW / (total + 1), 3, 6);
         int cursor = mappedX;
         for (int k = 0; k < 3; k++) {
             int count = k == 0 ? needW : (k == 1 ? needS : needD);
             int base = k == 0 ? 0xFF4FA3FF : (k == 1 ? 0xFFFFD166 : 0xFF54E0A0);
             int color = (base & 0x00FFFFFF) | 0x88000000;
-            for (int n = 0; n < count && cursor + shape <= mappedRight; n++) {
+            for (int n = 0; n < count && cursor + shape <= mappedRightFirst; n++) {
                 switch (k) {
                     case 0 -> graphics.fill(cursor, top, cursor + shape, top + shape, color);
                     case 1 -> this.drawMiniCircle(graphics, cursor, top, shape, color);
@@ -831,13 +836,13 @@ public class StrinovaGrowthEditScreen extends Screen {
         String label = "觉醒" + (index + 1) + "：";
         String statusText = active ? "已激活" : "未激活";
         int badgeTextW = this.font.width(statusText);
-        int badgeW = Math.min(badgeTextW + 8, Math.max(8, maxW));
+        int badgeW = Math.min(badgeTextW + 8, Math.max(8, maxFirstW));
         int badgeH = 13;
-        String labelShown = this.truncate(label, Math.max(4, maxW - badgeW - 3));
+        String labelShown = this.truncate(label, Math.max(4, maxFirstW - badgeW - 3));
         graphics.drawString(this.font, labelShown, mappedX, lineY + 2, COLOR_TEXT_DIM, false);
         int badgeX = mappedX + this.font.width(labelShown) + 3;
-        if (badgeX + badgeW > mappedRight) {
-            badgeX = Math.max(mappedX, mappedRight - badgeW);
+        if (badgeX + badgeW > mappedRightFirst) {
+            badgeX = Math.max(mappedX, mappedRightFirst - badgeW);
         }
         this.drawMiniRoundedOutline(graphics, badgeX, lineY, badgeW, badgeH, 2,
                 active ? 0xFF54E0A0 : 0x998A94A0);
@@ -846,7 +851,7 @@ public class StrinovaGrowthEditScreen extends Screen {
                 badgeX + Math.max(1, (badgeW - this.font.width(badgeShown)) / 2),
                 lineY + 2, active ? 0xFF54E0A0 : 0xFF8A94A0, false);
         lineY += badgeH + 3;
-        // 名称
+        // 名称（名称/描述可用整格宽度）
         if (lineY + 9 <= bottom) {
             String name = src == null || src.name() == null ? ("觉醒" + (index + 1)) : src.name();
             graphics.drawString(this.font, this.truncate(name, maxW), mappedX, lineY,

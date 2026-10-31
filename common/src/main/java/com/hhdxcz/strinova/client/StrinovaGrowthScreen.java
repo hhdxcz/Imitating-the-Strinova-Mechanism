@@ -909,9 +909,9 @@ public class StrinovaGrowthScreen extends Screen {
     /**
      * 渲染觉醒区（横跨立绘右侧到 innerRight、位于网络 + 武器区下方）：
      * 一个整体圆角面板，内部 2 条细竖线分成 3 等份；每份自上而下为
-     * 需求图标行 → 「觉醒N：」+ 圆角状态徽章 → 名称 → 描述（自动换行 1~3 行）；
-     * 面板顶部留出约 20~24px 条带放「⇄ 切换激活」按钮——按钮跟随当前选择，
-     * 显示在「下一次点击会激活的那一格」上方（选三觉时在觉醒2上方，选二觉时在觉醒3上方）。
+     * 需求图标行 → 「觉醒N：」+ 圆角描边状态徽章 → 名称 → 描述（自动换行 1~3 行）；
+     * 「⇄ 切换激活」按钮绝对定位在目标卡右上角（已选三觉 → 觉醒2 卡；已选二觉 → 觉醒3 卡），
+     * 目标卡首行右侧预留按钮宽度，避免压住形色图标行与「觉醒N：」文字，其他卡不受影响。
      */
     private void renderAwakenings(GuiGraphics graphics, int mouseX, int mouseY) {
         List<StrinovaGrowthState.Awakening> awakenings = StrinovaGrowthState.awakenings();
@@ -935,18 +935,15 @@ public class StrinovaGrowthScreen extends Screen {
             graphics.fill(dividerX, y0 + 5, dividerX + 1, y0 + totalH - 5, 0x33EAF2FA);
         }
 
-        // 顶部条带：按钮跟随当前选择，位于「下一次点击会激活的那一格」上方
-        int topStrip = clamp(Math.round(totalH * 0.26F), 16, 24);
-        graphics.fill(x0 + 6, y0 + topStrip, x0 + totalW - 6, y0 + topStrip + 1, 0x22EAF2FA);
+        // 「⇄ 切换激活」：绝对定位在目标卡（下次点击会激活的那一格）右上角、距右/上各约 5px
         int targetColumn = StrinovaGrowthState.selectedAwakening23() == 3 ? 1 : 2; // 觉醒2=1, 觉醒3=2
         int colLeft = x0 + Math.round(totalW * targetColumn / 3.0F);
         int colRight = x0 + Math.round(totalW * (targetColumn + 1) / 3.0F);
         int targetCellW = Math.max(1, colRight - colLeft);
         int toggleW = targetCellW >= 170 ? clamp(Math.round(targetCellW * 0.30F), 44, 60) : 16;
         int toggleH = 14;
-        int toggleX = clamp(colLeft + (targetCellW - toggleW) / 2,
-                x0 + 2, Math.max(x0 + 2, x0 + totalW - toggleW - 2));
-        int toggleY = y0 + Math.max(1, (topStrip - toggleH) / 2);
+        int toggleX = Math.max(colLeft + 3, colRight - toggleW - 5);
+        int toggleY = y0 + 5;
         this.awakenToggleX = toggleX;
         this.awakenToggleY = toggleY;
         this.awakenToggleW = toggleW;
@@ -957,32 +954,38 @@ public class StrinovaGrowthScreen extends Screen {
                 && mouseY >= toggleY && mouseY < toggleY + toggleH;
         this.hoveredAwakenToggle = hoveredToggle;
 
-        // 3 等份内容统一从顶部条带下方开始（不再为按钮预留第三列空间）
-        int contentTop = y0 + topStrip + 2;
+        // 3 等份内容从卡片顶部开始；仅目标卡的首行右侧为按钮预留宽度
+        int contentTop = y0 + 5;
         for (int i = 0; i < awakenings.size() && i < 3; i++) {
             int cellX = x0 + Math.round(totalW * i / 3.0F);
             int cellRight = x0 + Math.round(totalW * (i + 1) / 3.0F);
+            int firstRowReserve = (i == targetColumn) ? toggleW + 8 : 0;
             this.renderAwakeningCell(graphics, awakenings.get(i), i, cellX, cellRight,
-                    contentTop, mouseX, mouseY);
+                    contentTop, firstRowReserve, mouseX, mouseY);
         }
         this.renderAwakenToggle(graphics, toggleX, toggleY, toggleW, toggleH, enabled, hoveredToggle);
     }
 
-    /** 觉醒面板中的一份：需求图标行 → 「觉醒N：」+ 圆角状态徽章 → 名称 → 描述（自动换行）。 */
+    /** 觉醒面板中的一份：需求图标行 → 「觉醒N：」+ 圆角描边状态徽章 → 名称 → 描述（自动换行）。 */
     private void renderAwakeningCell(GuiGraphics graphics, StrinovaGrowthState.Awakening awakening,
                                      int index, int cellX, int cellRight, int contentTop,
-                                     int mouseX, int mouseY) {
+                                     int firstRowReserve, int mouseX, int mouseY) {
         boolean active = awakening.active();
         if (mouseX >= cellX && mouseX < cellRight
                 && mouseY >= this.awakenTop && mouseY < this.awakenTop + this.awakenHeight) {
             this.hoveredAwakening = index;
         }
         int contentLeft = cellX + 5;
-        int contentRight = cellRight - 5;
-        if (contentRight < contentLeft + 12) {
-            contentRight = cellRight - 4;
+        int contentRightFull = cellRight - 5;
+        if (contentRightFull < contentLeft + 12) {
+            contentRightFull = cellRight - 4;
         }
-        int maxWidth = Math.max(8, contentRight - contentLeft);
+        int contentRightFirst = contentRightFull - firstRowReserve;
+        if (contentRightFirst < contentLeft + 12) {
+            contentRightFirst = contentRightFull;
+        }
+        int maxWidth = Math.max(8, contentRightFirst - contentLeft);
+        int fullWidth = Math.max(8, contentRightFull - contentLeft);
         int top = contentTop;
         int bottom = this.awakenTop + this.awakenHeight - 3;
         if (top >= bottom) {
@@ -1038,10 +1041,10 @@ public class StrinovaGrowthScreen extends Screen {
         }
         this.drawStatusBadge(graphics, badgeX, y, badgeW, badgeH, active, statusText);
         y += badgeH + 3;
-        // 3) 名称（激活金色）
+        // 3) 名称（激活金色；按钮只在首行右侧，名称/描述可用整格宽度）
         if (y + 9 <= bottom) {
             graphics.drawString(this.font,
-                    truncate(awakening.name() == null ? "" : awakening.name(), maxWidth),
+                    truncate(awakening.name() == null ? "" : awakening.name(), fullWidth),
                     contentLeft, y, this.awakenNameColor(active), false);
             y += LINE_STEP;
         }
@@ -1049,7 +1052,7 @@ public class StrinovaGrowthScreen extends Screen {
         int maxLines = Math.min(this.showAwakenDescription ? 3 : 2,
                 Math.max(0, (bottom - y + 2) / LINE_STEP));
         if (maxLines > 0 && !isBlank(awakening.desc())) {
-            drawWrapped(graphics, Component.literal(awakening.desc()), contentLeft, y, maxWidth,
+            drawWrapped(graphics, Component.literal(awakening.desc()), contentLeft, y, fullWidth,
                     maxLines, 0xFFB4C0CC);
         }
     }

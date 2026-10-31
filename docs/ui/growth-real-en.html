@@ -86,10 +86,10 @@ body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; color: #EAF2FA; b
     border-top:2px solid transparent; border-bottom:2px solid transparent; transform:rotate(180deg); }
   .awakenPanel { height:188px; flex:none; position:relative; display:flex; align-items:stretch;
     background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.12); border-radius:5px;
-    padding:27px 0 6px; }
-  .awtoggle { position:absolute; top:5px; z-index:3; height:19px; padding:0 8px;
+    padding:8px 0 6px; }
+  .awtoggle { position:absolute; right:6px; top:3px; z-index:3; height:18px; padding:0 7px;
     background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.45); color:#EAF2FA;
-    font-size:11px; font-weight:700; display:flex; align-items:center; gap:5px; font-family:inherit; }
+    font-size:10.5px; font-weight:700; display:flex; align-items:center; gap:5px; font-family:inherit; }
   .awswap { width:12px; height:9px; position:relative; display:inline-block; }
   .awswap::before { content:''; position:absolute; left:0; top:1px; width:10px; height:2px; background:#EAF2FA; }
   .awswap::after { content:''; position:absolute; left:0; top:4px; width:10px; height:2px;
@@ -278,10 +278,9 @@ body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; color: #EAF2FA; b
           </div>
         </div>
         <div class="awakenPanel">
-          <button class="awtoggle" style="left:calc(50% - 43px)">
-            <i class="awswap"></i>切换激活</button>
           
     <div class="acard active">
+      
       <div class="aneed"><i class="needneed sq" style="background:#4FA3FF"></i><i class="needneed tri" style="background:#54E0A0"></i></div>
       <div class="atop">
         <span class="alabel">Awakening1：</span>
@@ -291,6 +290,7 @@ body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; color: #EAF2FA; b
       <div class="adesc">When spirits summoned by the Active Skill are destroyed or disappear, they leave behind residual Dark String energy. Collecting it reduces the cooldown of both Active and Passive Skills.</div>
     </div>
     <div class="acard">
+      <button class="awtoggle"><i class="awswap"></i>切换激活</button>
       <div class="aneed"><i class="needneed sq" style="background:#4FA3FF"></i><i class="needneed ci" style="background:#FFD166"></i><i class="needneed ci" style="background:#FFD166"></i><i class="needneed tri" style="background:#54E0A0"></i></div>
       <div class="atop">
         <span class="alabel">Awakening2：</span>
@@ -300,6 +300,7 @@ body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; color: #EAF2FA; b
       <div class="adesc">Dark String Missiles fired by spirits detonate and create an erosion field that continuously damages and slows enemies inside it.</div>
     </div>
     <div class="acard active">
+      
       <div class="aneed"><i class="needneed sq" style="background:#4FA3FF"></i><i class="needneed ci" style="background:#FFD166"></i><i class="needneed tri" style="background:#54E0A0"></i><i class="needneed tri" style="background:#54E0A0"></i></div>
       <div class="atop">
         <span class="alabel">Awakening3：</span>

@@ -198,10 +198,12 @@ function growthHtml(agent, lang) {
     return html;
   };
   const awakenCards = agent.awakenings.map((awakening, index) => {
-    // 演示：觉醒1 与 觉醒3 激活（二觉/三觉二选一）
+    // 演示：觉醒1 与 觉醒3 激活（二觉/三觉二选一）；已选三觉 → 按钮在觉醒2（index=1）右上角
     const active = index !== 1;
+    const toggleTarget = index === 1;
     return `
     <div class="acard${active ? ' active' : ''}">
+      ${toggleTarget ? '<button class="awtoggle"><i class="awswap"></i>切换激活</button>' : ''}
       <div class="aneed">${needShapes(awakening)}</div>
       <div class="atop">
         <span class="alabel">${t.awakening}${index + 1}：</span>
@@ -307,10 +309,10 @@ function growthHtml(agent, lang) {
     border-top:2px solid transparent; border-bottom:2px solid transparent; transform:rotate(180deg); }
   .awakenPanel { height:188px; flex:none; position:relative; display:flex; align-items:stretch;
     background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.12); border-radius:5px;
-    padding:27px 0 6px; }
-  .awtoggle { position:absolute; top:5px; z-index:3; height:19px; padding:0 8px;
+    padding:8px 0 6px; }
+  .awtoggle { position:absolute; right:6px; top:3px; z-index:3; height:18px; padding:0 7px;
     background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.45); color:#EAF2FA;
-    font-size:11px; font-weight:700; display:flex; align-items:center; gap:5px; font-family:inherit; }
+    font-size:10.5px; font-weight:700; display:flex; align-items:center; gap:5px; font-family:inherit; }
   .awswap { width:12px; height:9px; position:relative; display:inline-block; }
   .awswap::before { content:''; position:absolute; left:0; top:1px; width:10px; height:2px; background:#EAF2FA; }
   .awswap::after { content:''; position:absolute; left:0; top:4px; width:10px; height:2px;
@@ -360,8 +362,6 @@ function growthHtml(agent, lang) {
           </div>
         </div>
         <div class="awakenPanel">
-          <button class="awtoggle" style="left:calc(50% - 43px)">
-            <i class="awswap"></i>切换激活</button>
           ${awakenCards}
         </div>
       </div>
