@@ -52,6 +52,9 @@ public final class StrinovaSystemFontRenderer {
     }
 
     public static synchronized boolean isReady() {
+        if (!StrinovaHudConfig.get().useYaheiFont) {
+            return false;
+        }
         ensureInit();
         return ready;
     }

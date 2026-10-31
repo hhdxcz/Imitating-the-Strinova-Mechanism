@@ -43,6 +43,8 @@ public final class StrinovaHudConfig {
     public boolean stateEnabled = true;
     public boolean matchHeaderEnabled = true;
     public boolean scoreboardEnabled = true;
+    /** HUD/计分板是否使用微软雅黑（关闭则用原版像素字体）。 */
+    public boolean useYaheiFont = true;
     public String selectedAgentId = "";
     public StrinovaHudLayout layout = new StrinovaHudLayout();
 
