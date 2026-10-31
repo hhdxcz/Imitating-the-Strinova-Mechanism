@@ -62,6 +62,9 @@ public final class StrinovaHudConfig {
     /** 中间回合记录带「我方/敌方」单行高度（0 = 自动跟随数据行高）。 */
     public int scoreboardRoundRowHeight = 0;
 
+    /** 头像左侧留白（拖动「头像前」的列边界调整，0~24 像素）。 */
+    public int scoreboardNameLeftPadding = 0;
+
     /** 每个部件独立样式（可见性/字号/文字色/背景色）。 */
     public java.util.LinkedHashMap<String, ScoreboardComponentStyle> scoreboardComponents;
 
@@ -220,6 +223,7 @@ public final class StrinovaHudConfig {
         scoreboardTextScale = clampf(scoreboardTextScale, 0.6F, 1.8F);
         scoreboardRowHeight = clamp(scoreboardRowHeight, 14, 30);
         scoreboardRoundRowHeight = clamp(scoreboardRoundRowHeight, 0, 24);
+        scoreboardNameLeftPadding = clamp(scoreboardNameLeftPadding, 0, 24);
         if (scoreboardComponents == null) {
             scoreboardComponents = defaultScoreboardComponents();
         }
@@ -251,10 +255,10 @@ public final class StrinovaHudConfig {
         return String.format(java.util.Locale.ROOT,
                 "scoreboardWidthRatio=%.3f, scoreboardHeightRatio=%.3f, scoreboardOffsetX=%.1f, "
                         + "scoreboardOffsetY=%.1f, scoreboardTextScale=%.2f, scoreboardRowHeight=%d, "
-                        + "scoreboardRoundRowHeight=%d, columns=[%s]",
+                        + "scoreboardRoundRowHeight=%d, nameLeftPadding=%d, columns=[%s]",
                 scoreboardWidthRatio, scoreboardHeightRatio, scoreboardOffsetX,
                 scoreboardOffsetY, scoreboardTextScale, scoreboardRowHeight,
-                scoreboardRoundRowHeight, columnWeightsText());
+                scoreboardRoundRowHeight, scoreboardNameLeftPadding, columnWeightsText());
     }
 
     /** 导出计分板全部自定义配置为 JSON（尺寸/位置/字号/行高/列宽/逐部件样式）。 */
@@ -270,6 +274,7 @@ public final class StrinovaHudConfig {
         map.put("textScale", scoreboardTextScale);
         map.put("rowHeight", scoreboardRowHeight);
         map.put("roundRowHeight", scoreboardRoundRowHeight);
+        map.put("nameLeftPadding", scoreboardNameLeftPadding);
         Map<String, Float> weights = new LinkedHashMap<>();
         for (String key : SCOREBOARD_COLUMN_KEYS) {
             weights.put(key, scoreboardColumnWeight(key));
@@ -310,6 +315,9 @@ public final class StrinovaHudConfig {
             }
             if (object.has("roundRowHeight")) {
                 scoreboardRoundRowHeight = object.get("roundRowHeight").getAsInt();
+            }
+            if (object.has("nameLeftPadding")) {
+                scoreboardNameLeftPadding = object.get("nameLeftPadding").getAsInt();
             }
             if (object.has("columns") && object.get("columns").isJsonObject()) {
                 JsonObject columns = object.getAsJsonObject("columns");

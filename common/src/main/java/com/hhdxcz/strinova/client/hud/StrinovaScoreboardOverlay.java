@@ -460,6 +460,10 @@ public final class StrinovaScoreboardOverlay {
         for (int i = 0; i < anchors.length; i++) {
             starts[i] = anchors[i];
         }
+        // 头像左侧留白（可拖「头像前」边界调整，0~24px）
+        int padding = Math.max(0, Math.min(24, StrinovaHudConfig.get().scoreboardNameLeftPadding));
+        starts[0] = Math.min(starts[1] - 8, anchors[0] + padding);
+        starts[0] = Math.max(1, starts[0]);
         starts[8] = Math.max(anchors[anchors.length - 1] + 8,
                 contentW - Math.max(28, contentW / 10));
         return starts;
