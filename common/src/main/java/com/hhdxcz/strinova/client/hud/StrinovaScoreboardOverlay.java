@@ -193,9 +193,6 @@ public final class StrinovaScoreboardOverlay {
             }
             int nameX = avatarX + 22;
             String name = entry.name() == null ? "" : entry.name();
-            if (self) {
-                name = name + " · 你";
-            }
             painter.text(name, nameX, rowY + 4, self ? GOLD : dead ? TEXT_DIM : TEXT, false);
             String agent = entry.agentName() == null || entry.agentName().isEmpty() ? "未选角色" : entry.agentName();
             painter.textScaled(agent, nameX, rowY + 13, 0.8F, withAlpha(TEXT_DIM, dead ? 0x88 : 0xCC), false);
@@ -242,15 +239,16 @@ public final class StrinovaScoreboardOverlay {
     // ==================== 列位置（按内容宽度比例均分） ====================
 
     private static int[] columnAnchors(int contentW) {
+        // 比例对齐草图：头像+名字列紧贴左侧竖栏，其后依次 击败/阵亡/助攻、绝招、成长等级、主武器、输出分、技能分、协作分、PING
         return new int[]{
                 6,
-                Math.round(contentW * 0.14F),
-                Math.round(contentW * 0.27F),
-                Math.round(contentW * 0.39F),
-                Math.round(contentW * 0.51F),
-                Math.round(contentW * 0.63F),
-                Math.round(contentW * 0.71F),
-                Math.round(contentW * 0.79F)
+                Math.round(contentW * 0.13F),
+                Math.round(contentW * 0.30F),
+                Math.round(contentW * 0.42F),
+                Math.round(contentW * 0.55F),
+                Math.round(contentW * 0.64F),
+                Math.round(contentW * 0.72F),
+                Math.round(contentW * 0.80F)
         };
     }
 
