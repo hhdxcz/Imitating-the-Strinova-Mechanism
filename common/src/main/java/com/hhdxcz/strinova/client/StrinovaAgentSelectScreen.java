@@ -566,7 +566,7 @@ public class StrinovaAgentSelectScreen extends Screen {
     }
 
     // ------------------------------------------------------------------
-    // 顶部阶段条    // 顶部阶段条
+    // 顶部阶段条
     // ------------------------------------------------------------------
 
     /** 顶部阶段条：左右红/蓝斜切底条 + 中央「选择角色 + 大号倒计时」。 */
@@ -597,23 +597,31 @@ public class StrinovaAgentSelectScreen extends Screen {
         this.drawCenteredText(graphics, this.truncate(rightLabel.getString(), sideW - 10),
                 this.barX + this.barW - sideW / 2, this.barY + (this.barH - 9) / 2, COLOR_TEXT, true);
 
-        // 中央：选择角色 + 大号倒计时（宽度不够时缩小字号）
+        // 中央：选择角色 + 双方比分 + 大号倒计时（对齐真实 UI）
         int centerLeft = this.barX + sideW + 6;
         int centerRight = this.barX + this.barW - sideW - 6;
         int centerMid = (centerLeft + centerRight) / 2;
         Component selecting = Component.translatable("config.strinova.agent.selecting");
         String time = StrinovaMatchState.formattedTime();
+        String allyScore = String.valueOf(StrinovaMatchState.getAlliesScore());
+        String enemyScore = String.valueOf(StrinovaMatchState.getEnemiesScore());
         int labelW = this.font.width(selecting);
-        float timeScale = this.barH >= 28 ? 1.9F : 1.5F;
-        int totalW = labelW + 8 + Math.round(this.font.width(time) * timeScale);
-        if (totalW > centerRight - centerLeft) {
-            timeScale = 1.2F;
-            totalW = labelW + 6 + Math.round(this.font.width(time) * timeScale);
-        }
+        int scoreW = Math.max(this.font.width(allyScore), this.font.width(enemyScore));
+        float timeScale = this.barH >= 28 ? 1.8F : 1.4F;
+        int timeW = Math.round(this.font.width(time) * timeScale);
+        int totalW = labelW + 10 + scoreW + 10 + timeW + 10 + scoreW;
         int startX = Math.max(centerLeft, centerMid - totalW / 2);
-        this.drawText(graphics, selecting.getString(), startX, this.barY + (this.barH - 9) / 2, COLOR_DIM);
-        this.drawScaledText(graphics, time, startX + labelW + 6,
+        int textY = this.barY + (this.barH - 9) / 2;
+        if (totalW <= centerRight - centerLeft) {
+            this.drawText(graphics, selecting.getString(), startX, textY, COLOR_DIM);
+            startX += labelW + 10;
+        }
+        this.drawText(graphics, allyScore, startX, textY, 0xFFFF8A7A);
+        startX += scoreW + 10;
+        this.drawScaledText(graphics, time, startX,
                 this.barY + (this.barH - 9 * timeScale) / 2.0F, timeScale, COLOR_TEXT, true);
+        startX += timeW + 10;
+        this.drawText(graphics, enemyScore, startX, textY, 0xFF8FAEFF);
     }
 
     /** 绘制左/右斜切阵营底条：渐变矩形主体 + 内侧斜切三角 + 顶部高亮线。 */
