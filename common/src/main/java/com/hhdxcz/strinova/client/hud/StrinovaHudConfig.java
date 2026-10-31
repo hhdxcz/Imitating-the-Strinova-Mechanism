@@ -68,6 +68,9 @@ public final class StrinovaHudConfig {
     /** 左侧竖栏宽度占面板宽度比例（拖动「头像前」边界可左右调整，0.05~0.25）。 */
     public float scoreboardSidebarWidthRatio = 0.0903F;
 
+    /** 计分板整体不透明度（0.20~1.00，越小越透明）。 */
+    public float scoreboardOpacity = 0.95F;
+
     /** 每个部件独立样式（可见性/字号/文字色/背景色）。 */
     public java.util.LinkedHashMap<String, ScoreboardComponentStyle> scoreboardComponents;
 
@@ -268,6 +271,7 @@ public final class StrinovaHudConfig {
         scoreboardRoundRowHeight = clamp(scoreboardRoundRowHeight, 0, 24);
         scoreboardNameLeftPadding = clamp(scoreboardNameLeftPadding, 0, 24);
         scoreboardSidebarWidthRatio = clampf(scoreboardSidebarWidthRatio, 0.05F, 0.25F);
+        scoreboardOpacity = clampf(scoreboardOpacity, 0.20F, 1.0F);
         if (scoreboardComponents == null) {
             scoreboardComponents = defaultScoreboardComponents();
         }
@@ -321,6 +325,7 @@ public final class StrinovaHudConfig {
         map.put("roundRowHeight", scoreboardRoundRowHeight);
         map.put("nameLeftPadding", scoreboardNameLeftPadding);
         map.put("sidebarWidthRatio", scoreboardSidebarWidthRatio);
+        map.put("opacity", scoreboardOpacity);
         Map<String, Float> weights = new LinkedHashMap<>();
         for (String key : SCOREBOARD_COLUMN_KEYS) {
             weights.put(key, scoreboardColumnWeight(key));
@@ -367,6 +372,9 @@ public final class StrinovaHudConfig {
             }
             if (object.has("sidebarWidthRatio")) {
                 scoreboardSidebarWidthRatio = object.get("sidebarWidthRatio").getAsFloat();
+            }
+            if (object.has("opacity")) {
+                scoreboardOpacity = object.get("opacity").getAsFloat();
             }
             if (object.has("columns") && object.get("columns").isJsonObject()) {
                 JsonObject columns = object.getAsJsonObject("columns");

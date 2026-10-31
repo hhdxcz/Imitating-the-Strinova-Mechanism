@@ -135,6 +135,7 @@ public class StrinovaScoreboardEditorScreen extends Screen {
         config.scoreboardRoundRowHeight = 24;
         config.scoreboardNameLeftPadding = 0;
         config.scoreboardSidebarWidthRatio = 0.0903F;
+        config.scoreboardOpacity = 0.95F;
         config.resetScoreboardColumnDefaults();
         config.resetScoreboardComponentDefaults();
     }

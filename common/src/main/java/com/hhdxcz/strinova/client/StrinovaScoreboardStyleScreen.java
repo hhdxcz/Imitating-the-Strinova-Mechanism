@@ -112,7 +112,8 @@ public class StrinovaScoreboardStyleScreen extends Screen {
         StrinovaHudConfig.ScoreboardComponentStyle style = config.scoreboardComponent(selectedKey);
         boolean columnKey = isColumnKey(selectedKey);
         boolean roundKey = isRoundKey(selectedKey);
-        int areaTop = this.height - (92 + (columnKey ? 22 : 0) + (roundKey ? 22 : 0));
+        boolean panelKey = "panel".equals(selectedKey);
+        int areaTop = this.height - (92 + (columnKey ? 22 : 0) + (roundKey ? 22 : 0) + (panelKey ? 22 : 0));
         graphics.fill(0, areaTop, this.width, this.height, 0xE60B0F14);
         graphics.fill(0, areaTop, this.width, areaTop + 1, 0x44FFFFFF);
 
@@ -145,6 +146,10 @@ public class StrinovaScoreboardStyleScreen extends Screen {
             drawRoundHeightRow(graphics, rowY, config);
             rowY += 22;
         }
+        if (panelKey) {
+            drawOpacityRow(graphics, rowY, config);
+            rowY += 22;
+        }
         // 文字颜色
         drawColorRow(graphics, rowY, "文字色", 4, style.textColor);
         // 背景颜色
@@ -156,8 +161,7 @@ public class StrinovaScoreboardStyleScreen extends Screen {
         return "rounds".equals(key) || "roundAlly".equals(key) || "roundEnemy".equals(key);
     }
 
-    private void drawRoundHeightRow(GuiGraphics graphics, int y, StrinovaHudConfig config) {
-        graphics.drawString(this.font, "回合计行高", 8, y + 2, 0xFF9BAEBF, false);
+    private void drawRoundHeightRow(GuiGraphics graphics, int y, StrinovaHudConfig config) {        graphics.drawString(this.font, "回合计行高", 8, y + 2, 0xFF9BAEBF, false);
         int x = 8 + 64;
         x = button(graphics, x, y - 2, 52, "行高-", 12, 0);
         int height = StrinovaScoreboardOverlay.effectiveRoundRowHeight();
@@ -165,6 +169,18 @@ public class StrinovaScoreboardStyleScreen extends Screen {
         x += 36;
         button(graphics, x, y - 2, 52, "行高+", 13, 0);
         graphics.drawString(this.font, "（也可在布局编辑器拖中间三条边界线）", x + 56, y + 2, 0xFF7A8794, false);
+    }
+
+    /** 面板整体透明度调整行（仅选中 panel 时显示）。 */
+    private void drawOpacityRow(GuiGraphics graphics, int y, StrinovaHudConfig config) {
+        graphics.drawString(this.font, "面板透明度", 8, y + 2, 0xFF9BAEBF, false);
+        int x = 8 + 64;
+        x = button(graphics, x, y - 2, 52, "透明-", 15, 0);
+        String text = String.format(java.util.Locale.ROOT, "%.0f%%", config.scoreboardOpacity * 100.0F);
+        graphics.drawString(this.font, text, x + 4, y + 2, 0xFFEAF2FA, false);
+        x += 42;
+        button(graphics, x, y - 2, 52, "透明+", 16, 0);
+        graphics.drawString(this.font, "（0% 全透明 / 100% 不透明）", x + 56, y + 2, 0xFF7A8794, false);
     }
 
     private boolean isColumnKey(String key) {
@@ -369,6 +385,8 @@ public class StrinovaScoreboardStyleScreen extends Screen {
             }
             case 14 -> config.scoreboardComponent(selectedKey).centerH =
                     !config.scoreboardComponent(selectedKey).centerH;
+            case 15 -> config.scoreboardOpacity = Math.max(0.20F, config.scoreboardOpacity - 0.05F);
+            case 16 -> config.scoreboardOpacity = Math.min(1.0F, config.scoreboardOpacity + 0.05F);
             case 9 -> {
                 config.resetScoreboardComponentDefaults();
                 config.resetScoreboardColumnDefaults();

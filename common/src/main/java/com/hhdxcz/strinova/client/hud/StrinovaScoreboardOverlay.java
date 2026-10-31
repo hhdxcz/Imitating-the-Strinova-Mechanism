@@ -2,9 +2,13 @@ package com.hhdxcz.strinova.client.hud;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * TAB 计分板（对齐卡拉彼丘布局、支持可视化编辑器逐部件自定义）。
@@ -81,6 +85,13 @@ public final class StrinovaScoreboardOverlay {
         return color == 0 ? fallback : color;
     }
 
+    /** 应用计分板整体不透明度（只影响背景填充，文字保持清晰）。 */
+    private static int opacity(int argb) {
+        float value = Math.max(0.20F, Math.min(1.0F, StrinovaHudConfig.get().scoreboardOpacity));
+        int alpha = Math.round(((argb >>> 24) & 0xFF) * value);
+        return (Math.max(0, Math.min(255, alpha)) << 24) | (argb & 0x00FFFFFF);
+    }
+
     /** 当前是否应显示自定义计分板（TAB 按住 + 有进行中对局 + HUD 开启）。 */
     public static boolean isActive(Minecraft minecraft) {
         if (minecraft == null || minecraft.player == null || minecraft.options == null) {
@@ -91,9 +102,6 @@ public final class StrinovaScoreboardOverlay {
         }
         StrinovaHudConfig config = StrinovaHudConfig.get();
         if (!config.hudEnabled || !config.scoreboardEnabled) {
-            return false;
-        }
-        if (!StrinovaMatchState.isActive()) {
             return false;
         }
         if (!com.hhdxcz.strinova.StrinovaMod.isEnabled() && !StrinovaHudMockData.isEnabled()) {
@@ -123,7 +131,7 @@ public final class StrinovaScoreboardOverlay {
         Layout layout = computeLayout(graphics.guiWidth(), graphics.guiHeight());
 
         painter.rect(layout.left(), layout.top(), layout.width(), layout.height(),
-                backgroundColor("panel", PANEL_BG));
+                opacity(backgroundColor("panel", PANEL_BG)));
         painter.border(layout.left(), layout.top(), layout.width(), layout.height(),
                 textColor("panel", PANEL_BORDER), 1);
 
@@ -191,7 +199,7 @@ public final class StrinovaScoreboardOverlay {
         int height = layout.middleHeight();
         float textScale = layout.textScale() * fontScale("rounds");
 
-        painter.rect(left + 1, top, layout.width() - 2, height - 1, backgroundColor("rounds", MIDDLE_BG));
+        painter.rect(left + 1, top, layout.width() - 2, height - 1, opacity(backgroundColor("rounds", MIDDLE_BG)));
         painter.rect(left + 1, top, layout.width() - 2, 1, withAlpha(0xFFFFFF, 0x1E));
         painter.rect(left + 1, top + height - 1, layout.width() - 2, 1, withAlpha(0xFFFFFF, 0x1E));
 
@@ -288,8 +296,8 @@ public final class StrinovaScoreboardOverlay {
                 : Component.translatable(teamKey).getString();
         int score = ally ? StrinovaMatchState.getAlliesScore() : StrinovaMatchState.getEnemiesScore();
 
-        painter.rect(left + 1, top, sidebarWidth - 1, blockHeight - 1, backgroundColor("sidebar", SIDEBAR_BG));
-        painter.rect(left + 1, top, sidebarWidth - 1, headerHeight, withAlpha(accent, 0xE6));
+        painter.rect(left + 1, top, sidebarWidth - 1, blockHeight - 1, opacity(backgroundColor("sidebar", SIDEBAR_BG)));
+        painter.rect(left + 1, top, sidebarWidth - 1, headerHeight, opacity(withAlpha(accent, 0xE6)));
         float teamScale = 0.8F * textScale;
         int teamX = left + 3;
         if (style("sidebar").centerH) {
@@ -314,8 +322,10 @@ public final class StrinovaScoreboardOverlay {
     // ==================== 右侧内容区 ====================
 
     private static void renderTeamContent(StrinovaHudPainter painter, Layout layout, boolean ally) {
-        List<StrinovaScoreboardState.Entry> entries =
-                ally ? StrinovaScoreboardState.allies() : StrinovaScoreboardState.enemies();
+        // 没有进行中对局时，用当前在线玩家生成一份列表，保证一进游戏按 TAB 就有内容
+        List<StrinovaScoreboardState.Entry> entries = StrinovaMatchState.isActive()
+                ? (ally ? StrinovaScoreboardState.allies() : StrinovaScoreboardState.enemies())
+                : fallbackEntries(ally);
         int top = ally ? layout.blockTop() : layout.enemyTop();
         int contentX = layout.left() + layout.sidebarWidth();
         int contentW = layout.width() - layout.sidebarWidth() - 1;
@@ -331,7 +341,7 @@ public final class StrinovaScoreboardOverlay {
         // 列头行
         if (visible("header")) {
             float headerScale = BASE_HEADER_TEXT_SCALE * baseScale * fontScale("header");
-            painter.rect(contentX, top, contentW, headerHeight, backgroundColor("header", HEADER_ROW));
+            painter.rect(contentX, top, contentW, headerHeight, opacity(backgroundColor("header", HEADER_ROW)));
             int headerY = top + Math.round((headerHeight - 8.1F * headerScale) / 2);
             int headerColor = textColor("header", TEXT_DIM);
             drawColumnText(painter, kdaHeader(), contentX, starts, contentW, 1, headerY, headerScale,
@@ -363,7 +373,7 @@ public final class StrinovaScoreboardOverlay {
             boolean self = has && entry.self();
 
             int defaultRowBg = self ? ROW_SELF : dead ? ROW_DEAD : ((i % 2 == 0) ? ROW_BG : ROW_ALT);
-            painter.rect(contentX, rowY, contentW, rowHeight, backgroundColor("rows", defaultRowBg));
+            painter.rect(contentX, rowY, contentW, rowHeight, opacity(backgroundColor("rows", defaultRowBg)));
             if (self) {
                 painter.rect(contentX, rowY, 2, rowHeight, GOLD);
             }
@@ -549,6 +559,35 @@ public final class StrinovaScoreboardOverlay {
                 painter.rect(x + half - width, y + half + dy, width * 2 + 1, 1, 0xCCFFFFFF);
             }
         }
+    }
+
+    /** 无进行中对局时的 TAB 列表：用当前在线玩家（前一半我方、后一半敌方）。 */
+    private static List<StrinovaScoreboardState.Entry> fallbackEntries(boolean ally) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.getConnection() == null) {
+            return List.of();
+        }
+        List<PlayerInfo> infos = new ArrayList<>(minecraft.getConnection().getOnlinePlayers());
+        infos.sort(Comparator.comparing(info -> info.getProfile().getName(), String.CASE_INSENSITIVE_ORDER));
+        int allyCount = Math.min(ROW_COUNT, (infos.size() + 1) / 2);
+        List<StrinovaScoreboardState.Entry> result = new ArrayList<>();
+        for (int i = 0; i < infos.size(); i++) {
+            boolean isAlly = i < allyCount;
+            if (isAlly != ally) {
+                continue;
+            }
+            if (result.size() >= ROW_COUNT) {
+                break;
+            }
+            PlayerInfo info = infos.get(i);
+            UUID id = info.getProfile().getId();
+            boolean self = minecraft.player != null && minecraft.player.getUUID().equals(id);
+            result.add(new StrinovaScoreboardState.Entry(
+                    info.getProfile().getName(), "", isAlly, self,
+                    0, 0, 0, 150.0F, 80.0F, StrinovaScoreboardState.Status.ALIVE,
+                    0, 7, 1, "", 0, 0, 0, info.getLatency()));
+        }
+        return result;
     }
 
     private static int agentAccent(String agentName, int fallback) {
