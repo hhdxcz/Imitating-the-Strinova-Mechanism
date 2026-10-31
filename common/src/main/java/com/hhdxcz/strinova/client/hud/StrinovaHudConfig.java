@@ -54,14 +54,59 @@ public final class StrinovaHudConfig {
     /** 数据行高度（GUI 像素）。 */
     public int scoreboardRowHeight = 20;
 
-    /**
-     * 每个部件独立样式（可见性/字号/文字色/背景色）。
-     * <p>注意：这里不能在字段初始化器里调用 defaultScoreboardComponents()——
-     * 静态数组 SCOREBOARD_COMPONENT_KEYS 在源码中声明得更靠后，静态初始化尚未完成时为 null，
-     * 会在构造配置实例（HUD 配置初始化）时抛 NullPointerException。
-     * 因此改为惰性初始化：由 sanitize() / scoreboardComponent() 在类初始化完成后补齐。</p>
-     */
+    /** 每个部件独立样式（可见性/字号/文字色/背景色）。 */
     public java.util.LinkedHashMap<String, ScoreboardComponentStyle> scoreboardComponents;
+
+    /**
+     * 各列宽度权重（类似 Excel 列宽）：name / kda / ultimate / growth / weapon / damage / skill / assist / ping。
+     * 初值 null，由 sanitize()/scoreboardColumnWeight() 惰性补齐（避免静态初始化顺序 NPE）。
+     */
+    public java.util.LinkedHashMap<String, Float> scoreboardColumnWeights;
+
+    /** 列 key（与权重 map 一一对应；编辑器拖列边界时按相邻两列调整）。 */
+    public static final String[] SCOREBOARD_COLUMN_KEYS = {
+            "name", "kda", "ultimate", "growth", "weapon", "damage", "skill", "assist", "ping"
+    };
+
+    /** 列的中文名（编辑器显示用）。 */
+    public static String scoreboardColumnLabel(String key) {
+        return switch (key) {
+            case "name" -> "头像+名字";
+            case "kda" -> "击败/阵亡/助攻";
+            case "ultimate" -> "绝招";
+            case "growth" -> "成长等级";
+            case "weapon" -> "主武器";
+            case "damage" -> "输出分";
+            case "skill" -> "技能分";
+            case "assist" -> "协作分";
+            case "ping" -> "PING";
+            default -> key;
+        };
+    }
+
+    private static java.util.LinkedHashMap<String, Float> defaultScoreboardColumnWeights() {
+        java.util.LinkedHashMap<String, Float> map = new java.util.LinkedHashMap<>();
+        float[] defaults = {0.20F, 0.12F, 0.10F, 0.12F, 0.12F, 0.09F, 0.09F, 0.09F, 0.07F};
+        for (int i = 0; i < SCOREBOARD_COLUMN_KEYS.length; i++) {
+            map.put(SCOREBOARD_COLUMN_KEYS[i], defaults[i]);
+        }
+        return map;
+    }
+
+    /** 取某列宽度权重（0.02～0.60），不存在时补默认。 */
+    public float scoreboardColumnWeight(String key) {
+        if (scoreboardColumnWeights == null) {
+            scoreboardColumnWeights = defaultScoreboardColumnWeights();
+        }
+        return scoreboardColumnWeights.computeIfAbsent(key, k -> 0.08F);
+    }
+
+    public void setScoreboardColumnWeight(String key, float value) {
+        if (scoreboardColumnWeights == null) {
+            scoreboardColumnWeights = defaultScoreboardColumnWeights();
+        }
+        scoreboardColumnWeights.put(key, Math.max(0.02F, Math.min(0.60F, value)));
+    }
 
     /** 单个计分板部件的独立样式；颜色为 0 表示用默认色。 */
     public static final class ScoreboardComponentStyle {
@@ -171,6 +216,13 @@ public final class StrinovaHudConfig {
             ScoreboardComponentStyle style = scoreboardComponent(key);
             style.fontScale = clampf(style.fontScale, 0.5F, 2.0F);
         }
+        if (scoreboardColumnWeights == null) {
+            scoreboardColumnWeights = defaultScoreboardColumnWeights();
+        }
+        for (String key : SCOREBOARD_COLUMN_KEYS) {
+            float value = scoreboardColumnWeight(key);
+            scoreboardColumnWeights.put(key, Math.max(0.02F, Math.min(0.60F, value)));
+        }
     }
 
     private static float clampf(float value, float min, float max) {
@@ -188,9 +240,21 @@ public final class StrinovaHudConfig {
     public String scoreboardValuesSummary() {
         return String.format(java.util.Locale.ROOT,
                 "scoreboardWidthRatio=%.3f, scoreboardHeightRatio=%.3f, scoreboardOffsetX=%.1f, "
-                        + "scoreboardOffsetY=%.1f, scoreboardTextScale=%.2f, scoreboardRowHeight=%d",
+                        + "scoreboardOffsetY=%.1f, scoreboardTextScale=%.2f, scoreboardRowHeight=%d, columns=[%s]",
                 scoreboardWidthRatio, scoreboardHeightRatio, scoreboardOffsetX,
-                scoreboardOffsetY, scoreboardTextScale, scoreboardRowHeight);
+                scoreboardOffsetY, scoreboardTextScale, scoreboardRowHeight, columnWeightsText());
+    }
+
+    /** 列宽权重文本（如 name=0.20,kda=0.12,...）。 */
+    private String columnWeightsText() {
+        StringBuilder sb = new StringBuilder();
+        for (String key : SCOREBOARD_COLUMN_KEYS) {
+            if (sb.length() > 0) {
+                sb.append(',');
+            }
+            sb.append(String.format(java.util.Locale.ROOT, "%s=%.2f", key, scoreboardColumnWeight(key)));
+        }
+        return sb.toString();
     }
 
     /** 当前计分板调整值（JSON 片段，可直接贴回配置）。 */

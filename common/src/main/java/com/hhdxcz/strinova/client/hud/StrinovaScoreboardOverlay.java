@@ -135,6 +135,15 @@ public final class StrinovaScoreboardOverlay {
     }
 
     private static Layout computeLayout(int screenWidth, int screenHeight) {
+        return buildLayout(screenWidth, screenHeight);
+    }
+
+    /** 供编辑器使用：计算完整面板布局。 */
+    public static Layout computeLayoutPublic(int screenWidth, int screenHeight) {
+        return buildLayout(screenWidth, screenHeight);
+    }
+
+    private static Layout buildLayout(int screenWidth, int screenHeight) {
         StrinovaHudConfig config = StrinovaHudConfig.get();
         int rowHeight = Math.max(14, Math.min(30, config.scoreboardRowHeight));
         int headerHeight = Math.max(12, rowHeight - 3);
@@ -404,18 +413,25 @@ public final class StrinovaScoreboardOverlay {
 
     // ==================== 列位置 ====================
 
-    private static int[] columnAnchors(int contentW) {
-        // 按卡拉彼丘实测比例：头像+名字列更长，其后依次 击败/阵亡/助攻、绝招、成长等级、主武器、输出分、技能分、协作分、PING
-        return new int[]{
-                4,
-                Math.round(contentW * 0.23F),
-                Math.round(contentW * 0.35F),
-                Math.round(contentW * 0.46F),
-                Math.round(contentW * 0.59F),
-                Math.round(contentW * 0.67F),
-                Math.round(contentW * 0.76F),
-                Math.round(contentW * 0.83F)
-        };
+    /** 各列起点（内容区坐标，含头像+名字列）；编辑器拖列边界时用同一套计算。 */
+    public static int[] columnAnchors(int contentW) {
+        StrinovaHudConfig config = StrinovaHudConfig.get();
+        String[] keys = StrinovaHudConfig.SCOREBOARD_COLUMN_KEYS;
+        float total = 0.0F;
+        for (String key : keys) {
+            total += config.scoreboardColumnWeight(key);
+        }
+        if (total <= 0.0F) {
+            total = 1.0F;
+        }
+        int[] anchors = new int[8];
+        anchors[0] = 4;
+        float pos = config.scoreboardColumnWeight(keys[0]) / total;
+        for (int i = 1; i < anchors.length; i++) {
+            anchors[i] = Math.round(4 + contentW * pos);
+            pos += config.scoreboardColumnWeight(keys[i]) / total;
+        }
+        return anchors;
     }
 
     private static String kdaHeader() {
@@ -424,15 +440,47 @@ public final class StrinovaScoreboardOverlay {
                 + Component.translatable("hud.strinova.scoreboard.assists").getString();
     }
 
-    /** 队伍徽章（程序化几何占位）。 */
+    /**
+     * 队伍徽章：圆滑梯形（左边竖直、右边斜边，上窄下宽，四角圆滑），填充队伍色 + 亮色描边。
+     */
     private static void drawCrest(StrinovaHudPainter painter, int x, int y, int size, int accent) {
-        painter.rect(x, y, size, size, withAlpha(accent, 0x88));
-        painter.border(x, y, size, size, accent, 1);
-        int half = size / 2;
-        for (int dy = -half + 3; dy <= half - 3; dy++) {
-            int width = (half - 3) - Math.abs(dy);
-            if (width > 0) {
-                painter.rect(x + half - width, y + half + dy, width * 2 + 1, 1, 0xCCFFFFFF);
+        int w = Math.max(size, Math.round(size * 1.35F));
+        int h = size;
+        int slant = Math.max(3, Math.round(w * 0.22F));
+        int radius = Math.max(2, Math.round(h * 0.22F));
+        drawRoundedTrapezoid(painter, x, y, w, h, slant, radius, withAlpha(0xFFFFFF, 0xCC));
+        drawRoundedTrapezoid(painter, x + 1, y + 1, Math.max(2, w - 2), Math.max(2, h - 2),
+                Math.max(2, slant - 1), Math.max(1, radius - 1), withAlpha(accent, 0xE6));
+        // 中间高光斜带（增强“梯形”辨识度）
+        int bandX = x + Math.round(w * 0.32F);
+        int bandW = Math.max(2, Math.round(w * 0.12F));
+        for (int row = radius; row < h - radius; row++) {
+            int offset = Math.round(slant * (row / (float) Math.max(1, h - 1)) * 0.5F);
+            painter.rect(bandX + offset, y + 1 + row, bandW, 1, withAlpha(0xFFFFFF, 0x55));
+        }
+    }
+
+    /** 圆滑梯形：左边竖直、右边斜（上窄下宽），四角按 radius 内收。 */
+    private static void drawRoundedTrapezoid(StrinovaHudPainter painter, int x, int y, int w, int h,
+                                             int slant, int radius, int color) {
+        if (w <= 0 || h <= 0) {
+            return;
+        }
+        for (int row = 0; row < h; row++) {
+            float t = h <= 1 ? 0.0F : row / (float) (h - 1);
+            int right = x + w - Math.round(slant * (1.0F - t));
+            int inset = 0;
+            if (row < radius) {
+                inset = radius - row;
+            }
+            int fromBottom = h - 1 - row;
+            if (fromBottom < radius) {
+                inset = Math.max(inset, radius - fromBottom);
+            }
+            int rowLeft = x + inset;
+            int rowRight = right - inset;
+            if (rowRight > rowLeft) {
+                painter.rect(rowLeft, y + row, rowRight - rowLeft, 1, color);
             }
         }
     }

@@ -37,6 +37,16 @@ public class StrinovaScoreboardEditorScreen extends Screen {
     private float origTextScale;
     private int origRowHeight;
 
+    // 类似 Excel 的列宽/行高拖拽状态
+    private int resizingColumn = -1;
+    private double resizeStartX;
+    private float resizeStartLeftWeight;
+    private float resizeStartRightWeight;
+    private int resizeContentW;
+    private boolean resizingRow;
+    private double resizeStartY;
+    private int resizeStartRowHeight;
+
     public StrinovaScoreboardEditorScreen(@Nullable Screen parent) {
         super(Component.literal("计分板布局编辑器"));
         this.parent = parent;
@@ -161,7 +171,7 @@ public class StrinovaScoreboardEditorScreen extends Screen {
                 config.scoreboardTextScale, config.scoreboardRowHeight,
                 Math.round(config.scoreboardOffsetX), Math.round(config.scoreboardOffsetY));
         graphics.drawString(this.font, info, (this.width - this.font.width(info)) / 2, 18, 0xFF9BAEBF, false);
-        String hint = "拖动面板移动 · 滚轮调字体 · 方向键微调位置 · ESC 放弃修改";
+        String hint = "拖动面板移动 · 拖列头边界改列宽 · 拖行边界改行高 · 滚轮调字体 · ESC 放弃";
         graphics.drawString(this.font, hint, (this.width - this.font.width(hint)) / 2, 30, 0xFF9BAEBF, false);
 
         super.render(graphics, mouseX, mouseY, partialTick);
@@ -170,13 +180,51 @@ public class StrinovaScoreboardEditorScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
+            StrinovaHudConfig config = StrinovaHudConfig.get();
+            StrinovaScoreboardOverlay.Layout layout =
+                    StrinovaScoreboardOverlay.computeLayoutPublic(this.width, this.height);
+            int contentX = layout.left() + layout.sidebarWidth();
+            int contentW = layout.width() - layout.sidebarWidth() - 1;
+            int[] anchors = StrinovaScoreboardOverlay.columnAnchors(contentW);
+            boolean inHeader = (mouseY >= layout.blockTop()
+                    && mouseY <= layout.blockTop() + layout.headerHeight())
+                    || (mouseY >= layout.enemyTop() && mouseY <= layout.enemyTop() + layout.headerHeight());
+            if (inHeader) {
+                // 列边界：name|kda ... assist|ping（共 8 个边界）
+                for (int i = 0; i < 8; i++) {
+                    int boundary = contentX + (i + 1 < 8 ? anchors[i + 1] : contentW);
+                    if (Math.abs(mouseX - boundary) <= 4.0D) {
+                        String[] keys = StrinovaHudConfig.SCOREBOARD_COLUMN_KEYS;
+                        resizingColumn = i;
+                        resizeStartX = mouseX;
+                        resizeContentW = Math.max(1, contentW);
+                        resizeStartLeftWeight = config.scoreboardColumnWeight(keys[i]);
+                        resizeStartRightWeight = config.scoreboardColumnWeight(keys[i + 1]);
+                        return true;
+                    }
+                }
+            }
+            // 行边界：在我方/敌方区块的数据行之间拖动，调整全局行高
+            int[] blockRowTops = {layout.blockTop() + layout.headerHeight(),
+                    layout.enemyTop() + layout.headerHeight()};
+            for (int blockRowTop : blockRowTops) {
+                for (int k = 1; k < 5; k++) {
+                    int boundaryY = blockRowTop + k * layout.rowHeight();
+                    if (Math.abs(mouseY - boundaryY) <= 3.0D
+                            && mouseX >= contentX && mouseX <= contentX + contentW) {
+                        resizingRow = true;
+                        resizeStartY = mouseY;
+                        resizeStartRowHeight = layout.rowHeight();
+                        return true;
+                    }
+                }
+            }
             int[] bounds = StrinovaScoreboardOverlay.panelBounds(this.width, this.height);
             if (mouseX >= bounds[0] && mouseX <= bounds[0] + bounds[2]
                     && mouseY >= bounds[1] && mouseY <= bounds[1] + bounds[3]) {
                 dragging = true;
                 dragStartMouseX = mouseX;
                 dragStartMouseY = mouseY;
-                StrinovaHudConfig config = StrinovaHudConfig.get();
                 dragStartOffsetX = config.scoreboardOffsetX;
                 dragStartOffsetY = config.scoreboardOffsetY;
                 return true;
@@ -187,8 +235,24 @@ public class StrinovaScoreboardEditorScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        StrinovaHudConfig config = StrinovaHudConfig.get();
+        if (resizingColumn >= 0 && button == 0) {
+            String[] keys = StrinovaHudConfig.SCOREBOARD_COLUMN_KEYS;
+            float frac = (float) ((mouseX - resizeStartX) / resizeContentW);
+            float left = resizeStartLeftWeight + frac;
+            float right = resizeStartRightWeight - frac;
+            if (left >= 0.02F && right >= 0.02F) {
+                config.setScoreboardColumnWeight(keys[resizingColumn], left);
+                config.setScoreboardColumnWeight(keys[resizingColumn + 1], right);
+            }
+            return true;
+        }
+        if (resizingRow && button == 0) {
+            int newHeight = (int) Math.round(resizeStartRowHeight + (mouseY - resizeStartY));
+            config.scoreboardRowHeight = Math.max(14, Math.min(30, newHeight));
+            return true;
+        }
         if (dragging && button == 0) {
-            StrinovaHudConfig config = StrinovaHudConfig.get();
             config.scoreboardOffsetX = clampf((float) (dragStartOffsetX + mouseX - dragStartMouseX), -600.0F, 600.0F);
             config.scoreboardOffsetY = clampf((float) (dragStartOffsetY + mouseY - dragStartMouseY), -400.0F, 400.0F);
             return true;
@@ -200,6 +264,8 @@ public class StrinovaScoreboardEditorScreen extends Screen {
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (button == 0) {
             dragging = false;
+            resizingColumn = -1;
+            resizingRow = false;
         }
         return super.mouseReleased(mouseX, mouseY, button);
     }
