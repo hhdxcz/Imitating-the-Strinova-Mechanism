@@ -242,47 +242,63 @@ public final class StrinovaTaczCompat {
         return false;
     }
 
-    /** 读取 TACZ 枪械当前弹匣子弹数（反射 IGun API → NBT 兜底 → 0）。 */
+    /** 读取 TACZ 枪械当前可射击子弹数：弹匣 + 闭膛待击枪械枪膛内的 1 发（对应 IGun#hasBulletInBarrel）。 */
     public static int magazine(ItemStack stack) {
         if (!isTaczGun(stack)) {
             return 0;
         }
-        Object gun = taczGun(stack);
-        if (gun != null) {
-            for (String name : new String[]{"getCurrentAmmoCount", "getAmmoCount", "getAmmoAmount", "getMagazineAmmoCount"}) {
-                try {
-                    Method method = gun.getClass().getMethod(name, ItemStack.class);
-                    Object value = method.invoke(gun, stack);
-                    if (value instanceof Integer ammo) {
-                        return Math.max(0, ammo);
-                    }
-                } catch (Throwable ignored) {
-                }
+        Integer apiCount = gunInt(stack, "getCurrentAmmoCount");
+        int count;
+        boolean bulletInBarrel;
+        if (apiCount != null) {
+            count = Math.max(0, apiCount);
+            bulletInBarrel = Boolean.TRUE.equals(gunBoolean(stack, "hasBulletInBarrel"));
+        } else {
+            // TACZ API 不可用时的 NBT 兜底（旧版本/附属枪械）
+            Integer nbtCount = nbtAmmoCount(stack);
+            if (nbtCount == null) {
+                return 0;
             }
+            count = Math.max(0, nbtCount);
+            bulletInBarrel = nbtBulletInBarrel(stack);
         }
-        // NBT 兜底：TACZ 不同版本字段名不一致，逐个尝试
-        try {
-            var tag = stack.getTag();
-            if (tag != null) {
-                for (String key : new String[]{"AmmoCount", "CurrentAmmoCount", "GunCurrentAmmoCount",
-                        "ammo_count", "current_ammo", "Ammo"}) {
-                    if (tag.contains(key)) {
-                        return Math.max(0, tag.getInt(key));
-                    }
-                }
-            }
-        } catch (Throwable ignored) {
-        }
-        return 0;
+        // 闭膛枪械：枪膛里那 1 发也是可射击的真实子弹，TACZ 弹匣数不含它
+        return count + (bulletInBarrel ? 1 : 0);
     }
 
-    /** 读取备弹：优先枪械 ammoId 对应的弹药物品数量，其次统计背包内 TACZ 弹药。 */
+    /**
+     * 读取备弹。
+     * <ol>
+     *   <li>虚拟备弹（IGun#useDummyAmmo，如部分机枪/燃料武器）：数量存在枪械 NBT 里；</li>
+     *   <li>背包弹药：TACZ IAmmo 弹药物品按 {@link #countAmmo} 走 IAmmo#isAmmoOfGun；
+     *       弹盒 IAmmoBox 的数量存在 NBT（不是物品堆叠数），单独读取；</li>
+     *   <li>旧启发式兜底：按弹药 id / 物品 id 匹配，兼容 TACZ API 不可用的情况。</li>
+     * </ol>
+     */
     public static int reserve(LocalPlayer player, ItemStack gunStack) {
         if (player == null || !isTaczGun(gunStack)) {
             return 0;
         }
-        ResourceLocation ammoId = taczAmmoId(gunStack);
+        // 1) 虚拟备弹
+        if (Boolean.TRUE.equals(gunBoolean(gunStack, "useDummyAmmo"))) {
+            Integer dummy = gunInt(gunStack, "getDummyAmmoAmount");
+            if (dummy != null) {
+                return Math.max(0, dummy);
+            }
+        }
+        // 2) 背包弹药：TACZ 弹药物品 + 弹盒
         int total = 0;
+        for (ItemStack stack : player.getInventory().items) {
+            total += countAmmo(gunStack, stack);
+        }
+        for (ItemStack stack : player.getInventory().offhand) {
+            total += countAmmo(gunStack, stack);
+        }
+        if (total > 0) {
+            return total;
+        }
+        // 3) 旧启发式兜底
+        ResourceLocation ammoId = taczAmmoId(gunStack);
         for (ItemStack stack : player.getInventory().items) {
             if (matchesAmmo(stack, ammoId)) {
                 total += stack.getCount();
@@ -294,6 +310,121 @@ public final class StrinovaTaczCompat {
             }
         }
         return total;
+    }
+
+    /** 统计单个物品堆叠对该枪的弹药贡献：普通弹药按堆叠数、弹盒按盒内子弹数。 */
+    private static int countAmmo(ItemStack gunStack, ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return 0;
+        }
+        try {
+            Class<?> ammoClass = Class.forName("com.tacz.guns.api.item.IAmmo");
+            Object ammo = ammoClass.getMethod("getIAmmoOrNull", ItemStack.class).invoke(null, stack);
+            if (ammo != null) {
+                Object ok = ammoClass.getMethod("isAmmoOfGun", ItemStack.class, ItemStack.class)
+                        .invoke(ammo, gunStack, stack);
+                if (Boolean.TRUE.equals(ok)) {
+                    return stack.getCount();
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        try {
+            Class<?> boxClass = Class.forName("com.tacz.guns.api.item.IAmmoBox");
+            Object box = boxClass.getMethod("getIAmmoBoxOrNull", ItemStack.class).invoke(null, stack);
+            if (box != null) {
+                Object ok = boxClass.getMethod("isAmmoBoxOfGun", ItemStack.class, ItemStack.class)
+                        .invoke(box, gunStack, stack);
+                if (Boolean.TRUE.equals(ok)) {
+                    Object count = boxClass.getMethod("getAmmoCount", ItemStack.class).invoke(box, stack);
+                    if (count instanceof Number number) {
+                        return Math.max(0, number.intValue());
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return 0;
+    }
+
+    // 反射调用 IGun 的 int 方法（getCurrentAmmoCount / getDummyAmmoAmount 等）
+    private static Integer gunInt(ItemStack stack, String... names) {
+        Object gun = taczGun(stack);
+        if (gun == null) {
+            return null;
+        }
+        for (String name : names) {
+            try {
+                Method method = gun.getClass().getMethod(name, ItemStack.class);
+                method.setAccessible(true);
+                Object value = method.invoke(gun, stack);
+                if (value instanceof Number number) {
+                    return number.intValue();
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        return null;
+    }
+
+    // 反射调用 IGun 的 boolean 方法（hasBulletInBarrel / useDummyAmmo 等）
+    private static Boolean gunBoolean(ItemStack stack, String... names) {
+        Object gun = taczGun(stack);
+        if (gun == null) {
+            return null;
+        }
+        for (String name : names) {
+            try {
+                Method method = gun.getClass().getMethod(name, ItemStack.class);
+                method.setAccessible(true);
+                Object value = method.invoke(gun, stack);
+                if (value instanceof Boolean flag) {
+                    return flag;
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        return null;
+    }
+
+    // NBT 兜底：当前弹匣数（支持根 tag 与 GunData/Gun 嵌套）
+    private static Integer nbtAmmoCount(ItemStack stack) {
+        Integer value = nbtInt(stack.getTag(), new String[]{"GunCurrentAmmoCount", "CurrentAmmoCount",
+                "AmmoCount", "ammo_count", "current_ammo", "Ammo"}, 0);
+        return value;
+    }
+
+    // NBT 兜底：枪膛内是否有子弹
+    private static boolean nbtBulletInBarrel(ItemStack stack) {
+        Integer value = nbtInt(stack.getTag(), new String[]{"HasBulletInBarrel", "BulletInBarrel",
+                "GunHasBulletInBarrel", "bullet_in_barrel"}, 0);
+        return value != null && value != 0;
+    }
+
+    private static Integer nbtInt(CompoundTag tag, String[] keys, int depth) {
+        if (tag == null || depth > 2) {
+            return null;
+        }
+        try {
+            for (String key : keys) {
+                if (tag.contains(key, Tag.TAG_INT)) {
+                    return tag.getInt(key);
+                }
+                if (tag.contains(key, Tag.TAG_BYTE)) {
+                    return tag.getBoolean(key) ? 1 : 0;
+                }
+            }
+            for (String nested : new String[]{"GunData", "Gun", "GunInfo"}) {
+                if (tag.contains(nested, Tag.TAG_COMPOUND)) {
+                    Integer value = nbtInt(tag.getCompound(nested), keys, depth + 1);
+                    if (value != null) {
+                        return value;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return null;
     }
 
     private static boolean matchesAmmo(ItemStack stack, ResourceLocation ammoId) {

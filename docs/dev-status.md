@@ -52,6 +52,7 @@
 - S2C 同步 `s2c_match_state`（500ms 节流 + 登录单发），客户端写 MatchState/ScoreboardState/HudState；
 - 命令：`/strinova match start|stop|status`（OP 2）；
 - 平台钩子：伤害吸收（先纸片减伤）、死亡去重（Tag）、登录/登出/重生、server tick 广播。
+- **TACZ 弹药计数（v1.2.4）**：弹匣数 = IGun#getCurrentAmmoCount + 闭膛枪械枪膛内 1 发（hasBulletInBarrel）；备弹优先虚拟备弹（useDummyAmmo → getDummyAmmoAmount），其次背包弹药物品（IAmmo#isAmmoOfGun）与弹盒（IAmmoBox#getAmmoCount），旧 NBT/物品 id 兜底；
 - **TACZ / 命中部位（v1.2.3）**：护甲吸收对所有伤害通用（含 TACZ 子弹）；爆头通过反射探测 `DamageSource` / 直接实体 / NBT 标记（探测失败安全回退 false）；`KillEvent.headshot` 真实；真实伤害数字（S2C 附带 `DamageEvent`：amount/headshot/mitigated）；弹药 HUD 继续通过 `StrinovaTaczCompat` 读取 TACZ 弹匣/备弹。
 - **对局真实数据（v1.2.3）**：新增 C2S `c2s_profile`（选角 id + 成长等级 + 蓝方块/黄圆/绿三角三类增幅点数，服务端校验后缓存到 `StrinovaPlayerProfile`）；S2C 计分板条目同步下发三类点数，TAB 成长列全队可见（默认显示 0，加点后显示次数）；S2C 计分板条目新增 `agentName`、真实 `growthLevel`、输出分（累计真实伤害）、技能分（非枪械伤害）、真实 `ping`（`ServerPlayer.latency`）与伤害事件列表；计分板角色名不再空白，成长等级/输出分/技能分为真实数据。
 
