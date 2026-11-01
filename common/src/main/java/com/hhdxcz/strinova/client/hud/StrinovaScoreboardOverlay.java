@@ -428,16 +428,11 @@ public final class StrinovaScoreboardOverlay {
                 int colStart = contentX + starts[3];
                 int colEnd = contentX + columnEnd(starts, contentW, 3);
                 int available = Math.max(24, colEnd - colStart - 3);
-                boolean selfData = entry.self() && StrinovaGrowthState.hasData();
                 // 蓝方块=武器网络点数 / 黄圆=主动+被动技能 / 绿三角=护甲+弦化
-                // 默认（没有加点、或非本地玩家）只显示三个形状 + ">"，形状内不写 0；
-                // 有加点时才在对应形状内显示次数（例如方块点了 3 次显示 3）。
-                int[] counts = selfData
-                        ? new int[]{StrinovaGrowthState.purchasedWeapon(),
-                            StrinovaGrowthState.purchasedSkill(),
-                            StrinovaGrowthState.purchasedDefense()}
-                        : new int[]{0, 0, 0};
-                int[] active = selfData ? StrinovaGrowthState.activeAwakeningIndices() : new int[0];
+                // 全队玩家的分色点数由 C2S_PROFILE -> S2C_MATCH_STATE 同步；默认 0，形状内显示 0。
+                int[] counts = {entry.weaponPoints(), entry.skillPoints(), entry.defensePoints()};
+                int[] active = entry.self() && StrinovaGrowthState.hasData()
+                        ? StrinovaGrowthState.activeAwakeningIndices() : new int[0];
                 int slots = 3 + (active.length > 0 ? 1 + active.length : 0);
                 int slot = Math.max(7, Math.min(16, available / slots));
                 int shape = Math.max(6, slot - 2);
@@ -548,10 +543,7 @@ public final class StrinovaScoreboardOverlay {
     /** 在形状内部居中绘制数字。 */
     private static void drawShapeCount(StrinovaHudPainter painter, int count, int x, int y,
                                        int size, float scale) {
-        if (count <= 0) {
-            return; // 没有加点：形状留空，不显示 0
-        }
-        String text = String.valueOf(count);
+        String text = String.valueOf(Math.max(0, count));
         float numberScale = Math.min(0.8F * scale, size * 0.85F / 9.0F);
         int width = Math.round(painter.textWidth(text) * numberScale);
         painter.textScaled(text, x + Math.max(1, (size - width) / 2),
@@ -680,10 +672,19 @@ public final class StrinovaScoreboardOverlay {
             PlayerInfo info = infos.get(i);
             UUID id = info.getProfile().getId();
             boolean self = minecraft.player != null && minecraft.player.getUUID().equals(id);
+            int weaponPoints = 0;
+            int skillPoints = 0;
+            int defensePoints = 0;
+            if (self && StrinovaGrowthState.hasData()) {
+                weaponPoints = StrinovaGrowthState.purchasedWeapon();
+                skillPoints = StrinovaGrowthState.purchasedSkill();
+                defensePoints = StrinovaGrowthState.purchasedDefense();
+            }
             result.add(new StrinovaScoreboardState.Entry(
                     info.getProfile().getName(), "", isAlly, self,
                     0, 0, 0, 150.0F, 80.0F, StrinovaScoreboardState.Status.ALIVE,
-                    0, 7, 1, "", 0, 0, 0, info.getLatency()));
+                    0, 7, 1, "", 0, 0, 0, info.getLatency(),
+                    weaponPoints, skillPoints, defensePoints));
         }
         return result;
     }

@@ -6,10 +6,11 @@ import com.hhdxcz.strinova.net.StrinovaNetwork;
 import net.minecraft.client.Minecraft;
 
 /**
- * 客户端档案上报（角色 + 成长等级）。
+ * 客户端档案上报（角色 + 成长等级 + 三类增幅点数）。
  *
- * <p>服务端靠 {@code strinova:c2s_profile} 才知道客户端选了谁、增幅网络点到几级，再通过
- * {@code s2c_match_state} 把角色名 / 成长等级回填到 TAB 计分板与头像。上报时机：</p>
+ * <p>服务端靠 {@code strinova:c2s_profile} 才知道客户端选了谁、增幅网络点到几级、三类点数各多少，
+ * 再通过 {@code s2c_match_state} 把角色名 / 成长等级 / 分色点数回填到 TAB 计分板与头像，
+ * 让全队都能看到彼此的方块 / 圆 / 三角次数。上报时机：</p>
  * <ul>
  *   <li>进入世界后的第一帧 tick 发一次；</li>
  *   <li>选角锁定（{@link StrinovaAgentSelectScreen#lockSelection()}）、增幅网络购买 / 刷新返还 /
@@ -72,13 +73,19 @@ public final class StrinovaClientProfileSync {
             }
 
             int growthLevel = 1;
+            int weaponPoints = 0;
+            int skillPoints = 0;
+            int defensePoints = 0;
             try {
                 growthLevel = StrinovaGrowthState.growthLevel();
+                weaponPoints = StrinovaGrowthState.purchasedWeapon();
+                skillPoints = StrinovaGrowthState.purchasedSkill();
+                defensePoints = StrinovaGrowthState.purchasedDefense();
             } catch (Throwable ignored) {
-                // 成长数据不可用时回退默认等级 1
+                // 成长数据不可用时回退默认值（等级 1、点数 0）
             }
 
-            StrinovaNetwork.sendProfile(agentId, growthLevel);
+            StrinovaNetwork.sendProfile(agentId, growthLevel, weaponPoints, skillPoints, defensePoints);
             dirty = false;
             sentInWorld = true;
             lastSentMs = now;

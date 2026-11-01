@@ -215,6 +215,9 @@ players: [uuid, name, ally, kills, deaths, assists,
 |---|---|---|
 | agentId | utf64 | 当前锁定角色 id（可空 = 未选角） |
 | growthLevel | int | 客户端成长等级（0~9），服务端 clamp |
+| weaponPoints | int | 蓝方块（武器网络）点数，clamp 0~99 |
+| skillPoints | int | 黄圆（主动+被动技能）点数，clamp 0~99 |
+| defensePoints | int | 绿三角（护甲+弦化）点数，clamp 0~99 |
 
 服务端校验 agentId 必须在 `StrinovaAgentRoster` 中，非法整包忽略；缓存到 `StrinovaPlayerProfile`（玩家退出/服务器停止时清理）。
 
@@ -222,6 +225,7 @@ players: [uuid, name, ally, kills, deaths, assists,
 
 - 玩家条目 `name` 之后新增 `agentName`（utf64，服务端由 profile 映射为角色展示名，未选角为空串）；
 - `growthLevel` 改为档案真实值（默认 1）；
+- 玩家条目末尾新增三个计数：`weaponPoints` / `skillPoints` / `defensePoints`（蓝方块 / 黄圆 / 绿三角，默认 0，clamp 0~99，来源 C2S_PROFILE）；TAB 成长列全队可见，未加点形状内显示 0；
 - `damageScore` = 累计真实伤害（护甲吸收后）；`skillScore` = 非枪械伤害；`ping` = `ServerPlayer.latency`；
 - `players` 列表后追加命中事件列表 `varint count × {float amount, boolean headshot, boolean mitigated}`（每个接收者只收到自己命中造成的事件，仅对局进行中、最近 2s、最多 64 条），客户端用于伤害数字（爆头/减伤样式）。
 
