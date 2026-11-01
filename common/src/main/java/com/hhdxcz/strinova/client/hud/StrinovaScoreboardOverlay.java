@@ -429,52 +429,40 @@ public final class StrinovaScoreboardOverlay {
                 int colEnd = contentX + columnEnd(starts, contentW, 3);
                 int available = Math.max(24, colEnd - colStart - 3);
                 boolean selfData = entry.self() && StrinovaGrowthState.hasData();
-                if (!selfData) {
-                    // 其他玩家（或客户端无加点数据）：沿用原等级数字
-                    int growthColor = entry.growthLevel() >= 2 ? 0xFFDEB639 : 0xFF4B77DC;
-                    int chipBg = backgroundColor("growth", growthColor);
-                    int chipSize = Math.max(8, Math.round(10 * Math.min(2.0F, fontScale("growth"))));
-                    int chipY = rowY + (rowHeight - chipSize) / 2;
-                    int chipX = colStart;
-                    if (style("growth").centerH) {
-                        chipX = colStart + Math.max(0, (colEnd - colStart - chipSize) / 2);
-                    }
-                    painter.rect(chipX, chipY, chipSize, chipSize, chipBg);
-                    String levelText = String.valueOf(entry.growthLevel());
-                    float levelScale = 0.75F * growthScale;
-                    int levelWidth = Math.round(painter.textWidth(levelText) * levelScale);
-                    painter.textScaled(levelText, chipX + Math.max(1, (chipSize - levelWidth) / 2),
-                            chipY + Math.max(0, (chipSize - 9.0F * levelScale) / 2), levelScale,
-                            textColor("growth", 0xFF0A111C), false);
-                } else {
-                    // 蓝方块=武器网络点数 / 黄圆=主动+被动技能 / 绿三角=护甲+弦化
-                    int[] counts = {StrinovaGrowthState.purchasedWeapon(),
+                // 蓝方块=武器网络点数 / 黄圆=主动+被动技能 / 绿三角=护甲+弦化
+                // 默认（没有加点、或非本地玩家）只显示三个形状 + ">"，形状内不写 0；
+                // 有加点时才在对应形状内显示次数（例如方块点了 3 次显示 3）。
+                int[] counts = selfData
+                        ? new int[]{StrinovaGrowthState.purchasedWeapon(),
                             StrinovaGrowthState.purchasedSkill(),
-                            StrinovaGrowthState.purchasedDefense()};
-                    int[] active = StrinovaGrowthState.activeAwakeningIndices();
-                    int slots = 3 + Math.max(1, active.length) + 1;
-                    int slot = Math.max(7, Math.min(16, available / slots));
-                    int shape = Math.max(6, slot - 2);
-                    int shapeY = rowY + (rowHeight - shape) / 2;
-                    int cx = colStart;
-                    if (style("growth").centerH) {
-                        int total = shape * 3 + 6 + Math.max(4, Math.round(painter.textWidth(">") * growthScale))
-                                + (active.length > 0 ? active.length * (slot + 2) : 0);
-                        cx = colStart + Math.max(0, (colEnd - colStart - total) / 2);
-                    }
-                    drawGrowthSquare(painter, cx, shapeY, shape, 0xFF4FA3FF, counts[0], growthScale);
-                    cx += shape + 2;
-                    drawGrowthCircle(painter, cx, shapeY, shape, 0xFFE8B54D, counts[1], growthScale);
-                    cx += shape + 2;
-                    drawGrowthTriangle(painter, cx, shapeY, shape, 0xFF57C785, counts[2], growthScale);
-                    cx += shape + 3;
+                            StrinovaGrowthState.purchasedDefense()}
+                        : new int[]{0, 0, 0};
+                int[] active = selfData ? StrinovaGrowthState.activeAwakeningIndices() : new int[0];
+                int slots = 3 + (active.length > 0 ? 1 + active.length : 0);
+                int slot = Math.max(7, Math.min(16, available / slots));
+                int shape = Math.max(6, slot - 2);
+                int shapeY = rowY + (rowHeight - shape) / 2;
+                int arrowWidth = Math.max(4, Math.round(painter.textWidth(">") * growthScale));
+                int cx = colStart;
+                if (style("growth").centerH) {
+                    int total = shape * 3 + 6
+                            + (active.length > 0 ? arrowWidth + active.length * (slot + 2) : 0);
+                    cx = colStart + Math.max(0, (colEnd - colStart - total) / 2);
+                }
+                drawGrowthSquare(painter, cx, shapeY, shape, 0xFF4FA3FF, counts[0], growthScale);
+                cx += shape + 2;
+                drawGrowthCircle(painter, cx, shapeY, shape, 0xFFE8B54D, counts[1], growthScale);
+                cx += shape + 2;
+                drawGrowthTriangle(painter, cx, shapeY, shape, 0xFF57C785, counts[2], growthScale);
+                cx += shape + 3;
+                if (active.length > 0) {
                     painter.textScaled(">", cx, textY, growthScale, 0xFF9AA8B8, false);
-                    cx += Math.max(4, Math.round(painter.textWidth(">") * growthScale)) + 2;
-                    for (int index : active) {
-                        drawEightPointStar(painter, cx, rowY + (rowHeight - slot) / 2, slot, 0xFFE8833A,
-                                index, growthScale);
-                        cx += slot + 2;
-                    }
+                    cx += arrowWidth + 2;
+                }
+                for (int index : active) {
+                    drawEightPointStar(painter, cx, rowY + (rowHeight - slot) / 2, slot, 0xFFE8833A,
+                            index, growthScale);
+                    cx += slot + 2;
                 }
             }
 
@@ -560,7 +548,10 @@ public final class StrinovaScoreboardOverlay {
     /** 在形状内部居中绘制数字。 */
     private static void drawShapeCount(StrinovaHudPainter painter, int count, int x, int y,
                                        int size, float scale) {
-        String text = String.valueOf(Math.max(0, count));
+        if (count <= 0) {
+            return; // 没有加点：形状留空，不显示 0
+        }
+        String text = String.valueOf(count);
         float numberScale = Math.min(0.8F * scale, size * 0.85F / 9.0F);
         int width = Math.round(painter.textWidth(text) * numberScale);
         painter.textScaled(text, x + Math.max(1, (size - width) / 2),
