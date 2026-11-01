@@ -43,6 +43,8 @@ public class StrinovaGrowthScreen extends Screen {
     private static final int COLOR_TEXT = 0xFFEAF2FA;
     private static final int COLOR_TEXT_DIM = 0xFF9AA8B8;
     private static final int COLOR_TEXT_DISABLED = 0xFF5E6874;
+    /** 能量点不足时的价格颜色（红色）；足够时白色（或配置覆盖色）。 */
+    private static final int COLOR_PRICE_INSUFFICIENT = 0xFFFF5A5A;
     private static final int COLOR_SUCCESS = 0xFF54E0A0;
     private static final int COLOR_BORDER = 0x4035D6E8;
     /** 分类「刷新/返还」图标底色（绿色斜四边形）。 */
@@ -692,7 +694,7 @@ public class StrinovaGrowthScreen extends Screen {
             graphics.drawString(this.font, price,
                     diamondX - 8 - this.font.width(price), textY,
                     locked ? COLOR_LOCKED_TEXT
-                            : (affordable ? this.priceTextColor() : COLOR_TEXT_DISABLED), false);
+                            : (affordable ? this.priceTextColor() : COLOR_PRICE_INSUFFICIENT), false);
         }
     }
 
@@ -1490,7 +1492,7 @@ public class StrinovaGrowthScreen extends Screen {
         } else {
             graphics.drawString(this.font, price, x + 7, secondY,
                     item.cost() <= StrinovaGrowthState.energyPoints()
-                            ? this.priceTextColor() : COLOR_TEXT_DISABLED, false);
+                            ? this.priceTextColor() : COLOR_PRICE_INSUFFICIENT, false);
             drawDiamond(graphics, x + 7 + this.font.width(price) + 7, secondY + 4, 3, COLOR_DIAMOND);
         }
         int lineY = secondY + LINE_STEP;
@@ -1670,10 +1672,10 @@ public class StrinovaGrowthScreen extends Screen {
         return override != 0 ? override : COLOR_TEXT;
     }
 
-    /** 价格文字色：自定义 priceColor 非 0 时覆盖默认价格色。 */
+    /** 价格文字色（能量点足够时）：默认白色，自定义 priceColor 非 0 时覆盖。 */
     private int priceTextColor() {
         int override = StrinovaHudConfig.get().growthUi.priceColor;
-        return override != 0 ? override : 0xFFFF8A7A;
+        return override != 0 ? override : 0xFFFFFFFF;
     }
 
     /** 觉醒名称色：自定义 awakenNameColor 非 0 时覆盖（未激活时压暗，保留状态区分）。 */
