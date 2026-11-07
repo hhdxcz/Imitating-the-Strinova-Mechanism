@@ -356,7 +356,7 @@ public final class StrinovaScoreboardOverlay {
             float headerScale = BASE_HEADER_TEXT_SCALE * baseScale * fontScale("header");
             painter.rect(contentX, top, contentW, headerHeight, opacity(backgroundColor("header", HEADER_ROW)));
             // 列头文字略微上移
-            int headerLift = Math.max(1, Math.round(headerScale * 1.2F));
+            int headerLift = 2 + Math.max(1, Math.round(headerScale * 1.2F));
             int headerY = top + Math.round((headerHeight - 8.1F * headerScale) / 2) - headerLift;
             int headerColor = textColor("header", TEXT_DIM);
             drawColumnText(painter, kdaHeader(), contentX, starts, contentW, 1, headerY, headerScale,
@@ -402,7 +402,7 @@ public final class StrinovaScoreboardOverlay {
             int avatarY = rowY + (rowHeight - avatarSize) / 2;
             int avatarX = contentX + starts[0];
             // 数据行文字略微上移；高度按 1.05 倍字重计算，避免放大后下沉
-            int rowLift = Math.max(1, Math.round(rowScale * 1.2F));
+            int rowLift = 2 + Math.max(1, Math.round(rowScale * 1.2F));
             int textY = rowY
                     + Math.round((rowHeight - 9.0F * BASE_VALUE_TEXT_SCALE * rowScale) / 2)
                     - rowLift;

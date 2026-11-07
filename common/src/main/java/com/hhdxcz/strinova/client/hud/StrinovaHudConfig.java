@@ -82,7 +82,7 @@ public final class StrinovaHudConfig {
     public float scoreboardSidebarWidthRatio = 0.0903F;
 
     /** 计分板整体不透明度（0.20~1.00，越小越透明）。 */
-    public float scoreboardOpacity = 0.95F;
+    public float scoreboardOpacity = 0.20F;
 
     /** TAB 时是否把游戏画面整体压暗（默认关闭 → 大背景透明）。 */
     public boolean scoreboardDimBackground = false;
@@ -199,8 +199,8 @@ public final class StrinovaHudConfig {
         for (String key : new String[]{"kda", "ultimate", "weapon", "damage", "skill", "assist", "ping"}) {
             map.get(key).centerH = true;
         }
-        // 数据行默认字号 0.90x（/strinova_client scoreboard 编辑器的默认值）
-        map.get("rows").fontScale = 0.90F;
+        // 数据行默认字号 1.05x（/strinova_client scoreboard 编辑器的默认值）
+        map.get("rows").fontScale = 1.05F;
         ScoreboardComponentStyle rounds = map.get("rounds");
         rounds.fontScale = 1.25F;
         rounds.centerH = true;
@@ -299,10 +299,15 @@ public final class StrinovaHudConfig {
             ScoreboardComponentStyle style = scoreboardComponent(key);
             style.fontScale = clampf(style.fontScale, 0.5F, 2.0F);
         }
-        // 旧默认 0.85 → 新默认 0.90（仅当用户没有自定义过该值时才迁移）
+        // 旧默认 0.85 / 0.90 → 新默认 1.05（仅当用户没有自定义过该值时才迁移）
         ScoreboardComponentStyle rowsStyle = scoreboardComponent("rows");
-        if (Math.abs(rowsStyle.fontScale - 0.85F) < 0.0001F) {
-            rowsStyle.fontScale = 0.90F;
+        if (Math.abs(rowsStyle.fontScale - 0.85F) < 0.0001F
+                || Math.abs(rowsStyle.fontScale - 0.90F) < 0.0001F) {
+            rowsStyle.fontScale = 1.05F;
+        }
+        // 旧默认 0.95 → 新默认 0.20（不透明度 20%）；自定义过的值保留
+        if (Math.abs(scoreboardOpacity - 0.95F) < 0.0001F) {
+            scoreboardOpacity = 0.20F;
         }
         if (scoreboardColumnWeights == null) {
             scoreboardColumnWeights = defaultScoreboardColumnWeights();

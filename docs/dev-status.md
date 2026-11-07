@@ -61,6 +61,7 @@
 - 数据：`common/src/main/resources/assets/strinova/data/wiki_zh.json`（24 角色 × 8 分支 × 1~2 项 = 192 组 / 365 项，全部带成本与属性变化文案；技能/觉醒/档案/数值齐全）与 `wiki_en.json`（英文文本覆盖层，成本/需求与中文逐项校验一致）；
 - 生成脚本：`tools/wiki-sync.mjs`（biligame 中文全量抓取）、`tools/en-wiki-sync.mjs`（strinova.org 英文离线合并 + validator）；英文原始抓取经 web_fetch 获取后解析为 `docs/wiki-research/raw-en/*.json`；
 - 说明与缺口：`docs/wiki-research/README.md`（含两站数据来源、重新生成步骤、已知缺口）；
+- **计分板默认值调整（v1.3.5）**：`rows` 默认字号改为 **1.05x**（旧 0.85/0.90 自动迁移）；列头/数据行文字再上移 **2px**；计分板整体默认不透明度改为 **20%**（0.20，旧默认 0.95 自动迁移）；
 - **数据行默认字号（v1.3.4）**：`rows` 部件默认 `fontScale` 0.85 → **0.90**（`/strinova_client scoreboard` 的默认值）；旧配置若仍为 0.85 会自动迁移到 0.90，自定义过的值不动；数值基准倍率恢复 1.00，所以数据行实际默认 0.90x；
 - **计分板文字微调（v1.3.3）**：数据行字号 ×1.05（数值/名字），列头行与数据行文字整体上移 1~2px（按缩放自动取整）；
 - **字重调整（v1.3.2）**：HUD/TAB 字体从 Noto Sans SC Medium + Saira SemiBold 换成 **Noto Sans SC Regular + Saira Medium**（反馈“有点粗”），字形尺寸/图集不变；
