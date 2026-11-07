@@ -57,7 +57,7 @@ public final class StrinovaScoreboardOverlay {
     private static final int ROUND_CELL = 9;
     private static final int ROUND_STEP = 11;
     private static final float BASE_HEADER_TEXT_SCALE = 0.90F;
-    private static final float BASE_VALUE_TEXT_SCALE = 1.00F;
+    private static final float BASE_VALUE_TEXT_SCALE = 1.05F;
     private static final float BASE_NAME_TEXT_SCALE = 1.05F;
 
     /** 计算后面板布局（含编辑器所需的边界）。 */
@@ -355,7 +355,9 @@ public final class StrinovaScoreboardOverlay {
         if (visible("header")) {
             float headerScale = BASE_HEADER_TEXT_SCALE * baseScale * fontScale("header");
             painter.rect(contentX, top, contentW, headerHeight, opacity(backgroundColor("header", HEADER_ROW)));
-            int headerY = top + Math.round((headerHeight - 8.1F * headerScale) / 2);
+            // 列头文字略微上移
+            int headerLift = Math.max(1, Math.round(headerScale * 1.2F));
+            int headerY = top + Math.round((headerHeight - 8.1F * headerScale) / 2) - headerLift;
             int headerColor = textColor("header", TEXT_DIM);
             drawColumnText(painter, kdaHeader(), contentX, starts, contentW, 1, headerY, headerScale,
                     headerColor, headerCenter, false);
@@ -399,7 +401,11 @@ public final class StrinovaScoreboardOverlay {
             int avatarSize = Math.max(10, Math.min(16, rowHeight - 6));
             int avatarY = rowY + (rowHeight - avatarSize) / 2;
             int avatarX = contentX + starts[0];
-            int textY = rowY + Math.round((rowHeight - 9.0F * rowScale) / 2);
+            // 数据行文字略微上移；高度按 1.05 倍字重计算，避免放大后下沉
+            int rowLift = Math.max(1, Math.round(rowScale * 1.2F));
+            int textY = rowY
+                    + Math.round((rowHeight - 9.0F * BASE_VALUE_TEXT_SCALE * rowScale) / 2)
+                    - rowLift;
 
             if (visible("name")) {
                 float nameScale = BASE_NAME_TEXT_SCALE * rowScale * fontScale("name");
