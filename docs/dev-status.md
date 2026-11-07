@@ -61,6 +61,9 @@
 - 数据：`common/src/main/resources/assets/strinova/data/wiki_zh.json`（24 角色 × 8 分支 × 1~2 项 = 192 组 / 365 项，全部带成本与属性变化文案；技能/觉醒/档案/数值齐全）与 `wiki_en.json`（英文文本覆盖层，成本/需求与中文逐项校验一致）；
 - 生成脚本：`tools/wiki-sync.mjs`（biligame 中文全量抓取）、`tools/en-wiki-sync.mjs`（strinova.org 英文离线合并 + validator）；英文原始抓取经 web_fetch 获取后解析为 `docs/wiki-research/raw-en/*.json`；
 - 说明与缺口：`docs/wiki-research/README.md`（含两站数据来源、重新生成步骤、已知缺口）；
+- **HUD 贴图化（v1.2.4）**：TAB 成长列改用官方贴图 `T_UI_HUD_Square/Circle/Triangle`（资源路径 `assets/strinova/textures/gui/hud/growth_{square,circle,triangle}.png`）；`StrinovaHudPainter` 新增 `texture(...)`，程序化 painter 也能绘制 PNG，后续可逐步替换为图集；
+- **顶部面板重做（v1.2.4）**：`StrinovaMatchHeaderWidget` 改为截图布局（目标回合 + 大号倒计时 + 左右斜切比分板 + 本机角色头像/段位徽记 + 两侧银色装饰翼，520×58）；
+- **素材索引**：`docs/ui-assets/strinova-assets.csv`（全部 7,940 张）与 `strinova-hud-assets.csv`（HUD 相关 2,107 张），含名称/分类/尺寸/字节/相对路径；
 - 界面预览：`tools/ui-preview.mjs` 生成 `docs/ui/growth-real-{zh,en}.png` 与 `select-real-{zh,en}.png`（1600×900，Edge 无头截图）。
 
 ## 已知 TODO / 下一阶段

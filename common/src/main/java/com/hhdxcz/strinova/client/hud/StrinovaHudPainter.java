@@ -1,5 +1,7 @@
 package com.hhdxcz.strinova.client.hud;
 
+import net.minecraft.resources.ResourceLocation;
+
 /**
  * HUD 绘制抽象层。
  *
@@ -41,4 +43,17 @@ public interface StrinovaHudPainter {
 
     /** 直线（程序化实现会逐像素填充）。 */
     void line(int x1, int y1, int x2, int y2, int argb);
+
+    /**
+     * 绘制整张贴图（按目标宽高拉伸）。
+     *
+     * @param texture 贴图 ResourceLocation
+     * @param x       左上角 X
+     * @param y       左上角 Y
+     * @param width   目标宽
+     * @param height  目标高
+     * @param argb    颜色混合（一般传 0xFFFFFFFF 保持原色）
+     * @param alpha   整体透明度 0~1
+     */
+    void texture(ResourceLocation texture, int x, int y, int width, int height, int argb, float alpha);
 }

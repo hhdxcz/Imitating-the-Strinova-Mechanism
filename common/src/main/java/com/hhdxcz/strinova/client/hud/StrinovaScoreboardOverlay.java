@@ -2,6 +2,7 @@ package com.hhdxcz.strinova.client.hud;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 
@@ -21,6 +22,13 @@ import java.util.UUID;
 public final class StrinovaScoreboardOverlay {
 
     // ==================== 默认颜色（部件样式为 0 时使用） ====================
+    private static final ResourceLocation GROWTH_SQUARE =
+            new ResourceLocation("strinova", "textures/gui/hud/growth_square.png");
+    private static final ResourceLocation GROWTH_CIRCLE =
+            new ResourceLocation("strinova", "textures/gui/hud/growth_circle.png");
+    private static final ResourceLocation GROWTH_TRIANGLE =
+            new ResourceLocation("strinova", "textures/gui/hud/growth_triangle.png");
+
     private static final int DIM = 0xB3000000;
     private static final int PANEL_BG = 0xF20C1016;
     private static final int PANEL_BORDER = 0x55FFFFFF;
@@ -511,32 +519,24 @@ public final class StrinovaScoreboardOverlay {
         return starts;
     }
 
-    /** 成长等级：蓝色方块（武器网络点数）。 */
+    /** 成长等级：蓝色方块（武器网络点数）——官方 HUD 贴图。 */
     private static void drawGrowthSquare(StrinovaHudPainter painter, int x, int y, int size,
                                          int color, int count, float scale) {
-        painter.rect(x, y, size, size, color);
+        painter.texture(GROWTH_SQUARE, x, y, size, size, 0xFFFFFFFF, 1.0F);
         drawShapeCount(painter, count, x, y, size, scale);
     }
 
-    /** 成长等级：黄色圆（主动/被动技能点数）。 */
+    /** 成长等级：黄色圆（主动/被动技能点数）——官方 HUD 贴图。 */
     private static void drawGrowthCircle(StrinovaHudPainter painter, int x, int y, int size,
                                          int color, int count, float scale) {
-        int radius = size / 2;
-        for (int dy = -radius; dy <= radius; dy++) {
-            int half = (int) Math.sqrt(Math.max(0, radius * radius - dy * dy));
-            painter.rect(x + radius - half, y + radius + dy, half * 2 + 1, 1, color);
-        }
+        painter.texture(GROWTH_CIRCLE, x, y, size, size, 0xFFFFFFFF, 1.0F);
         drawShapeCount(painter, count, x, y, size, scale);
     }
 
-    /** 成长等级：绿色三角（护甲/弦化点数）。 */
+    /** 成长等级：绿色三角（护甲/弦化点数）——官方 HUD 贴图。 */
     private static void drawGrowthTriangle(StrinovaHudPainter painter, int x, int y, int size,
                                            int color, int count, float scale) {
-        int centerX = x + size / 2;
-        for (int dy = 0; dy < size; dy++) {
-            int half = (size / 2) * (dy + 1) / size;
-            painter.rect(centerX - half, y + dy, half * 2 + 1, 1, color);
-        }
+        painter.texture(GROWTH_TRIANGLE, x, y, size, size, 0xFFFFFFFF, 1.0F);
         drawShapeCount(painter, count, x, y, size, scale);
     }
 
@@ -547,7 +547,7 @@ public final class StrinovaScoreboardOverlay {
         float numberScale = Math.min(0.8F * scale, size * 0.85F / 9.0F);
         int width = Math.round(painter.textWidth(text) * numberScale);
         painter.textScaled(text, x + Math.max(1, (size - width) / 2),
-                y + Math.max(0, (size - 9.0F * numberScale) / 2), numberScale, 0xFF0A111C, false);
+                y + Math.max(0, (size - 9.0F * numberScale) / 2), numberScale, 0xFFFFFFFF, true);
     }
 
     /** 八芒星（已激活觉醒）：橙金色，星内数字为觉醒序号（1~3）。 */

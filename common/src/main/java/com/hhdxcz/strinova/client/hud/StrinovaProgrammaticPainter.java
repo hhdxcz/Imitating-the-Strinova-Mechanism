@@ -1,9 +1,11 @@
 package com.hhdxcz.strinova.client.hud;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * 程序化 HUD 绘制实现：不依赖任何贴图资源，先用几何图形 + 系统字体把 HUD 跑起来。
@@ -139,6 +141,25 @@ public final class StrinovaProgrammaticPainter implements StrinovaHudPainter {
         // 贴图版会替换为图集图标；程序化版本先用首字母占位
         String label = iconId == null || iconId.isEmpty() ? "?" : iconId.substring(0, 1).toUpperCase();
         text(label, x + (size - textWidth(label)) / 2, y + (size - textHeight()) / 2, argb, false);
+    }
+
+    @Override
+    public void texture(ResourceLocation texture, int x, int y, int width, int height, int argb, float alpha) {
+        if (graphics == null || texture == null || width <= 0 || height <= 0) {
+            return;
+        }
+        // 贴图统一按 256 归一化采样（Minecraft 的 blit 只把 textureWidth/Height 用于 UV 归一化，
+        // 实际采样仍是 0..1 全图，因此 64x64 等小图也能正确铺满）
+        final int texSize = 256;
+        float a = Math.max(0.0F, Math.min(1.0F, alpha));
+        float r = ((argb >> 16) & 0xFF) / 255.0F;
+        float g = ((argb >> 8) & 0xFF) / 255.0F;
+        float b = (argb & 0xFF) / 255.0F;
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(r, g, b, a);
+        graphics.blit(texture, x, y, width, height, 0.0F, 0.0F, texSize, texSize, texSize, texSize);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     @Override
