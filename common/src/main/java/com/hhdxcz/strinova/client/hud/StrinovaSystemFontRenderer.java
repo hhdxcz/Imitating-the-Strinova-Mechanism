@@ -28,11 +28,14 @@ import java.util.Map;
  */
 public final class StrinovaSystemFontRenderer {
 
-    private static final int ATLAS_SIZE = 512;
-    private static final int CELL = 16;
+    private static final int ATLAS_SIZE = 1024;
+    /** 每格 28px，字符四周留 4px 透明边，缩放采样时不会吃到相邻字。 */
+    private static final int CELL = 28;
+    private static final int CELL_PADDING = 4;
     private static final int COLS = ATLAS_SIZE / CELL;
     private static final int MAX_GLYPHS = COLS * COLS;
-    private static final int FONT_PX = 12;
+    /** 以 18px 光栅化、再缩到 9px 显示，缩小采样比 12→9 更平滑。 */
+    private static final int FONT_PX = 18;
     private static final int TARGET_TEXT_PX = 9;
 
     /** 每个字形的图集位置 + 墨迹包围盒 + 字宽。 */
@@ -97,8 +100,10 @@ public final class StrinovaSystemFontRenderer {
         float ratio = (TARGET_TEXT_PX * scale) / FONT_PX;
         try {
             if (shadow) {
-                RenderSystem.setShaderColor(0.0F, 0.0F, 0.0F, alpha / 255.0F * 0.6F);
-                drawGlyphs(graphics, text, x + 1.0F, y + 1.0F, ratio);
+                // 阴影偏移随缩放走，避免小字号时 1px 固定偏移把字“糊成两层”
+                float shadowOffset = Math.max(1.0F, Math.round(ratio * 2.0F));
+                RenderSystem.setShaderColor(0.0F, 0.0F, 0.0F, alpha / 255.0F * 0.5F);
+                drawGlyphs(graphics, text, x + shadowOffset, y + shadowOffset, ratio);
             }
             RenderSystem.setShaderColor(red / 255.0F, green / 255.0F, blue / 255.0F, alpha / 255.0F);
             drawGlyphs(graphics, text, x, y, ratio);
@@ -161,7 +166,7 @@ public final class StrinovaSystemFontRenderer {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setFont(awtFont.deriveFont((float) FONT_PX));
             g2.setColor(Color.WHITE);
-            g2.drawString(String.valueOf((char) ch), 1, CELL - 3);
+            g2.drawString(String.valueOf((char) ch), CELL_PADDING, CELL - 5);
             FontMetrics metrics = g2.getFontMetrics();
             advance = metrics.charWidth((char) ch);
             if (advance <= 0) {
