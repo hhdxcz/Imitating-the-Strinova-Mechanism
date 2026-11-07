@@ -44,6 +44,7 @@ public final class StrinovaHudConfig {
     public boolean matchHeaderEnabled = true;
     public boolean scoreboardEnabled = true;
     /** HUD/计分板是否使用微软雅黑（关闭则用原版像素字体）。 */
+    /** 使用内置 HUD 字体（中文 Noto Sans SC + 数字/英文 Saira）；关闭后回退原版字体。 */
     public boolean useYaheiFont = true;
     /** 打开本模组界面时是否给游戏画面加轻量高斯模糊。 */
     public boolean uiBlurEnabled = true;
