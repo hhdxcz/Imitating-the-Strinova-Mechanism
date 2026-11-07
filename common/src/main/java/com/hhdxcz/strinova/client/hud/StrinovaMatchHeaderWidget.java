@@ -2,21 +2,24 @@ package com.hhdxcz.strinova.client.hud;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+
 import java.util.List;
 import java.util.Locale;
 
 /**
  * 对局顶部面板（对齐真实截图）：
- * 中间「目标 N 回合」+ 大号倒计时，左右是我的/敌方比分斜切面板，
- * 左侧为本机角色头像 + 段位徽记，两侧用银色斜切装饰翼收边。
+ * 中间「目标 N 回合」+ 大号倒计时，左右是我的/敌方比分斜切面板；
+ * 两侧各 5 个玩家头像（官方 T_Dynamic_RoleScoreboard_*，中途加入/未选角用 HalfEnterEmpty），
+ * 外侧用银色斜切装饰翼收边。
  *
- * <p>所有元素仍走 {@link StrinovaHudPainter}，因此支持 HUD 编辑器自由拖动/缩放，
- * 也兼容后续贴图版 painter。</p>
+ * <p>所有元素仍走 {@link StrinovaHudPainter}，因此支持 HUD 编辑器自由拖动/缩放。</p>
  */
 public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
 
     private static final int WIDTH = 520;
     private static final int HEIGHT = 58;
+    private static final int PORTRAIT = 20;
+    private static final int PORTRAIT_STEP = 21;
 
     private static final int COLOR_ALLY = 0xFFBC3B47;
     private static final int COLOR_ENEMY = 0xFF4B77DC;
@@ -48,13 +51,23 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         int centerX = x + WIDTH / 2;
 
         // 两侧银色斜切装饰翼
-        drawWing(painter, x, y + HEIGHT / 2, 150, false);
-        drawWing(painter, x + WIDTH - 150, y + HEIGHT / 2, 150, true);
+        drawWing(painter, x, y + HEIGHT / 2, 130, false);
+        drawWing(painter, x + WIDTH - 130, y + HEIGHT / 2, 130, true);
 
         // 中央斜切暗底
-        slanted(painter, centerX - 160, y + 3, 320, HEIGHT - 6, 12, COLOR_CENTER);
-        painter.rect(x + 70, y + 1, WIDTH - 140, 1, COLOR_SILVER_DIM);
-        painter.rect(x + 90, y + HEIGHT - 2, WIDTH - 180, 1, COLOR_SILVER_DIM);
+        slanted(painter, centerX - 158, y + 3, 316, HEIGHT - 6, 12, COLOR_CENTER);
+        painter.rect(x + 110, y + 1, WIDTH - 220, 1, COLOR_SILVER_DIM);
+        painter.rect(x + 130, y + HEIGHT - 2, WIDTH - 260, 1, COLOR_SILVER_DIM);
+
+        // 左右各 5 个头像（先画底，再画中央文字）
+        List<StrinovaScoreboardState.Entry> allies = StrinovaScoreboardState.allies();
+        List<StrinovaScoreboardState.Entry> enemies = StrinovaScoreboardState.enemies();
+        int portraitY = y + (HEIGHT - PORTRAIT) / 2;
+        for (int i = 0; i < 5; i++) {
+            drawTeamPortrait(painter, x + 4 + i * PORTRAIT_STEP, portraitY, entry(allies, i), false);
+            drawTeamPortrait(painter, x + WIDTH - 4 - PORTRAIT - (4 - i) * PORTRAIT_STEP, portraitY,
+                    entry(enemies, i), true);
+        }
 
         int alliesScore = active ? StrinovaMatchState.getAlliesScore() : 3;
         int enemiesScore = active ? StrinovaMatchState.getEnemiesScore() : 2;
@@ -69,7 +82,7 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         painter.text(roundText, centerX - painter.textWidth(roundText) / 2, y + 2,
                 StrinovaProgrammaticPainter.COLOR_TEXT_DIM, false);
 
-        // 中央倒计时：官方 DP_Num 七段数码数字（冒号用两个方块绘制）
+        // 中央倒计时：官方 DP_Num 七段数码数字
         String time = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60);
         float digitHeight = 22.0F;
         float timeWidth = StrinovaHudDigits.textWidth(time, digitHeight);
@@ -77,18 +90,14 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
                 digitHeight, 0xFFFFFFFF, 1.0F);
 
         // 左右比分板（斜切）
-        drawScorePlate(painter, centerX - 132, y + 18, 74, 24, 10, COLOR_PLATE, COLOR_ALLY,
+        drawScorePlate(painter, centerX - 132, y + 20, 74, 22, 10, COLOR_PLATE, COLOR_ALLY,
                 twoDigits(alliesScore), COLOR_ALLY_TEXT, true);
-        drawScorePlate(painter, centerX + 58, y + 18, 74, 24, -10, COLOR_PLATE, COLOR_ENEMY,
+        drawScorePlate(painter, centerX + 58, y + 20, 74, 22, -10, COLOR_PLATE, COLOR_ENEMY,
                 twoDigits(enemiesScore), COLOR_ENEMY_TEXT, false);
 
         // 中间比分连接线
-        painter.rect(centerX - 40, y + 29, 80, 1, COLOR_SILVER_DIM);
-        painter.rect(centerX - 2, y + 26, 4, 7, 0x99E8F0FA);
-
-        // 左侧本机角色头像 + 段位徽记
-        drawSelfPortrait(painter, centerX - 238, y + 10, 36);
-        drawRankBadge(painter, centerX - 220, y + 50);
+        painter.rect(centerX - 40, y + 30, 80, 1, COLOR_SILVER_DIM);
+        painter.rect(centerX - 2, y + 27, 4, 7, 0x99E8F0FA);
     }
 
     /** 斜切矩形（逐行偏移，模拟平行四边形）。 */
@@ -108,7 +117,6 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
     private static void drawWing(StrinovaHudPainter painter, int x, int centerY, int length, boolean flip) {
         int dir = flip ? -1 : 1;
         int startX = flip ? x + length : x;
-        // 斜切淡底
         for (int i = 0; i < 18; i++) {
             float t = i / 17.0F;
             int w = Math.round(22 + 26 * t);
@@ -116,21 +124,18 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
             int px = flip ? startX - w - Math.round(6 * t) : startX + Math.round(6 * t);
             painter.rect(px, centerY + oy - 4, w, 8, 0x38C8D2DE);
         }
-        // 亮边斜线
-        painter.line(startX, centerY - 10, startX + dir * (length - 40), centerY - 10, COLOR_SILVER);
-        painter.line(startX, centerY + 10, startX + dir * (length - 40), centerY + 10, COLOR_SILVER);
-        // 端点小三角
-        int tx = startX + dir * (length - 34);
+        painter.line(startX, centerY - 10, startX + dir * (length - 34), centerY - 10, COLOR_SILVER);
+        painter.line(startX, centerY + 10, startX + dir * (length - 34), centerY + 10, COLOR_SILVER);
+        int tx = startX + dir * (length - 28);
         painter.line(tx, centerY - 10, tx + dir * 8, centerY, COLOR_SILVER);
         painter.line(tx, centerY + 10, tx + dir * 8, centerY, COLOR_SILVER);
     }
 
-    /** 比分斜切板：左侧红色、右侧蓝色，数字右/左对齐。 */
+    /** 比分斜切板：左侧红色、右侧蓝色。 */
     private static void drawScorePlate(StrinovaHudPainter painter, int x, int y, int width, int height,
                                        int skew, int bg, int edge, String score, int scoreColor,
                                        boolean allySide) {
         slanted(painter, x, y, width, height, skew, bg);
-        // 顶/底亮边
         for (int i = 0; i < height; i++) {
             float t = height <= 1 ? 0.5F : (float) i / (height - 1);
             int offset = Math.round((t - 0.5F) * skew);
@@ -148,72 +153,37 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         }
     }
 
-    /** 本机角色头像：定位色左边条 + 首字 + 存活绿点。 */
-    private static void drawSelfPortrait(StrinovaHudPainter painter, int x, int y, int size) {
-        StrinovaScoreboardState.Entry self = null;
-        for (StrinovaScoreboardState.Entry entry : StrinovaScoreboardState.allies()) {
-            if (entry.self()) {
-                self = entry;
-                break;
-            }
+    /** 顶部面板玩家头像：官方 RoleScoreboard 贴图；未选角/中途加入用 HalfEnterEmpty。 */
+    private static void drawTeamPortrait(StrinovaHudPainter painter, int x, int y,
+                                         StrinovaScoreboardState.Entry entry, boolean enemy) {
+        painter.rect(x, y, PORTRAIT, PORTRAIT, 0xB3101820);
+        ResourceLocation texture = entry == null ? null
+                : StrinovaHudTextures.avatarByAgentName(entry.agentName());
+        if (texture == null) {
+            texture = StrinovaHudTextures.SCOREBOARD_EMPTY;
         }
-        String agentName = self == null ? null : self.agentName();
-        if (agentName == null || agentName.isEmpty()) {
-            agentName = selectedAgentName();
-        }
-        String label = agentName == null || agentName.isEmpty() ? "?" : agentName.substring(0, 1);
-        int accent = agentAccent(agentName, COLOR_ALLY);
-        painter.rect(x, y, size, size, 0xB3101820);
-        ResourceLocation avatarTexture = StrinovaHudTextures.avatarByAgentName(agentName);
-        if (avatarTexture != null) {
-            painter.textureRegion(avatarTexture, x, y, size, size,
-                    16.0F, 0.0F, 32, 32, 56, 32, 0xFFFFFFFF, 1.0F);
+        // 头像原图 56×32，取中间 32×32 方图裁切
+        painter.textureRegion(texture, x, y, PORTRAIT, PORTRAIT,
+                16.0F, 0.0F, 32, 32, 56, 32, 0xFFFFFFFF, 1.0F);
+        int border;
+        if (entry != null && entry.self()) {
+            border = 0xFFFFD166;
+        } else if (entry != null && entry.status() == StrinovaScoreboardState.Status.ALIVE) {
+            border = 0xCCFFFFFF;
         } else {
-            painter.text(label, x + (size - painter.textWidth(label)) / 2,
-                    y + (size - painter.textHeight()) / 2, 0xFFEAF6FF, true);
+            border = enemy ? 0x774B77DC : 0x77BC3B47;
         }
-        painter.rect(x, y, 2, size, accent);
-        painter.border(x, y, size, size, 0x88FFFFFF, 1);
-        if (self == null || self.status() == StrinovaScoreboardState.Status.ALIVE) {
-            painter.rect(x + size - 7, y + size - 7, 6, 6, 0xFF5FE08C);
-            painter.border(x + size - 7, y + size - 7, 6, 6, 0xAA000000, 1);
+        painter.border(x, y, PORTRAIT, PORTRAIT, border, 1);
+        if (entry != null && entry.status() == StrinovaScoreboardState.Status.ALIVE) {
+            painter.rect(x + PORTRAIT - 4, y + PORTRAIT - 4, 3, 3, 0xFF5FE08C);
         }
     }
 
-    /** 段位徽记（简化的三角金徽）。 */
-    private static void drawRankBadge(StrinovaHudPainter painter, int centerX, int y) {
-        painter.line(centerX - 9, y + 2, centerX, y - 4, 0xFFE8C56A);
-        painter.line(centerX, y - 4, centerX + 9, y + 2, 0xFFE8C56A);
-        painter.line(centerX - 9, y + 2, centerX + 9, y + 2, 0xFFE8C56A);
-        painter.rect(centerX - 1, y + 4, 2, 2, 0xFFE8C56A);
+    private static StrinovaScoreboardState.Entry entry(List<StrinovaScoreboardState.Entry> list, int index) {
+        return index < list.size() ? list.get(index) : null;
     }
 
     private static String twoDigits(int value) {
         return String.format(Locale.ROOT, "%02d", Math.max(0, value));
-    }
-
-    private static String selectedAgentName() {
-        try {
-            String id = StrinovaHudConfig.get().selectedAgentId;
-            if (id == null || id.isEmpty()) {
-                return "";
-            }
-            StrinovaAgentRoster.Agent agent = StrinovaAgentRoster.byId(id);
-            return agent == null ? "" : agent.name();
-        } catch (Throwable ignored) {
-            return "";
-        }
-    }
-
-    private static int agentAccent(String agentName, int fallback) {
-        if (agentName == null || agentName.isEmpty()) {
-            return fallback;
-        }
-        for (StrinovaAgentRoster.Agent agent : StrinovaAgentRoster.agents()) {
-            if (agent.name().equals(agentName)) {
-                return agent.accentColor();
-            }
-        }
-        return fallback;
     }
 }

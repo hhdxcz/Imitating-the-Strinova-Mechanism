@@ -2,6 +2,7 @@ package com.hhdxcz.strinova.client;
 
 import com.hhdxcz.strinova.client.hud.StrinovaAgentRoster;
 import com.hhdxcz.strinova.client.hud.StrinovaAgentSelectUi;
+import com.hhdxcz.strinova.client.hud.StrinovaHudTextures;
 import com.hhdxcz.strinova.client.hud.StrinovaHudConfig;
 import com.hhdxcz.strinova.client.hud.StrinovaMatchState;
 import com.hhdxcz.strinova.client.hud.StrinovaScoreboardState;
@@ -11,6 +12,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 
 import java.util.ArrayList;
@@ -88,6 +90,8 @@ public class StrinovaAgentSelectScreen extends Screen {
     private final List<StrinovaAgentRoster.Agent> agents = StrinovaAgentRoster.agents();
     /** 当前选中的超弦体下标（头像网格高亮 + P1 标记 + 中央立绘/右侧面板数据源）。 */
     private int selectedIndex;
+    /** 左侧立绘是否已“选择后出现”：未点选前显示官方 HalfEnterEmpty 空头像。 */
+    private boolean portraitRevealed;
     /** 上次锁定（写入配置）的角色 id，用于在头像网格中显示绿色勾。 */
     private String lockedAgentId = "";
     /** 右侧页签状态：true=武器选择，false=外观选择。 */
@@ -214,6 +218,7 @@ public class StrinovaAgentSelectScreen extends Screen {
         }
         this.selectedIndex = current == null ? 0 : Math.max(0, this.agents.indexOf(current));
         this.lockedAgentId = config.selectedAgentId == null ? "" : config.selectedAgentId;
+        this.portraitRevealed = !this.lockedAgentId.isEmpty();
 
         this.computeLayout();
         this.layoutRightPanel();
@@ -540,6 +545,7 @@ public class StrinovaAgentSelectScreen extends Screen {
         int index = this.gridIndexAt((int) mouseX, (int) mouseY);
         if (index >= 0) {
             this.selectedIndex = index;
+            this.portraitRevealed = true;
             this.selectedSkill = 0;
             return true;
         }
@@ -990,13 +996,17 @@ public class StrinovaAgentSelectScreen extends Screen {
             graphics.fill(this.centerX + this.centerW / 4, charTop + 6,
                     this.centerX + this.centerW * 3 / 4, charTop + 7, withAlpha(accent, 0x99));
 
-            float scale = Math.min(Math.min(this.centerW * 0.50F,
-                    (charBottom - charTop) * 0.55F) / 9.0F, 12.0F);
-            scale = Math.max(1.0F, scale);
-            this.drawGiantChar(graphics, firstChar(name), charCx + Math.round(scale),
-                    charCy + Math.round(scale), scale, 0x55000000);
-            this.drawGiantChar(graphics, firstChar(name), charCx, charCy, scale,
-                    withAlpha(COLOR_TEXT, 0xE6));
+            // 官方选角左侧人物头像（RoleHUD），未选角时显示 HalfEnterEmpty
+            ResourceLocation roleHud = this.portraitRevealed
+                    ? StrinovaHudTextures.roleHudByAgentName(name) : null;
+            if (roleHud == null) {
+                roleHud = StrinovaHudTextures.ROLE_HUD_EMPTY;
+            }
+            int areaH = Math.max(8, charBottom - charTop - 6);
+            int areaW = Math.max(8, this.centerW - 8);
+            int portraitSize = Math.max(8, Math.min(areaW, areaH));
+            graphics.blit(roleHud, charCx - portraitSize / 2, charCy - portraitSize / 2,
+                    portraitSize, portraitSize, 0.0F, 0.0F, 256, 256, 256, 256);
 
             // 底部名字条：角色名（大号）+ 定位 · 阵营（小字）
             int nameTop = charBottom;
@@ -1323,6 +1333,12 @@ public class StrinovaAgentSelectScreen extends Screen {
                 ? withAlpha(cellAccent, 0xCC)
                 : (hovered ? 0x55FFFFFF : withAlpha(cellAccent, 0x66));
         graphics.fill(x, y, x + this.cellW, y + this.cellH, background);
+        // 官方选角底部可点人物头像（SelectTalent 98×78）
+        ResourceLocation talentTexture = StrinovaHudTextures.selectTalentByAgentName(agent.name());
+        if (talentTexture != null) {
+            graphics.blit(talentTexture, x, y, this.cellW, this.cellH,
+                    0.0F, 0.0F, 98, 78, 98, 78);
+        }
         this.border(graphics, x, y, this.cellW, this.cellH,
                 selected ? 0xFFFFFFFF : withAlpha(cellAccent, 0xBB));
         if (selected) {
@@ -1332,8 +1348,10 @@ public class StrinovaAgentSelectScreen extends Screen {
             graphics.fill(x - 1, y, x, y + this.cellH, cellAccent);
             graphics.fill(x + this.cellW, y, x + this.cellW + 1, y + this.cellH, cellAccent);
         }
-        this.drawCenteredText(graphics, firstChar(agent.name()), x + this.cellW / 2,
-                y + (this.cellH - 9) / 2, selected ? 0xFF0A111C : COLOR_TEXT, false);
+        if (talentTexture == null) {
+            this.drawCenteredText(graphics, firstChar(agent.name()), x + this.cellW / 2,
+                    y + (this.cellH - 9) / 2, selected ? 0xFF0A111C : COLOR_TEXT, false);
+        }
         // 选中者左上角 P1 标记（格子太窄时退化为金色小方块，避免遮挡居中首字）
         if (selected) {
             if (this.cellW >= 20 && this.cellH >= 26) {

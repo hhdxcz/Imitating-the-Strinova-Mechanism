@@ -406,6 +406,10 @@ public final class StrinovaScoreboardOverlay {
                 int accentColor = agentAccent(entry.agentName(), accent);
                 painter.rect(avatarX, avatarY, avatarSize, avatarSize, 0xFF0D1218);
                 ResourceLocation avatarTexture = StrinovaHudTextures.avatarByAgentName(entry.agentName());
+                boolean noAgent = entry.agentName() == null || entry.agentName().isEmpty();
+                if (avatarTexture == null && noAgent) {
+                    avatarTexture = StrinovaHudTextures.SCOREBOARD_EMPTY;
+                }
                 if (avatarTexture != null) {
                     // 官方计分板头像 56×32，取中间 32×32 方图裁切，避免拉伸
                     painter.textureRegion(avatarTexture, avatarX, avatarY, avatarSize, avatarSize,
