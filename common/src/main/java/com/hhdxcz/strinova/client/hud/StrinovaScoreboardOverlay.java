@@ -431,7 +431,6 @@ public final class StrinovaScoreboardOverlay {
                             avatarY + Math.round((avatarSize - 6.75F * rowScale) / 2),
                             0.75F * rowScale, TEXT, false);
                 }
-                painter.rect(avatarX, avatarY, 2, avatarSize, accentColor);
                 painter.border(avatarX, avatarY, avatarSize, avatarSize, 0x66FFFFFF, 1);
                 if (entry.status() == StrinovaScoreboardState.Status.ALIVE) {
                     painter.rect(avatarX + avatarSize - 4, avatarY + avatarSize - 3, 3, 3, GREEN);

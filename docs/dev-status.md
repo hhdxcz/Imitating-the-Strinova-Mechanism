@@ -61,6 +61,7 @@
 - 数据：`common/src/main/resources/assets/strinova/data/wiki_zh.json`（24 角色 × 8 分支 × 1~2 项 = 192 组 / 365 项，全部带成本与属性变化文案；技能/觉醒/档案/数值齐全）与 `wiki_en.json`（英文文本覆盖层，成本/需求与中文逐项校验一致）；
 - 生成脚本：`tools/wiki-sync.mjs`（biligame 中文全量抓取）、`tools/en-wiki-sync.mjs`（strinova.org 英文离线合并 + validator）；英文原始抓取经 web_fetch 获取后解析为 `docs/wiki-research/raw-en/*.json`；
 - 说明与缺口：`docs/wiki-research/README.md`（含两站数据来源、重新生成步骤、已知缺口）；
+- **头像边框修正（v1.2.9）**：顶部面板头像的底框/边框贴合头像图片本身（56:32 矩形，不再包正方形大框）；TAB 计分板头像移除左侧高亮竖线；
 - **头像素材修正（v1.2.8）**：TAB 计分板行头像改用官方移动端头像 `T_Dynamic_RoleHUDMobile_*`（100×100 方图等比缩放到方框）；顶部面板加宽到 560×60、头像框 24px、白细边框 + 底部高光，头像比之前大一圈；
 - **头像缩放修正（v1.2.7）**：TAB 计分板与顶部面板的 RoleScoreboard 头像改为按 56:32 原比例缩到方框内（不再 32×32 中心裁切放大脸部，上下留暗底）；
 - **头像位置修正（v1.2.6）**：`RoleHUD_*` 改放到选角界面**左侧队友卡片**（中间大立绘恢复程序化首字）；底部可点人物 `SelectTalent_*` 按**原始比例 98:78** 绘制（格子比例同步调整）并改为深底 + 白色细边框；

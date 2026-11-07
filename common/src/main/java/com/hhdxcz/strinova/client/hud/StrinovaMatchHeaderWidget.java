@@ -156,15 +156,15 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
     /** 顶部面板玩家头像：官方 RoleScoreboard 贴图；未选角/中途加入用 HalfEnterEmpty。 */
     private static void drawTeamPortrait(StrinovaHudPainter painter, int x, int y,
                                          StrinovaScoreboardState.Entry entry, boolean enemy) {
-        painter.rect(x, y, PORTRAIT, PORTRAIT, 0xB3101820);
         ResourceLocation texture = entry == null ? null
                 : StrinovaHudTextures.avatarByAgentName(entry.agentName());
         if (texture == null) {
             texture = StrinovaHudTextures.SCOREBOARD_EMPTY;
         }
-        // 头像原图 56×32，按原比例缩到方框内（宽度占满、上下留暗底）
-        int fitHeight = Math.max(4, Math.round(PORTRAIT * 32.0F / 56.0F));
+        // 头像原图 56×32：底框、边框都贴合图片本身（不再包正方形大框）
+        int fitHeight = Math.max(6, Math.round(PORTRAIT * 32.0F / 56.0F));
         int fitY = y + (PORTRAIT - fitHeight) / 2;
+        painter.rect(x, fitY, PORTRAIT, fitHeight, 0xB3101820);
         painter.textureRegion(texture, x, fitY, PORTRAIT, fitHeight,
                 0.0F, 0.0F, 56, 32, 56, 32, 0xFFFFFFFF, 1.0F);
         // 边框：白色细框（本人金色、死亡压暗），不再用队伍色粗框
@@ -176,11 +176,11 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         } else {
             border = 0x55FFFFFF;
         }
-        painter.border(x, y, PORTRAIT, PORTRAIT, border, 1);
+        painter.border(x, fitY, PORTRAIT, fitHeight, border, 1);
         // 底部细高光，贴近真实 UI 的玻璃质感
-        painter.rect(x + 1, y + PORTRAIT - 2, PORTRAIT - 2, 1, 0x33FFFFFF);
+        painter.rect(x + 1, fitY + fitHeight - 2, PORTRAIT - 2, 1, 0x33FFFFFF);
         if (entry != null && entry.status() == StrinovaScoreboardState.Status.ALIVE) {
-            painter.rect(x + PORTRAIT - 4, y + PORTRAIT - 4, 3, 3, 0xFF5FE08C);
+            painter.rect(x + PORTRAIT - 4, fitY + fitHeight - 4, 3, 3, 0xFF5FE08C);
         }
     }
 
