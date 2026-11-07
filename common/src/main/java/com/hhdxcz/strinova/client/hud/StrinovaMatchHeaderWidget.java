@@ -16,10 +16,10 @@ import java.util.Locale;
  */
 public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
 
-    private static final int WIDTH = 520;
-    private static final int HEIGHT = 58;
-    private static final int PORTRAIT = 20;
-    private static final int PORTRAIT_STEP = 21;
+    private static final int WIDTH = 560;
+    private static final int HEIGHT = 60;
+    private static final int PORTRAIT = 24;
+    private static final int PORTRAIT_STEP = 24;
 
     private static final int COLOR_ALLY = 0xFFBC3B47;
     private static final int COLOR_ENEMY = 0xFF4B77DC;
@@ -55,9 +55,9 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         drawWing(painter, x + WIDTH - 130, y + HEIGHT / 2, 130, true);
 
         // 中央斜切暗底
-        slanted(painter, centerX - 158, y + 3, 316, HEIGHT - 6, 12, COLOR_CENTER);
-        painter.rect(x + 110, y + 1, WIDTH - 220, 1, COLOR_SILVER_DIM);
-        painter.rect(x + 130, y + HEIGHT - 2, WIDTH - 260, 1, COLOR_SILVER_DIM);
+        slanted(painter, centerX - 150, y + 3, 300, HEIGHT - 6, 12, COLOR_CENTER);
+        painter.rect(x + 130, y + 1, WIDTH - 260, 1, COLOR_SILVER_DIM);
+        painter.rect(x + 150, y + HEIGHT - 2, WIDTH - 300, 1, COLOR_SILVER_DIM);
 
         // 左右各 5 个头像（先画底，再画中央文字）
         List<StrinovaScoreboardState.Entry> allies = StrinovaScoreboardState.allies();
@@ -167,15 +167,18 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         int fitY = y + (PORTRAIT - fitHeight) / 2;
         painter.textureRegion(texture, x, fitY, PORTRAIT, fitHeight,
                 0.0F, 0.0F, 56, 32, 56, 32, 0xFFFFFFFF, 1.0F);
+        // 边框：白色细框（本人金色、死亡压暗），不再用队伍色粗框
         int border;
         if (entry != null && entry.self()) {
             border = 0xFFFFD166;
         } else if (entry != null && entry.status() == StrinovaScoreboardState.Status.ALIVE) {
             border = 0xCCFFFFFF;
         } else {
-            border = enemy ? 0x774B77DC : 0x77BC3B47;
+            border = 0x55FFFFFF;
         }
         painter.border(x, y, PORTRAIT, PORTRAIT, border, 1);
+        // 底部细高光，贴近真实 UI 的玻璃质感
+        painter.rect(x + 1, y + PORTRAIT - 2, PORTRAIT - 2, 1, 0x33FFFFFF);
         if (entry != null && entry.status() == StrinovaScoreboardState.Status.ALIVE) {
             painter.rect(x + PORTRAIT - 4, y + PORTRAIT - 4, 3, 3, 0xFF5FE08C);
         }

@@ -405,17 +405,25 @@ public final class StrinovaScoreboardOverlay {
                 float nameScale = BASE_NAME_TEXT_SCALE * rowScale * fontScale("name");
                 int accentColor = agentAccent(entry.agentName(), accent);
                 painter.rect(avatarX, avatarY, avatarSize, avatarSize, 0xFF0D1218);
-                ResourceLocation avatarTexture = StrinovaHudTextures.avatarByAgentName(entry.agentName());
+                ResourceLocation mobileAvatar = StrinovaHudTextures.mobileAvatarByAgentName(entry.agentName());
+                ResourceLocation avatarTexture = mobileAvatar != null ? mobileAvatar
+                        : StrinovaHudTextures.avatarByAgentName(entry.agentName());
                 boolean noAgent = entry.agentName() == null || entry.agentName().isEmpty();
                 if (avatarTexture == null && noAgent) {
                     avatarTexture = StrinovaHudTextures.SCOREBOARD_EMPTY;
                 }
                 if (avatarTexture != null) {
-                    // 官方计分板头像 56×32：按原比例缩放到方框内（宽度占满、上下留暗底）
-                    int fitHeight = Math.max(4, Math.round(avatarSize * 32.0F / 56.0F));
-                    int fitY = avatarY + (avatarSize - fitHeight) / 2;
-                    painter.textureRegion(avatarTexture, avatarX, fitY, avatarSize, fitHeight,
-                            0.0F, 0.0F, 56, 32, 56, 32, 0xFFFFFFFF, 1.0F);
+                    if (mobileAvatar != null) {
+                        // 移动端头像 100×100：等比缩放到方框（铺满）
+                        painter.textureRegion(mobileAvatar, avatarX, avatarY, avatarSize, avatarSize,
+                                0.0F, 0.0F, 100, 100, 100, 100, 0xFFFFFFFF, 1.0F);
+                    } else {
+                        // RoleScoreboard 56×32：按原比例缩到方框内（宽度占满、上下留暗底）
+                        int fitHeight = Math.max(4, Math.round(avatarSize * 32.0F / 56.0F));
+                        int fitY = avatarY + (avatarSize - fitHeight) / 2;
+                        painter.textureRegion(avatarTexture, avatarX, fitY, avatarSize, fitHeight,
+                                0.0F, 0.0F, 56, 32, 56, 32, 0xFFFFFFFF, 1.0F);
+                    }
                 } else {
                     String initial = entry.agentName() == null || entry.agentName().isEmpty()
                             ? "?" : entry.agentName().substring(0, 1);

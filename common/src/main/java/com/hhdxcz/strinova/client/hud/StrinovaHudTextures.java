@@ -4,6 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * HUD 贴图资源索引：官方 UI 贴图 → 模组资源路径。
@@ -50,6 +51,11 @@ public final class StrinovaHudTextures {
             Map.entry("xinghui", "146")
     );
 
+    /** 有移动端 HUD 头像（T_Dynamic_RoleHUDMobile_*）的角色。 */
+    private static final Set<String> MOBILE_IDS = Set.of(
+            "michele", "audrey", "madeleine", "xin", "ling", "baimo", "freesia", "flavia",
+            "aika", "xinxia", "lawi", "yvette", "ming", "meridith", "kanami", "xinghui");
+
     /** 选角左侧面板头像：缺少 flavia 的 RoleHUD 素材。 */
     private static final Map<String, ResourceLocation> ROLE_HUD_BY_NAME = new HashMap<>();
 
@@ -58,6 +64,9 @@ public final class StrinovaHudTextures {
 
     /** 顶部面板/计分板头像（RoleScoreboard）。 */
     private static final Map<String, ResourceLocation> SCOREBOARD_BY_NAME = new HashMap<>();
+
+    /** TAB 计分板头像（RoleHUDMobile，100×100 方图）。 */
+    private static final Map<String, ResourceLocation> MOBILE_BY_NAME = new HashMap<>();
 
     static {
         for (StrinovaAgentRoster.Agent agent : StrinovaAgentRoster.agents()) {
@@ -73,6 +82,9 @@ public final class StrinovaHudTextures {
             }
             SELECT_BY_NAME.put(agent.name(), hud("select/" + agent.id()));
             SCOREBOARD_BY_NAME.put(agent.name(), hud("avatars/" + agent.id()));
+            if (MOBILE_IDS.contains(agent.id())) {
+                MOBILE_BY_NAME.put(agent.name(), hud("avatars_mobile/" + agent.id()));
+            }
         }
     }
 
@@ -95,6 +107,11 @@ public final class StrinovaHudTextures {
     /** 按图鉴展示名取顶部面板/计分板头像（RoleScoreboard）；未收录返回 null。 */
     public static ResourceLocation avatarByAgentName(String agentName) {
         return agentName == null ? null : SCOREBOARD_BY_NAME.get(agentName);
+    }
+
+    /** 按图鉴展示名取 TAB 计分板头像（RoleHUDMobile 100×100）；未收录返回 null。 */
+    public static ResourceLocation mobileAvatarByAgentName(String agentName) {
+        return agentName == null ? null : MOBILE_BY_NAME.get(agentName);
     }
 
     /** 按图鉴展示名取选角界面左侧头像（RoleHUD）；未收录返回 null。 */
