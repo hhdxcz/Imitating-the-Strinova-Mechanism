@@ -162,9 +162,11 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         if (texture == null) {
             texture = StrinovaHudTextures.SCOREBOARD_EMPTY;
         }
-        // 头像原图 56×32，取中间 32×32 方图裁切
-        painter.textureRegion(texture, x, y, PORTRAIT, PORTRAIT,
-                16.0F, 0.0F, 32, 32, 56, 32, 0xFFFFFFFF, 1.0F);
+        // 头像原图 56×32，按原比例缩到方框内（宽度占满、上下留暗底）
+        int fitHeight = Math.max(4, Math.round(PORTRAIT * 32.0F / 56.0F));
+        int fitY = y + (PORTRAIT - fitHeight) / 2;
+        painter.textureRegion(texture, x, fitY, PORTRAIT, fitHeight,
+                0.0F, 0.0F, 56, 32, 56, 32, 0xFFFFFFFF, 1.0F);
         int border;
         if (entry != null && entry.self()) {
             border = 0xFFFFD166;

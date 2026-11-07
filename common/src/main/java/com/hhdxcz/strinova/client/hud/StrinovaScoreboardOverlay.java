@@ -411,9 +411,11 @@ public final class StrinovaScoreboardOverlay {
                     avatarTexture = StrinovaHudTextures.SCOREBOARD_EMPTY;
                 }
                 if (avatarTexture != null) {
-                    // 官方计分板头像 56×32，取中间 32×32 方图裁切，避免拉伸
-                    painter.textureRegion(avatarTexture, avatarX, avatarY, avatarSize, avatarSize,
-                            16.0F, 0.0F, 32, 32, 56, 32, 0xFFFFFFFF, 1.0F);
+                    // 官方计分板头像 56×32：按原比例缩放到方框内（宽度占满、上下留暗底）
+                    int fitHeight = Math.max(4, Math.round(avatarSize * 32.0F / 56.0F));
+                    int fitY = avatarY + (avatarSize - fitHeight) / 2;
+                    painter.textureRegion(avatarTexture, avatarX, fitY, avatarSize, fitHeight,
+                            0.0F, 0.0F, 56, 32, 56, 32, 0xFFFFFFFF, 1.0F);
                 } else {
                     String initial = entry.agentName() == null || entry.agentName().isEmpty()
                             ? "?" : entry.agentName().substring(0, 1);
