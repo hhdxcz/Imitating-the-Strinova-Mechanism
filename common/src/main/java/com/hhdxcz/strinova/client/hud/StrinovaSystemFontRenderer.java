@@ -22,8 +22,8 @@ import java.util.Map;
 /**
  * HUD/计分板字体渲染器：内置「Noto Sans SC（中文）+ Saira（数字/英文）」双字体。
  *
- * <p>中文字符走 {@code NotoSansSC-Medium.ttf}（OFL），拉丁字母/数字/符号走
- * {@code Saira-SemiBold.ttf}（OFL），与卡拉彼丘官网 UI 字体栈一致；两者按字符自动选择，
+ * <p>中文字符走 {@code NotoSansSC-Regular.ttf}（OFL），拉丁字母/数字/符号走
+ * {@code Saira-Medium.ttf}（OFL），与卡拉彼丘官网 UI 字体栈一致；两者按字符自动选择，
  * 字形按需光栅化到 1024×1024 动态图集（每格 28px、四周留 4px 透明边，缩放采样不串字）。</p>
  *
  * <p>找不到内置字体时回退到 {@code config/strinova-fonts/} 或系统字体（雅黑/文泉驿）；
@@ -278,8 +278,8 @@ public final class StrinovaSystemFontRenderer {
         triedInit = true;
         try {
             // 1) 内置字体：Noto Sans SC（中文）+ Saira（数字/拉丁），OFL 许可，可随模组分发
-            fontCjk = loadResourceFont("NotoSansSC-Medium.ttf");
-            fontLatin = loadResourceFont("Saira-SemiBold.ttf");
+            fontCjk = loadResourceFont("NotoSansSC-Regular.ttf");
+            fontLatin = loadResourceFont("Saira-Medium.ttf");
 
             // 2) 回退字体：config/strinova-fonts 或系统雅黑/文泉驿
             Font fallback = loadFallbackFont();
@@ -302,7 +302,7 @@ public final class StrinovaSystemFontRenderer {
             atlasId = new ResourceLocation(StrinovaMod.MOD_ID, "dynamic_scoreboard_font");
             Minecraft.getInstance().getTextureManager().register(atlasId, atlasTexture);
             ready = true;
-            StrinovaMod.LOGGER.info("Strinova: 已加载 HUD 字体（中文 Noto Sans SC，数字/英文 Saira）");
+            StrinovaMod.LOGGER.info("Strinova: 已加载 HUD 字体（中文 Noto Sans SC Regular，数字/英文 Saira Medium）");
         } catch (Throwable throwable) {
             ready = false;
             StrinovaMod.LOGGER.warn("Strinova: 加载 HUD 字体失败，回退原版字体: {}", throwable.toString());
