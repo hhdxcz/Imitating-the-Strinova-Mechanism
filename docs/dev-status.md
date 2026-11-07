@@ -61,6 +61,7 @@
 - 数据：`common/src/main/resources/assets/strinova/data/wiki_zh.json`（24 角色 × 8 分支 × 1~2 项 = 192 组 / 365 项，全部带成本与属性变化文案；技能/觉醒/档案/数值齐全）与 `wiki_en.json`（英文文本覆盖层，成本/需求与中文逐项校验一致）；
 - 生成脚本：`tools/wiki-sync.mjs`（biligame 中文全量抓取）、`tools/en-wiki-sync.mjs`（strinova.org 英文离线合并 + validator）；英文原始抓取经 web_fetch 获取后解析为 `docs/wiki-research/raw-en/*.json`；
 - 说明与缺口：`docs/wiki-research/README.md`（含两站数据来源、重新生成步骤、已知缺口）；
+- **头像位置修正（v1.2.6）**：`RoleHUD_*` 改放到选角界面**左侧队友卡片**（中间大立绘恢复程序化首字）；底部可点人物 `SelectTalent_*` 按**原始比例 98:78** 绘制（格子比例同步调整）并改为深底 + 白色细边框；
 - **三套官方头像接入（v1.2.5）**：选角左侧人物头像 `T_Dynamic_RoleHUD_*`（点选后出现，默认 HalfEnterEmpty）、选角底部可点人物 `T_Dynamic_SelectTalent_*`、顶部面板 5v5 玩家头像 `T_Dynamic_RoleScoreboard_*`（中途加入/未选角用 HalfEnterEmpty）；缺素材角色回退空头像/首字；
 - **官方头像（v1.2.4）**：TAB 计分板行头像与顶部面板本机头像改用 `T_Dynamic_RoleScoreboard_*`（17 名角色，biligame wiki 角色 ID 映射），未收录角色回退首字头像；
 - **官方数码数字（v1.2.4）**：顶部面板倒计时改用 `DP_Num` 七段数码精灵表（`StrinovaHudDigits` + `textureRegion`）；

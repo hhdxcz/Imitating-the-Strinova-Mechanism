@@ -30,7 +30,7 @@
 | `assets/strinova/textures/gui/hud/digits.png` | `DP_Num · Strinova.png`（7 段数码数字表，11 格 170×256，0~9 + 空档） |
 | `assets/strinova/textures/gui/hud/avatars/<agentId>.png` | `T_Dynamic_RoleScoreboard_<数字ID> · Strinova.png`（56×32，顶部面板/计分板头像） |
 | `assets/strinova/textures/gui/hud/avatars/empty.png` | `T_Dynamic_RoleScoreboard_HalfEnterEmpty · Strinova.png`（中途加入/未选角） |
-| `assets/strinova/textures/gui/hud/rolehud/<agentId>.png` | `T_Dynamic_RoleHUD_<数字ID> · Strinova.png`（原 128/256，统一缩放到 256×256，选角左侧头像） |
+| `assets/strinova/textures/gui/hud/rolehud/<agentId>.png` | `T_Dynamic_RoleHUD_<数字ID> · Strinova.png`（原 128/256，统一缩放到 256×256，选角左侧队友卡片头像） |
 | `assets/strinova/textures/gui/hud/rolehud/empty.png` | `T_Dynamic_RoleHUD_HalfEnterEmpty · Strinova.png`（选角默认/未点选） |
 | `assets/strinova/textures/gui/hud/select/<agentId>.png` | `T_Dynamic_SelectTalent_<数字ID> · Strinova.png`（98×78，选角底部可点人物） |
 
@@ -45,8 +45,8 @@
 - `DP_Num` 已用于顶部面板倒计时（`StrinovaHudDigits`，冒号用两个方块绘制）。
 
 ### 三套头像的用途（用户确认）
-- `rolehud/`：选角界面**左侧面板**人物头像；玩家点选角色后才显示，默认 `rolehud/empty.png`；
-- `select/`：选角界面**底部可点人物**缩略头像；
+- `rolehud/`：选角界面**左侧「队友」列表卡片**头像（不是中间大立绘）；
+- `select/`：选角界面**底部可点人物**缩略头像，按原始比例 98:78 绘制（格子也按 98:78）；
 - `avatars/`：**顶部面板**玩家头像；中途加入对局尚未结束时用 `avatars/empty.png`。
 - 缺失素材的角色（如芙拉薇娅没有 RoleHUD/SelectTalent、忧雾/蕾欧娜/千代/诺诺/玛拉/汐/加拉蒂亚没有头像）回退：左侧用空头像、底部用首字、顶部用 HalfEnterEmpty。
 - `DP_Num`（1870×256）：0–9 数码数字精灵表，适合倒计时/比分。
