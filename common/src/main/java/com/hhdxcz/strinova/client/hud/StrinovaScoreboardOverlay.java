@@ -57,7 +57,7 @@ public final class StrinovaScoreboardOverlay {
     private static final int ROUND_CELL = 9;
     private static final int ROUND_STEP = 11;
     private static final float BASE_HEADER_TEXT_SCALE = 0.90F;
-    private static final float BASE_VALUE_TEXT_SCALE = 1.05F;
+    private static final float BASE_VALUE_TEXT_SCALE = 1.00F;
     private static final float BASE_NAME_TEXT_SCALE = 1.05F;
 
     /** 计算后面板布局（含编辑器所需的边界）。 */

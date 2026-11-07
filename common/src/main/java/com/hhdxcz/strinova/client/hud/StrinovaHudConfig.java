@@ -199,7 +199,8 @@ public final class StrinovaHudConfig {
         for (String key : new String[]{"kda", "ultimate", "weapon", "damage", "skill", "assist", "ping"}) {
             map.get(key).centerH = true;
         }
-        map.get("rows").fontScale = 0.85F;
+        // 数据行默认字号 0.90x（/strinova_client scoreboard 编辑器的默认值）
+        map.get("rows").fontScale = 0.90F;
         ScoreboardComponentStyle rounds = map.get("rounds");
         rounds.fontScale = 1.25F;
         rounds.centerH = true;
@@ -297,7 +298,13 @@ public final class StrinovaHudConfig {
         for (String key : SCOREBOARD_COMPONENT_KEYS) {
             ScoreboardComponentStyle style = scoreboardComponent(key);
             style.fontScale = clampf(style.fontScale, 0.5F, 2.0F);
-        }        if (scoreboardColumnWeights == null) {
+        }
+        // 旧默认 0.85 → 新默认 0.90（仅当用户没有自定义过该值时才迁移）
+        ScoreboardComponentStyle rowsStyle = scoreboardComponent("rows");
+        if (Math.abs(rowsStyle.fontScale - 0.85F) < 0.0001F) {
+            rowsStyle.fontScale = 0.90F;
+        }
+        if (scoreboardColumnWeights == null) {
             scoreboardColumnWeights = defaultScoreboardColumnWeights();
         }
         for (String key : SCOREBOARD_COLUMN_KEYS) {
