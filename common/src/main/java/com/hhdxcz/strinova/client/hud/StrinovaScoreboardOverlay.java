@@ -398,7 +398,8 @@ public final class StrinovaScoreboardOverlay {
                 continue;
             }
 
-            int avatarSize = Math.max(10, Math.min(16, rowHeight - 6));
+            // 头像尽量填满行高（对齐原版卡拉彼丘 TAB：头像≈行高，名字在右侧）
+            int avatarSize = Math.max(10, Math.min(28, rowHeight - 2));
             int avatarY = rowY + (rowHeight - avatarSize) / 2;
             int avatarX = contentX + starts[0];
             // 数据行文字略微上移；高度按 1.05 倍字重计算，避免放大后下沉
