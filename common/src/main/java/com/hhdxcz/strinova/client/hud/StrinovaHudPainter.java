@@ -56,4 +56,18 @@ public interface StrinovaHudPainter {
      * @param alpha   整体透明度 0~1
      */
     void texture(ResourceLocation texture, int x, int y, int width, int height, int argb, float alpha);
+
+    /**
+     * 绘制贴图的一块区域（用于精灵表/九宫格/数码数字）。
+     *
+     * @param u         区域左上角 U（像素）
+     * @param v         区域左上角 V（像素）
+     * @param uWidth    区域宽（像素）
+     * @param vHeight   区域高（像素）
+     * @param texWidth  原图宽（像素）
+     * @param texHeight 原图高（像素）
+     */
+    void textureRegion(ResourceLocation texture, int x, int y, int width, int height,
+                       float u, float v, int uWidth, int vHeight, int texWidth, int texHeight,
+                       int argb, float alpha);
 }

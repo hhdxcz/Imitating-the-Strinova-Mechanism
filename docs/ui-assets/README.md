@@ -27,12 +27,18 @@
 | `assets/strinova/textures/gui/hud/growth_square.png` | `strinova-other/strinova/other/T_UI_HUD_Square · Strinova.png` |
 | `assets/strinova/textures/gui/hud/growth_circle.png` | `T_UI_HUD_Circle · Strinova.png` |
 | `assets/strinova/textures/gui/hud/growth_triangle.png` | `T_UI_HUD_Triangle · Strinova.png` |
+| `assets/strinova/textures/gui/hud/digits.png` | `DP_Num · Strinova.png`（7 段数码数字表，11 格 170×256，0~9 + 空档） |
+| `assets/strinova/textures/gui/hud/avatars/<agentId>.png` | `T_Dynamic_RoleScoreboard_<数字ID> · Strinova.png`（56×32） |
 
 用途：TAB 计分板「成长等级」列的蓝方块 / 黄圆 / 绿三角（次数文字仍用系统字体白色绘制）。
 
 ## 下一步可用的关键素材
 
-- `T_Dynamic_RoleScoreboard_*`（17 张，56×32）：角色在计分板中的头像裁切；编号与角色 id 的映射尚未确认。
+- `T_Dynamic_RoleScoreboard_*`（17 张，56×32）：角色在计分板中的头像裁切；**数字 ID 已通过 biligame wiki 角色信息框 `ID` 字段确认**：
+  101 米雪儿·李 / 105 奥黛丽·格罗夫 / 107 玛德蕾娜·利里 / 108 信 / 109 令 / 110 白墨 / 112 绯莎 / 115 芙拉薇娅 /
+  119 艾卡 / 120 珐格兰丝 / 124 心夏 / 128 拉薇 / 131 伊薇特 / 132 明 / 133 梅瑞狄斯 / 137 香奈美 / 146 星绘。
+  未收录头像的角色（忧雾/蕾欧娜/千代/诺诺/玛拉/汐/加拉蒂亚）自动回退为首字头像。
+- `DP_Num` 已用于顶部面板倒计时（`StrinovaHudDigits`，冒号用两个方块绘制）。
 - `DP_Num`（1870×256）：0–9 数码数字精灵表，适合倒计时/比分。
 - `SS_UI_HUDPC`（1619×1633）：HUD 精灵表（排名 1st–10th、击杀/技能图标、准星等），需按 UV 切图。
 - `T_UI_HUD_2020/2021`：发光方框 / 白色圆角框，可做选中框、状态框。

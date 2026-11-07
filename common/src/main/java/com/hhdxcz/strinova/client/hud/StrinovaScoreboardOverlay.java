@@ -405,12 +405,20 @@ public final class StrinovaScoreboardOverlay {
                 float nameScale = BASE_NAME_TEXT_SCALE * rowScale * fontScale("name");
                 int accentColor = agentAccent(entry.agentName(), accent);
                 painter.rect(avatarX, avatarY, avatarSize, avatarSize, 0xFF0D1218);
+                ResourceLocation avatarTexture = StrinovaHudTextures.avatarByAgentName(entry.agentName());
+                if (avatarTexture != null) {
+                    // 官方计分板头像 56×32，取中间 32×32 方图裁切，避免拉伸
+                    painter.textureRegion(avatarTexture, avatarX, avatarY, avatarSize, avatarSize,
+                            16.0F, 0.0F, 32, 32, 56, 32, 0xFFFFFFFF, 1.0F);
+                } else {
+                    String initial = entry.agentName() == null || entry.agentName().isEmpty()
+                            ? "?" : entry.agentName().substring(0, 1);
+                    painter.textScaled(initial, avatarX + Math.round((avatarSize - 6.75F * rowScale) / 2),
+                            avatarY + Math.round((avatarSize - 6.75F * rowScale) / 2),
+                            0.75F * rowScale, TEXT, false);
+                }
                 painter.rect(avatarX, avatarY, 2, avatarSize, accentColor);
                 painter.border(avatarX, avatarY, avatarSize, avatarSize, 0x66FFFFFF, 1);
-                String initial = entry.agentName() == null || entry.agentName().isEmpty()
-                        ? "?" : entry.agentName().substring(0, 1);
-                painter.textScaled(initial, avatarX + Math.round((avatarSize - 6.75F * rowScale) / 2),
-                        avatarY + Math.round((avatarSize - 6.75F * rowScale) / 2), 0.75F * rowScale, TEXT, false);
                 if (entry.status() == StrinovaScoreboardState.Status.ALIVE) {
                     painter.rect(avatarX + avatarSize - 4, avatarY + avatarSize - 3, 3, 3, GREEN);
                 }

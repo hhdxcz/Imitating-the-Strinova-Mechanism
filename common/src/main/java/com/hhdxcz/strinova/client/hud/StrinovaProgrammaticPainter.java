@@ -163,6 +163,25 @@ public final class StrinovaProgrammaticPainter implements StrinovaHudPainter {
     }
 
     @Override
+    public void textureRegion(ResourceLocation texture, int x, int y, int width, int height,
+                              float u, float v, int uWidth, int vHeight, int texWidth, int texHeight,
+                              int argb, float alpha) {
+        if (graphics == null || texture == null || width <= 0 || height <= 0
+                || uWidth <= 0 || vHeight <= 0 || texWidth <= 0 || texHeight <= 0) {
+            return;
+        }
+        float a = Math.max(0.0F, Math.min(1.0F, alpha));
+        float r = ((argb >> 16) & 0xFF) / 255.0F;
+        float g = ((argb >> 8) & 0xFF) / 255.0F;
+        float b = (argb & 0xFF) / 255.0F;
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(r, g, b, a);
+        graphics.blit(texture, x, y, width, height, u, v, uWidth, vHeight, texWidth, texHeight);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+    }
+
+    @Override
     public void line(int x1, int y1, int x2, int y2, int argb) {
         if (graphics == null) {
             return;

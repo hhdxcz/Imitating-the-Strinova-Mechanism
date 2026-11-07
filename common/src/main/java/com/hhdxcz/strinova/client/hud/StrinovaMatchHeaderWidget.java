@@ -1,6 +1,7 @@
 package com.hhdxcz.strinova.client.hud;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import java.util.List;
 import java.util.Locale;
 
@@ -68,11 +69,12 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         painter.text(roundText, centerX - painter.textWidth(roundText) / 2, y + 2,
                 StrinovaProgrammaticPainter.COLOR_TEXT_DIM, false);
 
-        // 中央倒计时
+        // 中央倒计时：官方 DP_Num 七段数码数字（冒号用两个方块绘制）
         String time = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60);
-        float timeScale = 1.9F;
-        painter.textScaled(time, centerX - painter.textWidth(time) * timeScale / 2.0F, y + 13,
-                timeScale, StrinovaProgrammaticPainter.COLOR_TEXT, true);
+        float digitHeight = 22.0F;
+        float timeWidth = StrinovaHudDigits.textWidth(time, digitHeight);
+        StrinovaHudDigits.draw(painter, time, Math.round(centerX - timeWidth / 2.0F), y + 12,
+                digitHeight, 0xFFFFFFFF, 1.0F);
 
         // 左右比分板（斜切）
         drawScorePlate(painter, centerX - 132, y + 18, 74, 24, 10, COLOR_PLATE, COLOR_ALLY,
@@ -155,14 +157,23 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
                 break;
             }
         }
-        String agentName = self == null ? selectedAgentName() : self.agentName();
+        String agentName = self == null ? null : self.agentName();
+        if (agentName == null || agentName.isEmpty()) {
+            agentName = selectedAgentName();
+        }
         String label = agentName == null || agentName.isEmpty() ? "?" : agentName.substring(0, 1);
         int accent = agentAccent(agentName, COLOR_ALLY);
         painter.rect(x, y, size, size, 0xB3101820);
+        ResourceLocation avatarTexture = StrinovaHudTextures.avatarByAgentName(agentName);
+        if (avatarTexture != null) {
+            painter.textureRegion(avatarTexture, x, y, size, size,
+                    16.0F, 0.0F, 32, 32, 56, 32, 0xFFFFFFFF, 1.0F);
+        } else {
+            painter.text(label, x + (size - painter.textWidth(label)) / 2,
+                    y + (size - painter.textHeight()) / 2, 0xFFEAF6FF, true);
+        }
         painter.rect(x, y, 2, size, accent);
         painter.border(x, y, size, size, 0x88FFFFFF, 1);
-        painter.text(label, x + (size - painter.textWidth(label)) / 2,
-                y + (size - painter.textHeight()) / 2, 0xFFEAF6FF, true);
         if (self == null || self.status() == StrinovaScoreboardState.Status.ALIVE) {
             painter.rect(x + size - 7, y + size - 7, 6, 6, 0xFF5FE08C);
             painter.border(x + size - 7, y + size - 7, 6, 6, 0xAA000000, 1);
