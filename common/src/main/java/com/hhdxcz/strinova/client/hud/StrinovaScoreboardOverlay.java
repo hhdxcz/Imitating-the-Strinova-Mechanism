@@ -573,8 +573,14 @@ public final class StrinovaScoreboardOverlay {
         String text = String.valueOf(Math.max(0, count));
         float numberScale = Math.min(0.8F * scale, size * 0.85F / 9.0F);
         int width = Math.round(painter.textWidth(text) * numberScale);
-        painter.textScaled(text, x + Math.max(1, (size - width) / 2),
-                y + Math.max(0, (size - 9.0F * numberScale) / 2), numberScale, 0xFFFFFFFF, true);
+        // 自定义字体按墨迹盒绘制：字形墨迹顶部/左侧相对 9px 行框有偏移，
+        // 这里补偿一下，数字才真正落在形状中心（否则会偏右下）。
+        int inkOffsetX = Math.round(numberScale * 2.0F);
+        int inkOffsetY = Math.round(numberScale * 4.0F);
+        painter.textScaled(text,
+                x + Math.max(1, (size - width) / 2) - inkOffsetX,
+                y + Math.max(0, (size - 9.0F * numberScale) / 2) - inkOffsetY,
+                numberScale, 0xFFFFFFFF, true);
     }
 
     /** 八芒星（已激活觉醒）：橙金色，星内数字为觉醒序号（1~3）。 */
