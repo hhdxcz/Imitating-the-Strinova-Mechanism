@@ -247,7 +247,7 @@ public final class StrinovaScoreboardOverlay {
         int start = Math.max(0, results.size() - slotCount);
         int allyCenterY = top + 1 + rowHeight / 2;
         int enemyCenterY = top + 1 + rowHeight + rowHeight / 2;
-        int dotRadius = Math.max(2, Math.min(4, rowHeight / 5));
+        int dotRadius = Math.max(1, Math.min(3, rowHeight / 7));
         for (int slot = 0; slot < slotCount; slot++) {
             int centerX = contentX + 4 + slotStep * slot + slotStep / 2;
             int roundIndex = start + slot;
@@ -310,6 +310,12 @@ public final class StrinovaScoreboardOverlay {
         float textScale = layout.textScale() * fontScale("sidebar");
         int accent = ally ? TEAM_ALLY : TEAM_ENEMY;
         String teamKey = ally ? StrinovaMatchState.getAlliesTeamKey() : StrinovaMatchState.getEnemiesTeamKey();
+        if (teamKey == null || teamKey.isEmpty()) {
+            // 大厅/测试条目没有 match 队伍键时，用「剪刀手/欧泊」默认阵营名
+            teamKey = ally
+                    ? com.hhdxcz.strinova.gameplay.StrinovaMatchManager.alliesTeamKey()
+                    : com.hhdxcz.strinova.gameplay.StrinovaMatchManager.enemiesTeamKey();
+        }
         String teamName = teamKey == null || teamKey.isEmpty()
                 ? Component.translatable(ally ? "hud.strinova.match.allies" : "hud.strinova.match.enemies").getString()
                 : Component.translatable(teamKey).getString();
@@ -342,8 +348,8 @@ public final class StrinovaScoreboardOverlay {
                 Math.round(Math.max(20, areaHeight - 10) * 108.0F / 132.0F)));
         int emblemH = Math.round(emblemW * 132.0F / 108.0F);
         int emblemX = left + (sidebarWidth - emblemW) / 2;
-        // 对齐游戏内 TAB：徽记靠上放（不垂直居中），比分用大字号叠在徽记中央
-        int emblemY = areaTop + 3;
+        // 徽记上下居中；比分用大字号叠在徽记中央
+        int emblemY = areaTop + Math.max(2, (areaHeight - emblemH - 8) / 2);
         painter.texture(emblem, emblemX, emblemY, emblemW, emblemH, 0xFFFFFFFF, 0.92F);
         String scoreText = String.valueOf(score);
         float baseWidth = Math.max(1.0F, painter.textWidth(scoreText));
