@@ -65,6 +65,20 @@ python tools/...  # 或在仓库根执行等价脚本
 ```
 
 （当前索引由一次性 Python 脚本生成，未入库脚本；如需可再补一个 `tools/ui-asset-index.mjs`。）
+## TAB 计分板状态图标（SS_UI_ScoreboardPC 切片）
+
+已接入 `assets/strinova/textures/gui/scoreboard/`：
+
+| 资源 | 用途 |
+|---|---|
+| `disconnect.png` | 玩家断链（显示在 PING 列） |
+| `medal.png` | 输出/技能/协作分最高项右侧奖章 |
+| `bomb_ally/enemy.png` | 炸弹爆炸（我方/敌方回合） |
+| `defuse_ally/enemy.png` | 成功拆除炸弹 |
+| `timeout_ally/enemy.png` | 进攻超时 |
+| `elimination_ally/enemy.png` | 全部击杀/灭队 |
+| `faction_banner.png` | 阵营名下方横幅（按队伍色染色） |
+
 ## 精灵表切图（sprite sheet）
 
 	ools/slice-spritesheet.py 可按透明 alpha 自动切分精灵表，支持连通块/邻近合并/过滤碎片：

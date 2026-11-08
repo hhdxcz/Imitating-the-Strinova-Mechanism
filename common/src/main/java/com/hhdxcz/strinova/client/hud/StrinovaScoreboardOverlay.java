@@ -238,7 +238,10 @@ public final class StrinovaScoreboardOverlay {
                 labelScale, textColor("roundEnemy", ENEMY_WIN), false);
 
         List<StrinovaMatchState.RoundResult> results = StrinovaMatchState.roundResults();
-        int maxCells = Math.max(1, (contentW - 6) / ROUND_STEP);
+        // 回合格随中间带行高自适应放大（图标要看得清）
+        int roundCell = Math.max(7, Math.min(16, rowHeight - 4));
+        int roundStep = roundCell + 2;
+        int maxCells = Math.max(1, (contentW - 6) / roundStep);
         int start = Math.max(0, results.size() - maxCells);
         int cellX = contentX + 3;
         int drawn = 0;
@@ -249,20 +252,20 @@ public final class StrinovaScoreboardOverlay {
             drawEmptyDot(painter, cellX + 3, allyY + 3);
             drawEmptyDot(painter, cellX + 3, enemyY + 3);
             if (result.allyWon()) {
-                drawRoundCell(painter, cellX, allyY, result.reasonKey(),
-                        textColor("roundAlly", ALLY_WIN), textScale);
+                drawRoundCell(painter, cellX, allyY, result.reasonKey(), true,
+                        textColor("roundAlly", ALLY_WIN), textScale, roundCell);
             } else {
-                drawRoundCell(painter, cellX, enemyY, result.reasonKey(),
-                        textColor("roundEnemy", ENEMY_WIN), textScale);
+                drawRoundCell(painter, cellX, enemyY, result.reasonKey(), false,
+                        textColor("roundEnemy", ENEMY_WIN), textScale, roundCell);
             }
-            cellX += ROUND_STEP;
+            cellX += roundStep;
             drawn++;
         }
         int placeholders = Math.min(maxCells - drawn, 8);
         for (int i = 0; i < placeholders; i++) {
             drawEmptyDot(painter, cellX + 3, top + 4);
             drawEmptyDot(painter, cellX + 3, top + 4 + rowHeight);
-            cellX += ROUND_STEP;
+            cellX += roundStep;
         }
     }
 
@@ -271,10 +274,17 @@ public final class StrinovaScoreboardOverlay {
     }
 
     private static void drawRoundCell(StrinovaHudPainter painter, int x, int y, String reasonKey,
-                                      int color, float textScale) {
-        painter.rect(x, y, ROUND_CELL, ROUND_CELL, withAlpha(color, 0x55));
-        painter.border(x, y, ROUND_CELL, ROUND_CELL, color, 1);
-        painter.textScaled(reasonGlyph(reasonKey), x + 1, y + 1, 0.5F * textScale, TEXT, false);
+                                      boolean allyWon, int color, float textScale, int cell) {
+        painter.rect(x, y, cell, cell, withAlpha(color, 0x55));
+        painter.border(x, y, cell, cell, color, 1);
+        ResourceLocation icon = StrinovaScoreboardIcons.roundIcon(reasonKey, allyWon);
+        if (icon != null) {
+            int pad = 1;
+            painter.texture(icon, x + pad, y + pad, cell - pad * 2, cell - pad * 2,
+                    0xFFFFFFFF, 1.0F);
+        } else {
+            painter.textScaled(reasonGlyph(reasonKey), x + 1, y + 1, 0.5F * textScale, TEXT, false);
+        }
     }
 
     private static String reasonGlyph(String reasonKey) {
@@ -322,8 +332,17 @@ public final class StrinovaScoreboardOverlay {
 
         int areaTop = top + headerHeight;
         int areaHeight = blockHeight - headerHeight - 1;
+        // 阵营名下方横幅（原图白色矩形，按队伍色染色）
+        int bannerW = Math.max(8, sidebarWidth - 6);
+        int bannerH = Math.max(5, Math.round(bannerW * 31.0F / 144.0F));
+        int bannerX = left + 3;
+        int bannerY = areaTop + 2;
+        painter.textureRegion(StrinovaScoreboardIcons.FACTION_BANNER, bannerX, bannerY,
+                bannerW, bannerH, 0.0F, 0.0F, 144, 31, 144, 31, accent, 0.90F);
+        int areaTop2 = bannerY + bannerH + 2;
+        int areaHeight2 = Math.max(10, areaHeight - bannerH - 4);
         int crestSize = Math.max(12, Math.min(24, Math.round(sidebarWidth * 0.3F)));
-        int crestTop = areaTop + Math.max(0, (areaHeight - crestSize - 14) / 2);
+        int crestTop = areaTop2 + Math.max(0, (areaHeight2 - crestSize - 14) / 2);
         drawCrest(painter, left + (sidebarWidth - crestSize) / 2, crestTop, crestSize, accent);
         String scoreText = String.valueOf(score);
         float scoreScale = 1.1F * textScale;
@@ -506,17 +525,67 @@ public final class StrinovaScoreboardOverlay {
             drawColumnValue(painter, "assist", String.valueOf(entry.assistScore()),
                     contentX, starts, contentW, 7, textY, rowScale, TEXT);
 
+            // 输出/技能/协作里唯一最高的一项，在数值右边显示奖章图标
+            int[] scores = {entry.damageScore(), entry.skillScore(), entry.assistScore()};
+            int bestColumn = -1;
+            int bestValue = 0;
+            boolean tied = false;
+            for (int scoreIndex = 0; scoreIndex < scores.length; scoreIndex++) {
+                if (scores[scoreIndex] > bestValue) {
+                    bestValue = scores[scoreIndex];
+                    bestColumn = scoreIndex;
+                    tied = false;
+                } else if (scores[scoreIndex] == bestValue && bestValue > 0) {
+                    tied = true;
+                }
+            }
+            if (!tied && bestValue > 0 && bestColumn >= 0) {
+                int index = 5 + bestColumn;
+                String key = StrinovaHudConfig.SCOREBOARD_COLUMN_KEYS[index];
+                String valueText = String.valueOf(bestValue);
+                float valueScale = BASE_VALUE_TEXT_SCALE * rowScale * fontScale(key);
+                int colStart = contentX + starts[index];
+                int colEnd = contentX + columnEnd(starts, contentW, index);
+                int valueWidth = Math.round(painter.textWidth(valueText) * valueScale);
+                int valueX = style(key).centerH
+                        ? colStart + Math.max(0, (colEnd - colStart - valueWidth) / 2)
+                        : colStart;
+                int iconH = Math.max(6, Math.round(9.0F * rowScale));
+                int iconW = Math.max(5, Math.round(iconH * 15.0F / 19.0F));
+                int iconX = valueX + valueWidth + 2;
+                if (iconX + iconW > colEnd - 1) {
+                    iconX = Math.max(colStart, colEnd - 1 - iconW);
+                }
+                int iconY = textY + Math.max(0, Math.round((9.0F * valueScale - iconH) / 2.0F));
+                painter.textureRegion(StrinovaScoreboardIcons.MEDAL, iconX, iconY, iconW, iconH,
+                        0.0F, 0.0F, 15, 19, 15, 19, 0xFFFFFFFF, 1.0F);
+            }
+
             if (visible("ping")) {
-                float pingScale = BASE_VALUE_TEXT_SCALE * rowScale * fontScale("ping");
-                String pingText = String.valueOf(entry.ping());
-                int pingColor = textColor("ping", entry.ping() > 100 ? GOLD : TEXT_DIM);
-                if (style("ping").centerH) {
-                    drawColumnText(painter, pingText, contentX, starts, contentW, 8, textY, pingScale,
-                            pingColor, true, false);
+                if (entry.ping() <= 0) {
+                    // 玩家断链：PING 列显示断线图标
+                    int iconH = Math.max(6, Math.round(8.0F * rowScale));
+                    int iconW = Math.max(8, Math.round(iconH * 33.0F / 21.0F));
+                    int colStart = contentX + starts[8];
+                    int colEnd = contentX + columnEnd(starts, contentW, 8);
+                    int iconX = style("ping").centerH
+                            ? colStart + Math.max(0, (colEnd - colStart - iconW) / 2)
+                            : Math.max(colStart, colEnd - 4 - iconW);
+                    int iconY = rowY + Math.max(0, (rowHeight - iconH) / 2);
+                    painter.textureRegion(StrinovaScoreboardIcons.DISCONNECT, iconX, iconY,
+                            iconW, iconH, 0.0F, 0.0F, 33, 21, 33, 21, 0xFFFFFFFF, 1.0F);
                 } else {
-                    int pingWidth = Math.round(painter.textWidth(pingText) * pingScale);
-                    painter.textScaled(pingText, contentX + contentW - 4 - pingWidth, textY, pingScale,
-                            pingColor, false);
+                    float pingScale = BASE_VALUE_TEXT_SCALE * rowScale * fontScale("ping");
+                    String pingText = String.valueOf(entry.ping());
+                    int pingColor = textColor("ping", entry.ping() > 100 ? GOLD : TEXT_DIM);
+                    if (style("ping").centerH) {
+                        drawColumnText(painter, pingText, contentX, starts, contentW, 8, textY, pingScale,
+                                pingColor, true, false);
+                    } else {
+                        int pingWidth = Math.round(painter.textWidth(pingText) * pingScale);
+                        painter.textScaled(pingText, contentX + contentW - 4 - pingWidth, textY, pingScale,
+                                pingColor, false);
+                    }
                 }
             }
         }
