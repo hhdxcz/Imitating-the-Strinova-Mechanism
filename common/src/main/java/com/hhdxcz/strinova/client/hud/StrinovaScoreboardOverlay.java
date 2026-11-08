@@ -506,7 +506,8 @@ public final class StrinovaScoreboardOverlay {
                 int slot = Math.max(7, Math.min(16, available / slots));
                 int shape = Math.max(6, slot - 2);
                 int shapeY = rowY + (rowHeight - shape) / 2;
-                int arrowWidth = Math.max(4, Math.round(painter.textWidth(">") * growthScale));
+                int arrowH = Math.max(5, Math.min(12, rowHeight - 6));
+                int arrowWidth = Math.max(3, Math.round(arrowH * 11.0F / 17.0F));
                 int cx = colStart;
                 if (style("growth").centerH) {
                     int total = shape * 3 + 6
@@ -520,12 +521,15 @@ public final class StrinovaScoreboardOverlay {
                 drawGrowthTriangle(painter, cx, shapeY, shape, 0xFF57C785, counts[2], growthScale);
                 cx += shape + 3;
                 if (active.length > 0) {
-                    painter.textScaled(">", cx, textY, growthScale, 0xFF9AA8B8, false);
+                    painter.textureRegion(StrinovaScoreboardIcons.AWAKEN_ARROW, cx,
+                            rowY + (rowHeight - arrowH) / 2, arrowWidth, arrowH,
+                            0.0F, 0.0F, 11, 17, 11, 17, 0xFFFFFFFF, 1.0F);
                     cx += arrowWidth + 2;
                 }
                 for (int index : active) {
-                    drawEightPointStar(painter, cx, rowY + (rowHeight - slot) / 2, slot, 0xFFE8833A,
-                            index, growthScale);
+                    painter.textureRegion(StrinovaScoreboardIcons.AWAKEN_STAR, cx,
+                            rowY + (rowHeight - slot) / 2, slot, slot,
+                            0.0F, 0.0F, 26, 26, 26, 26, 0xFFFFFFFF, 1.0F);
                     cx += slot + 2;
                 }
             }
