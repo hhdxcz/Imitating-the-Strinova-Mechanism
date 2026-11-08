@@ -253,9 +253,13 @@ public final class StrinovaScoreboardOverlay {
             int roundIndex = start + slot;
             if (roundIndex < results.size()) {
                 StrinovaMatchState.RoundResult result = results.get(roundIndex);
-                int centerY = result.allyWon() ? allyCenterY : enemyCenterY;
-                int otherY = result.allyWon() ? enemyCenterY : allyCenterY;
-                ResourceLocation icon = StrinovaScoreboardIcons.roundIcon(result.reasonKey(), result.allyWon());
+                // 「进攻超时」只属于进攻方（我方/红钟）；防守方没有超时图标
+                boolean timeout = "hud.strinova.match.reason.timeout".equals(result.reasonKey());
+                int centerY = timeout || result.allyWon() ? allyCenterY : enemyCenterY;
+                int otherY = timeout || result.allyWon() ? enemyCenterY : allyCenterY;
+                ResourceLocation icon = timeout
+                        ? StrinovaScoreboardIcons.TIMEOUT_ALLY
+                        : StrinovaScoreboardIcons.roundIcon(result.reasonKey(), result.allyWon());
                 if (icon != null) {
                     int iconSize = roundCell;
                     painter.texture(icon, centerX - iconSize / 2, centerY - iconSize / 2,
