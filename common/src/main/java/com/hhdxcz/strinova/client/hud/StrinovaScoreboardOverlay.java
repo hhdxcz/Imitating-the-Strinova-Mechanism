@@ -346,13 +346,17 @@ public final class StrinovaScoreboardOverlay {
                 Math.round(Math.max(20, areaHeight - 10) * 108.0F / 132.0F)));
         int emblemH = Math.round(emblemW * 132.0F / 108.0F);
         int emblemX = left + (sidebarWidth - emblemW) / 2;
-        int emblemY = areaTop + Math.max(2, (areaHeight - emblemH - 8) / 2);
+        // 对齐游戏内 TAB：徽记靠上放（不垂直居中），比分用大字号叠在徽记中央
+        int emblemY = areaTop + 3;
         painter.texture(emblem, emblemX, emblemY, emblemW, emblemH, 0xFFFFFFFF, 0.92F);
         String scoreText = String.valueOf(score);
-        float scoreScale = Math.max(1.0F, textScale * 1.6F);
-        float scoreWidth = painter.textWidth(scoreText) * scoreScale;
+        float baseWidth = Math.max(1.0F, painter.textWidth(scoreText));
+        float scoreScale = Math.max(1.2F, Math.min(
+                (emblemH * 0.36F) / 9.0F,
+                (emblemW * 0.78F) / baseWidth));
+        float scoreWidth = baseWidth * scoreScale;
         int scoreY = emblemY + Math.max(0, (emblemH - Math.round(9 * scoreScale)) / 2)
-                - Math.round(scoreScale * 2.5F);
+                - Math.round(scoreScale * 2.0F);
         painter.textScaled(scoreText, emblemX + (emblemW - scoreWidth) / 2.0F, scoreY,
                 scoreScale, textColor("sidebar", TEXT), true);
     }
