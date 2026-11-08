@@ -527,9 +527,19 @@ public final class StrinovaScoreboardOverlay {
                     cx += arrowWidth + 2;
                 }
                 for (int index : active) {
+                    int starY = rowY + (rowHeight - slot) / 2;
                     painter.textureRegion(StrinovaScoreboardIcons.AWAKEN_STAR, cx,
-                            rowY + (rowHeight - slot) / 2, slot, slot,
+                            starY, slot, slot,
                             0.0F, 0.0F, 26, 26, 26, 26, 0xFFFFFFFF, 1.0F);
+                    // 星芒贴图本身没有数字，这里叠上觉醒序号（1~3）
+                    String label = String.valueOf(index);
+                    float labelScale = Math.max(0.4F, slot * 0.52F / 9.0F);
+                    int labelW = Math.round(painter.textWidth(label) * labelScale);
+                    int labelH = Math.round(9.0F * labelScale);
+                    painter.textScaled(label,
+                            cx + (slot - labelW) / 2.0F - Math.round(labelScale * 2.0F),
+                            starY + (slot - labelH) / 2.0F,
+                            labelScale, 0xFFFFFFFF, true);
                     cx += slot + 2;
                 }
             }
