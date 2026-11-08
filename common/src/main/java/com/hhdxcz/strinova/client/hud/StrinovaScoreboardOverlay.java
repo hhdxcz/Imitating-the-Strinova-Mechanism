@@ -361,8 +361,7 @@ public final class StrinovaScoreboardOverlay {
         // 自定义字体按墨迹盒绘制：补偿字形墨迹相对 9px 行框的偏移，数字才真正居中
         float scoreX = emblemX + (emblemW - scoreWidth) / 2.0F
                 - Math.round(scoreScale * 2.5F);
-        int scoreY = emblemY + Math.max(0, (emblemH - Math.round(9 * scoreScale)) / 2)
-                - Math.round(scoreScale * 4.0F);
+        int scoreY = emblemY + Math.max(0, (emblemH - Math.round(9 * scoreScale)) / 2);
         painter.textScaled(scoreText, scoreX, scoreY,
                 scoreScale, textColor("sidebar", TEXT), true);
     }
@@ -390,9 +389,7 @@ public final class StrinovaScoreboardOverlay {
         if (visible("header")) {
             float headerScale = BASE_HEADER_TEXT_SCALE * baseScale * fontScale("header");
             painter.rect(contentX, top, contentW, headerHeight, opacity(backgroundColor("header", HEADER_ROW)));
-            // 列头文字略微上移
-            int headerLift = 2 + Math.max(1, Math.round(headerScale * 1.2F));
-            int headerY = top + Math.round((headerHeight - 8.1F * headerScale) / 2) - headerLift;
+            int headerY = top + Math.round((headerHeight - 8.1F * headerScale) / 2);
             int headerColor = textColor("header", TEXT_DIM);
             drawColumnText(painter, kdaHeader(), contentX, starts, contentW, 1, headerY, headerScale,
                     headerColor, headerCenter, false);
@@ -437,11 +434,8 @@ public final class StrinovaScoreboardOverlay {
             int avatarSize = Math.max(10, Math.min(28, rowHeight - 2));
             int avatarY = rowY + (rowHeight - avatarSize) / 2;
             int avatarX = contentX + starts[0];
-            // 数据行文字略微上移；高度按 1.05 倍字重计算，避免放大后下沉
-            int rowLift = 2 + Math.max(1, Math.round(rowScale * 1.2F));
             int textY = rowY
-                    + Math.round((rowHeight - 9.0F * BASE_VALUE_TEXT_SCALE * rowScale) / 2)
-                    - rowLift;
+                    + Math.round((rowHeight - 9.0F * BASE_VALUE_TEXT_SCALE * rowScale) / 2);
 
             if (visible("name")) {
                 float nameScale = BASE_NAME_TEXT_SCALE * rowScale * fontScale("name");
@@ -662,10 +656,9 @@ public final class StrinovaScoreboardOverlay {
         // 自定义字体按墨迹盒绘制：字形墨迹顶部/左侧相对 9px 行框有偏移，
         // 这里补偿一下，数字才真正落在形状中心（否则会偏右下）。
         int inkOffsetX = Math.round(numberScale * 2.0F);
-        int inkOffsetY = Math.round(numberScale * 4.0F);
         painter.textScaled(text,
                 x + Math.max(1, (size - width) / 2) - inkOffsetX,
-                y + Math.max(0, (size - 9.0F * numberScale) / 2) - inkOffsetY,
+                y + Math.max(0, (size - 9.0F * numberScale) / 2),
                 numberScale, 0xFFFFFFFF, true);
     }
 

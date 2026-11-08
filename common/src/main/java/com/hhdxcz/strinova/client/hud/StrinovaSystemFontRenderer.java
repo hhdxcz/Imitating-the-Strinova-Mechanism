@@ -40,6 +40,8 @@ public final class StrinovaSystemFontRenderer {
     /** 以 18px 光栅化、再缩到 9px 显示，缩小采样比 12→9 更平滑。 */
     private static final int FONT_PX = 18;
     private static final int TARGET_TEXT_PX = 9;
+    /** 9px 行框内基线所在位置（以 18px 光栅化坐标计），用于让不同字形按基线对齐。 */
+    private static final int LINE_BASELINE_PX = 14;
 
     private static final int FONT_CJK = 0;
     private static final int FONT_LATIN = 1;
@@ -138,7 +140,9 @@ public final class StrinovaSystemFontRenderer {
             int cellX = (glyph.cell() % COLS) * CELL;
             int cellY = (glyph.cell() / COLS) * CELL;
             int drawXpx = Math.round(drawX + glyph.inkX() * ratio);
-            int drawYpx = Math.round(startY + glyph.inkY() * ratio);
+            // 按基线对齐，而不是按每个字各自的墨迹顶部对齐
+            int drawYpx = Math.round(startY
+                    + (glyph.inkY() + LINE_BASELINE_PX - (CELL - 5)) * ratio);
             int drawW = Math.max(1, Math.round(glyph.inkW() * ratio));
             int drawH = Math.max(1, Math.round(glyph.inkH() * ratio));
             graphics.blit(atlasId, drawXpx, drawYpx, drawW, drawH,
