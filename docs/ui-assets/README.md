@@ -65,3 +65,12 @@ python tools/...  # 或在仓库根执行等价脚本
 ```
 
 （当前索引由一次性 Python 脚本生成，未入库脚本；如需可再补一个 `tools/ui-asset-index.mjs`。）
+## 精灵表切图（sprite sheet）
+
+	ools/slice-spritesheet.py 可按透明 alpha 自动切分精灵表，支持连通块/邻近合并/过滤碎片：
+
+`powershell
+python tools/slice-spritesheet.py "输入.png" "输出目录" --mode grouped --gap 1 --min-size 3 --min-area 20
+`
+
+输出每个图标 PNG + manifest.json（x/y/w/h/parts）+ _contact.png 索引图。
