@@ -29,6 +29,10 @@ public final class StrinovaScoreboardIcons {
     public static final ResourceLocation ELIMINATION_ALLY = icon("elimination_ally");
     public static final ResourceLocation ELIMINATION_ENEMY = icon("elimination_enemy");
     public static final ResourceLocation FACTION_BANNER = icon("faction_banner");
+    /** 剪刀手阵营徽记（粉色翅膀）。 */
+    public static final ResourceLocation SCISSORS_EMBLEM = icon("faction_scissors");
+    /** 欧泊阵营徽记（蓝色 P.U.S 盾）。 */
+    public static final ResourceLocation OPAL_EMBLEM = icon("faction_opal");
 
     private StrinovaScoreboardIcons() {
     }

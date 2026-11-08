@@ -320,7 +320,9 @@ public final class StrinovaScoreboardOverlay {
         int score = ally ? StrinovaMatchState.getAlliesScore() : StrinovaMatchState.getEnemiesScore();
 
         painter.rect(left + 1, top, sidebarWidth - 1, blockHeight - 1, opacity(backgroundColor("sidebar", SIDEBAR_BG)));
-        painter.rect(left + 1, top, sidebarWidth - 1, headerHeight, opacity(withAlpha(accent, 0xE6)));
+        // 阵营名斜切横幅（01 原图是白色矩形，用队伍色染色）
+        painter.textureRegion(StrinovaScoreboardIcons.FACTION_BANNER, left + 1, top,
+                sidebarWidth - 1, headerHeight, 0.0F, 0.0F, 144, 31, 144, 31, accent, 0.95F);
         float teamScale = 0.8F * textScale;
         int teamX = left + 3;
         if (style("sidebar").centerH) {
@@ -332,23 +334,27 @@ public final class StrinovaScoreboardOverlay {
 
         int areaTop = top + headerHeight;
         int areaHeight = blockHeight - headerHeight - 1;
-        // 阵营名下方横幅（原图白色矩形，按队伍色染色）
-        int bannerW = Math.max(8, sidebarWidth - 6);
-        int bannerH = Math.max(5, Math.round(bannerW * 31.0F / 144.0F));
-        int bannerX = left + 3;
-        int bannerY = areaTop + 2;
-        painter.textureRegion(StrinovaScoreboardIcons.FACTION_BANNER, bannerX, bannerY,
-                bannerW, bannerH, 0.0F, 0.0F, 144, 31, 144, 31, accent, 0.90F);
-        int areaTop2 = bannerY + bannerH + 2;
-        int areaHeight2 = Math.max(10, areaHeight - bannerH - 4);
-        int crestSize = Math.max(12, Math.min(24, Math.round(sidebarWidth * 0.3F)));
-        int crestTop = areaTop2 + Math.max(0, (areaHeight2 - crestSize - 14) / 2);
-        drawCrest(painter, left + (sidebarWidth - crestSize) / 2, crestTop, crestSize, accent);
+        // 阵营徽记：剪刀手=粉色翅膀，欧泊=蓝色 P.U.S 盾；比分叠在徽记中间
+        boolean scissors = teamName.contains("剪刀")
+                || (teamKey != null && teamKey.toLowerCase(java.util.Locale.ROOT).contains("scissor"));
+        boolean opal = teamName.contains("欧泊")
+                || (teamKey != null && teamKey.toLowerCase(java.util.Locale.ROOT).contains("opal"));
+        ResourceLocation emblem = scissors ? StrinovaScoreboardIcons.SCISSORS_EMBLEM
+                : opal ? StrinovaScoreboardIcons.OPAL_EMBLEM
+                : (ally ? StrinovaScoreboardIcons.SCISSORS_EMBLEM : StrinovaScoreboardIcons.OPAL_EMBLEM);
+        int emblemW = Math.max(18, Math.min(sidebarWidth - 8,
+                Math.round(Math.max(20, areaHeight - 10) * 108.0F / 132.0F)));
+        int emblemH = Math.round(emblemW * 132.0F / 108.0F);
+        int emblemX = left + (sidebarWidth - emblemW) / 2;
+        int emblemY = areaTop + Math.max(2, (areaHeight - emblemH - 8) / 2);
+        painter.texture(emblem, emblemX, emblemY, emblemW, emblemH, 0xFFFFFFFF, 0.92F);
         String scoreText = String.valueOf(score);
-        float scoreScale = 1.1F * textScale;
+        float scoreScale = Math.max(1.0F, textScale * 1.6F);
         float scoreWidth = painter.textWidth(scoreText) * scoreScale;
-        painter.textScaled(scoreText, left + (sidebarWidth - scoreWidth) / 2,
-                crestTop + crestSize + 2, scoreScale, textColor("sidebar", TEXT), true);
+        int scoreY = emblemY + Math.max(0, (emblemH - Math.round(9 * scoreScale)) / 2)
+                - Math.round(scoreScale * 2.5F);
+        painter.textScaled(scoreText, emblemX + (emblemW - scoreWidth) / 2.0F, scoreY,
+                scoreScale, textColor("sidebar", TEXT), true);
     }
 
     // ==================== 右侧内容区 ====================
