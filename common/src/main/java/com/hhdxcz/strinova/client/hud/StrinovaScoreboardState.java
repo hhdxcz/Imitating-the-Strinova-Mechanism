@@ -46,16 +46,28 @@ public final class StrinovaScoreboardState {
             int ping,
             int weaponPoints,
             int skillPoints,
-            int defensePoints
+            int defensePoints,
+            int awakeningMask
     ) {
-        /** 兼容旧构造：未知分色点数时按 0 处理。 */
+        /** 兼容旧构造：未知分色点数和觉醒 mask 时按 0 处理。 */
         public Entry(String name, String agentName, boolean ally, boolean self,
                      int kills, int deaths, int assists, float health, float armor, Status status,
                      int ultimatePoints, int ultimateMax, int growthLevel, String weaponName,
                      int damageScore, int skillScore, int assistScore, int ping) {
             this(name, agentName, ally, self, kills, deaths, assists, health, armor, status,
                     ultimatePoints, ultimateMax, growthLevel, weaponName, damageScore, skillScore,
-                    assistScore, ping, 0, 0, 0);
+                    assistScore, ping, 0, 0, 0, 0);
+        }
+
+        /** 兼容旧构造：觉醒 mask 按 0 处理。 */
+        public Entry(String name, String agentName, boolean ally, boolean self,
+                     int kills, int deaths, int assists, float health, float armor, Status status,
+                     int ultimatePoints, int ultimateMax, int growthLevel, String weaponName,
+                     int damageScore, int skillScore, int assistScore, int ping,
+                     int weaponPoints, int skillPoints, int defensePoints) {
+            this(name, agentName, ally, self, kills, deaths, assists, health, armor, status,
+                    ultimatePoints, ultimateMax, growthLevel, weaponName, damageScore, skillScore,
+                    assistScore, ping, weaponPoints, skillPoints, defensePoints, 0);
         }
     }
 

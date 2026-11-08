@@ -223,6 +223,29 @@ public final class StrinovaGrowthState {
                 && purchasedDefense >= source.needDefense();
     }
 
+    /** 已激活觉醒的 bitmask（bit0=一觉、bit1=二觉、bit2=三觉），用于同步给其他玩家。 */
+    public static int activeAwakeningMask() {
+        int mask = 0;
+        for (int index : activeAwakeningIndices()) {
+            if (index >= 1 && index <= 3) {
+                mask |= 1 << (index - 1);
+            }
+        }
+        return mask;
+    }
+
+    /** 把 bitmask 还原成觉醒序号数组（1~3）。 */
+    public static int[] indicesFromMask(int mask) {
+        int[] result = new int[3];
+        int count = 0;
+        for (int i = 0; i < 3; i++) {
+            if ((mask & (1 << i)) != 0) {
+                result[count++] = i + 1;
+            }
+        }
+        return java.util.Arrays.copyOf(result, count);
+    }
+
     /** 二觉与三觉是否都已满足需求（此时「切换激活」可用）。 */
     public static boolean canToggleAwakenings() {
         return isAwakeningEligible(2) && isAwakeningEligible(3);

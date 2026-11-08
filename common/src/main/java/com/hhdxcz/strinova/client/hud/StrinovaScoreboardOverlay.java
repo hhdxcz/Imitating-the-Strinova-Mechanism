@@ -497,8 +497,11 @@ public final class StrinovaScoreboardOverlay {
                 // 蓝方块=武器网络点数 / 黄圆=主动+被动技能 / 绿三角=护甲+弦化
                 // 全队玩家的分色点数由 C2S_PROFILE -> S2C_MATCH_STATE 同步；默认 0，形状内显示 0。
                 int[] counts = {entry.weaponPoints(), entry.skillPoints(), entry.defensePoints()};
-                int[] active = self && StrinovaGrowthState.hasData()
-                        ? StrinovaGrowthState.activeAwakeningIndices() : new int[0];
+                // 其他玩家的觉醒通过服务端同步的 mask 显示；自己的行再用本地状态兜底
+                int[] active = StrinovaGrowthState.indicesFromMask(entry.awakeningMask());
+                if (active.length == 0 && self && StrinovaGrowthState.hasData()) {
+                    active = StrinovaGrowthState.activeAwakeningIndices();
+                }
                 int slots = 3 + (active.length > 0 ? 1 + active.length : 0);
                 int slot = Math.max(7, Math.min(16, available / slots));
                 int shape = Math.max(6, slot - 2);
@@ -797,7 +800,9 @@ public final class StrinovaScoreboardOverlay {
                     info.getProfile().getName(), "", isAlly, self,
                     0, 0, 0, 150.0F, 80.0F, StrinovaScoreboardState.Status.ALIVE,
                     0, 7, 1, "", 0, 0, 0, info.getLatency(),
-                    weaponPoints, skillPoints, defensePoints));
+                    weaponPoints, skillPoints, defensePoints,
+                    self && StrinovaGrowthState.hasData()
+                            ? StrinovaGrowthState.activeAwakeningMask() : 0));
         }
         return result;
     }

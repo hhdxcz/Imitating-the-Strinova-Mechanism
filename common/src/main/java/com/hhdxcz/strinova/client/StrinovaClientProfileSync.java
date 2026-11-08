@@ -76,16 +76,19 @@ public final class StrinovaClientProfileSync {
             int weaponPoints = 0;
             int skillPoints = 0;
             int defensePoints = 0;
+            int awakeningMask = 0;
             try {
                 growthLevel = StrinovaGrowthState.growthLevel();
                 weaponPoints = StrinovaGrowthState.purchasedWeapon();
                 skillPoints = StrinovaGrowthState.purchasedSkill();
                 defensePoints = StrinovaGrowthState.purchasedDefense();
+                awakeningMask = StrinovaGrowthState.activeAwakeningMask();
             } catch (Throwable ignored) {
                 // 成长数据不可用时回退默认值（等级 1、点数 0）
             }
 
-            StrinovaNetwork.sendProfile(agentId, growthLevel, weaponPoints, skillPoints, defensePoints);
+            StrinovaNetwork.sendProfile(agentId, growthLevel, weaponPoints, skillPoints, defensePoints,
+                    awakeningMask);
             dirty = false;
             sentInWorld = true;
             lastSentMs = now;

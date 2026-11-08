@@ -24,7 +24,8 @@ public final class StrinovaPlayerProfile {
 
     /** 一名玩家的档案快照。{@code agentId} 为空串表示尚未选角。 */
     public record Profile(String agentId, int growthLevel,
-                          int weaponPoints, int skillPoints, int defensePoints) {
+                          int weaponPoints, int skillPoints, int defensePoints,
+                          int awakeningMask) {
     }
 
     /** 成长等级下限。 */
@@ -36,7 +37,7 @@ public final class StrinovaPlayerProfile {
     /** 单类增幅点数上限（防恶意包）。 */
     public static final int MAX_GROWTH_POINTS = 99;
 
-    private static final Profile DEFAULT = new Profile("", DEFAULT_GROWTH_LEVEL, 0, 0, 0);
+    private static final Profile DEFAULT = new Profile("", DEFAULT_GROWTH_LEVEL, 0, 0, 0, 0);
     private static final Map<UUID, Profile> PROFILES = new ConcurrentHashMap<>();
 
     private StrinovaPlayerProfile() {
@@ -54,7 +55,8 @@ public final class StrinovaPlayerProfile {
      * @return true 表示已写入；false 表示参数非法（角色 id 查不到 / UUID 为空），本次上报被忽略
      */
     public static boolean set(UUID playerId, String agentId, int growthLevel,
-                              int weaponPoints, int skillPoints, int defensePoints) {
+                              int weaponPoints, int skillPoints, int defensePoints,
+                              int awakeningMask) {
         if (playerId == null) {
             return false;
         }
@@ -65,13 +67,19 @@ public final class StrinovaPlayerProfile {
         }
         PROFILES.put(playerId, new Profile(id, clampGrowthLevel(growthLevel),
                 clampGrowthPoints(weaponPoints), clampGrowthPoints(skillPoints),
-                clampGrowthPoints(defensePoints)));
+                clampGrowthPoints(defensePoints), awakeningMask & 0x7));
         return true;
     }
 
     /** 兼容旧调用：分色点数按 0 处理。 */
     public static boolean set(UUID playerId, String agentId, int growthLevel) {
-        return set(playerId, agentId, growthLevel, 0, 0, 0);
+        return set(playerId, agentId, growthLevel, 0, 0, 0, 0);
+    }
+
+    /** 兼容旧调用：觉醒 mask 按 0 处理。 */
+    public static boolean set(UUID playerId, String agentId, int growthLevel,
+                              int weaponPoints, int skillPoints, int defensePoints) {
+        return set(playerId, agentId, growthLevel, weaponPoints, skillPoints, defensePoints, 0);
     }
 
     /** 读取玩家档案；不存在时返回默认档案（agentId 空串、成长等级 1、点数全 0），永不为 null。 */
@@ -106,6 +114,11 @@ public final class StrinovaPlayerProfile {
     /** 黄圆（主动+被动技能）点数。 */
     public static int skillPoints(UUID playerId) {
         return get(playerId).skillPoints();
+    }
+
+    /** 已激活觉醒 bitmask（bit0=一觉、bit1=二觉、bit2=三觉）。 */
+    public static int awakeningMask(UUID playerId) {
+        return get(playerId).awakeningMask();
     }
 
     /** 绿三角（护甲+弦化）点数。 */

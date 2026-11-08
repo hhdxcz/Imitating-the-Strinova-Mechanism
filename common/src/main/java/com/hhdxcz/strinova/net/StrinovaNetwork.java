@@ -322,12 +322,14 @@ public final class StrinovaNetwork {
             int reportedWeaponPoints;
             int reportedSkillPoints;
             int reportedDefensePoints;
+            int reportedAwakeningMask;
             try {
                 reportedAgentId = buf.readUtf(64);
                 reportedGrowthLevel = buf.readInt();
                 reportedWeaponPoints = buf.readInt();
                 reportedSkillPoints = buf.readInt();
                 reportedDefensePoints = buf.readInt();
+                reportedAwakeningMask = buf.readInt();
             } catch (RuntimeException e) {
                 // 超长 / 截断的恶意包：丢弃，不写档案
                 StrinovaMod.LOGGER.warn("Rejected invalid profile payload from {}: {}",
@@ -339,9 +341,10 @@ public final class StrinovaNetwork {
             final int weaponPoints = reportedWeaponPoints;
             final int skillPoints = reportedSkillPoints;
             final int defensePoints = reportedDefensePoints;
+            final int awakeningMask = reportedAwakeningMask & 0x7;
             context.queue(() -> {
                 if (!StrinovaPlayerProfile.set(player.getUUID(), agentId, growthLevel,
-                        weaponPoints, skillPoints, defensePoints)) {
+                        weaponPoints, skillPoints, defensePoints, awakeningMask)) {
                     StrinovaMod.LOGGER.warn("Rejected unknown agent id '{}' reported by {}",
                             agentId, player.getName().getString());
                 }
@@ -630,13 +633,14 @@ public final class StrinovaNetwork {
                 int weaponPoints = buf.readInt();
                 int skillPoints = buf.readInt();
                 int defensePoints = buf.readInt();
+                int awakeningMask = buf.readInt();
                 boolean self = localId != null && localId.equals(playerId);
                 entries.add(new StrinovaScoreboardState.Entry(name, agentName, ally, self,
                         kills, deaths, assists, health, armor,
                         alive ? StrinovaScoreboardState.Status.ALIVE : StrinovaScoreboardState.Status.DEAD,
                         ultimatePoints, Math.max(1, ultimateMax), growthLevel, weaponName,
                         damageScore, skillScore, assistScore, ping,
-                        weaponPoints, skillPoints, defensePoints));
+                        weaponPoints, skillPoints, defensePoints, awakeningMask));
                 if (self) {
                     selfHealth = health;
                     selfArmor = armor;
@@ -879,7 +883,8 @@ public final class StrinovaNetwork {
 
     // 客户端把自己的选角 / 成长等级上报给服务端（服务端会再做校验与 clamp）
     public static void sendProfile(String agentId, int growthLevel,
-                                   int weaponPoints, int skillPoints, int defensePoints) {
+                                   int weaponPoints, int skillPoints, int defensePoints,
+                                   int awakeningMask) {
         String safeAgentId = agentId == null ? "" : agentId;
         if (safeAgentId.length() > 64) {
             safeAgentId = safeAgentId.substring(0, 64);
@@ -890,6 +895,7 @@ public final class StrinovaNetwork {
         buf.writeInt(StrinovaPlayerProfile.clampGrowthPoints(weaponPoints));
         buf.writeInt(StrinovaPlayerProfile.clampGrowthPoints(skillPoints));
         buf.writeInt(StrinovaPlayerProfile.clampGrowthPoints(defensePoints));
+        buf.writeInt(awakeningMask & 0x7);
         NetworkManager.sendToServer(C2S_PROFILE, buf);
     }
 
@@ -1096,6 +1102,7 @@ public final class StrinovaNetwork {
             buf.writeInt(StrinovaPlayerProfile.weaponPoints(playerId));
             buf.writeInt(StrinovaPlayerProfile.skillPoints(playerId));
             buf.writeInt(StrinovaPlayerProfile.defensePoints(playerId));
+            buf.writeInt(StrinovaPlayerProfile.awakeningMask(playerId));
         }
 
         // 伤害数字事件（只包含接收者本人造成的命中）：在 players 列表之后追加
