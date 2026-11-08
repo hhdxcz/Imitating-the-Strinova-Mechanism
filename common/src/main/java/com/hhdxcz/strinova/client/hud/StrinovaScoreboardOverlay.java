@@ -307,7 +307,8 @@ public final class StrinovaScoreboardOverlay {
         int sidebarWidth = layout.sidebarWidth();
         int headerHeight = layout.headerHeight();
         int blockHeight = layout.blockHeight();
-        float textScale = layout.textScale() * fontScale("sidebar");
+        // 左侧竖栏字号整体放大 15%
+        float textScale = layout.textScale() * fontScale("sidebar") * 1.15F;
         int accent = ally ? TEAM_ALLY : TEAM_ENEMY;
         String teamKey = ally ? StrinovaMatchState.getAlliesTeamKey() : StrinovaMatchState.getEnemiesTeamKey();
         if (teamKey == null || teamKey.isEmpty()) {
@@ -357,9 +358,12 @@ public final class StrinovaScoreboardOverlay {
                 (emblemH * 0.36F) / 9.0F,
                 (emblemW * 0.78F) / baseWidth));
         float scoreWidth = baseWidth * scoreScale;
+        // 自定义字体按墨迹盒绘制：补偿字形墨迹相对 9px 行框的偏移，数字才真正居中
+        float scoreX = emblemX + (emblemW - scoreWidth) / 2.0F
+                - Math.round(scoreScale * 2.5F);
         int scoreY = emblemY + Math.max(0, (emblemH - Math.round(9 * scoreScale)) / 2)
-                - Math.round(scoreScale * 2.0F);
-        painter.textScaled(scoreText, emblemX + (emblemW - scoreWidth) / 2.0F, scoreY,
+                - Math.round(scoreScale * 4.0F);
+        painter.textScaled(scoreText, scoreX, scoreY,
                 scoreScale, textColor("sidebar", TEXT), true);
     }
 
