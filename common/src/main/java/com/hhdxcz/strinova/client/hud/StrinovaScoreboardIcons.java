@@ -41,7 +41,8 @@ public final class StrinovaScoreboardIcons {
     private StrinovaScoreboardIcons() {
     }
 
-    /** 回合结果图标：reasonKey 来自 StrinovaMatchManager，allyWon 决定蓝/红变体。 */
+    /** 回合结果图标：reasonKey 来自 StrinovaMatchManager，allyWon 决定红/蓝变体。
+     * ally/我方=进攻方→红色，enemy/对方=防守方→蓝色（资源文件已按此映射）。 */
     public static ResourceLocation roundIcon(String reasonKey, boolean allyWon) {
         if (reasonKey == null) {
             return null;
