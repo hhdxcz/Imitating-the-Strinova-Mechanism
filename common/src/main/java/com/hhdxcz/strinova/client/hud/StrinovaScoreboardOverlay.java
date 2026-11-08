@@ -239,51 +239,47 @@ public final class StrinovaScoreboardOverlay {
 
         List<StrinovaMatchState.RoundResult> results = StrinovaMatchState.roundResults();
         // 回合格随中间带行高自适应放大（图标要看得清）
-        int roundCell = Math.max(7, Math.min(16, rowHeight - 4));
-        int roundStep = roundCell + 2;
-        int maxCells = Math.max(1, (contentW - 6) / roundStep);
-        int start = Math.max(0, results.size() - maxCells);
-        int cellX = contentX + 3;
-        int drawn = 0;
-        for (int i = start; i < results.size() && drawn < maxCells; i++) {
-            StrinovaMatchState.RoundResult result = results.get(i);
-            int allyY = top + 1;
-            int enemyY = top + 1 + rowHeight;
-            drawEmptyDot(painter, cellX + 3, allyY + 3);
-            drawEmptyDot(painter, cellX + 3, enemyY + 3);
-            if (result.allyWon()) {
-                drawRoundCell(painter, cellX, allyY, result.reasonKey(), true,
-                        textColor("roundAlly", ALLY_WIN), textScale, roundCell);
+        // 对齐游戏内 TAB：两排等距菱形圆点 + 中间竖向分隔线
+        int roundCell = Math.max(8, Math.min(14, rowHeight - 4));
+        int minStep = Math.max(14, roundCell + 8);
+        int slotCount = Math.max(1, Math.min(20, (contentW - 8) / minStep));
+        int slotStep = Math.max(1, (contentW - 8) / slotCount);
+        int start = Math.max(0, results.size() - slotCount);
+        int allyCenterY = top + 1 + rowHeight / 2;
+        int enemyCenterY = top + 1 + rowHeight + rowHeight / 2;
+        int dotRadius = Math.max(2, Math.min(4, rowHeight / 5));
+        for (int slot = 0; slot < slotCount; slot++) {
+            int centerX = contentX + 4 + slotStep * slot + slotStep / 2;
+            int roundIndex = start + slot;
+            if (roundIndex < results.size()) {
+                StrinovaMatchState.RoundResult result = results.get(roundIndex);
+                int centerY = result.allyWon() ? allyCenterY : enemyCenterY;
+                int otherY = result.allyWon() ? enemyCenterY : allyCenterY;
+                ResourceLocation icon = StrinovaScoreboardIcons.roundIcon(result.reasonKey(), result.allyWon());
+                if (icon != null) {
+                    int iconSize = roundCell;
+                    painter.texture(icon, centerX - iconSize / 2, centerY - iconSize / 2,
+                            iconSize, iconSize, 0xFFFFFFFF, 1.0F);
+                } else {
+                    painter.textScaled(reasonGlyph(result.reasonKey()), centerX - 2, centerY - 4,
+                            0.5F * textScale, TEXT, false);
+                }
+                drawDiamondDot(painter, centerX, otherY, dotRadius, withAlpha(0xFFFFFF, 0x3A));
             } else {
-                drawRoundCell(painter, cellX, enemyY, result.reasonKey(), false,
-                        textColor("roundEnemy", ENEMY_WIN), textScale, roundCell);
+                drawDiamondDot(painter, centerX, allyCenterY, dotRadius, withAlpha(0xFFFFFF, 0x55));
+                drawDiamondDot(painter, centerX, enemyCenterY, dotRadius, withAlpha(0xFFFFFF, 0x55));
             }
-            cellX += roundStep;
-            drawn++;
         }
-        int placeholders = Math.min(maxCells - drawn, 8);
-        for (int i = 0; i < placeholders; i++) {
-            drawEmptyDot(painter, cellX + 3, top + 4);
-            drawEmptyDot(painter, cellX + 3, top + 4 + rowHeight);
-            cellX += roundStep;
-        }
+        int dividerX = contentX + 4 + (slotStep * slotCount) / 2;
+        painter.line(dividerX, top + 4, dividerX, top + height - 5, withAlpha(0xFFFFFF, 0x28));
     }
 
-    private static void drawEmptyDot(StrinovaHudPainter painter, int x, int y) {
-        painter.rect(x, y, 2, 2, withAlpha(0xFFFFFF, 0x55));
-    }
-
-    private static void drawRoundCell(StrinovaHudPainter painter, int x, int y, String reasonKey,
-                                      boolean allyWon, int color, float textScale, int cell) {
-        painter.rect(x, y, cell, cell, withAlpha(color, 0x55));
-        painter.border(x, y, cell, cell, color, 1);
-        ResourceLocation icon = StrinovaScoreboardIcons.roundIcon(reasonKey, allyWon);
-        if (icon != null) {
-            int pad = 1;
-            painter.texture(icon, x + pad, y + pad, cell - pad * 2, cell - pad * 2,
-                    0xFFFFFFFF, 1.0F);
-        } else {
-            painter.textScaled(reasonGlyph(reasonKey), x + 1, y + 1, 0.5F * textScale, TEXT, false);
+    /** 菱形小点（回合记录占位）。 */
+    private static void drawDiamondDot(StrinovaHudPainter painter, int centerX, int centerY,
+                                       int radius, int color) {
+        for (int dy = -radius; dy <= radius; dy++) {
+            int half = radius - Math.abs(dy);
+            painter.rect(centerX - half, centerY + dy, half * 2 + 1, 1, color);
         }
     }
 
