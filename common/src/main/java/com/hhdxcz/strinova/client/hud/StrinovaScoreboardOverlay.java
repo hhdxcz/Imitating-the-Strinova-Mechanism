@@ -417,7 +417,8 @@ public final class StrinovaScoreboardOverlay {
             boolean has = i < entries.size();
             StrinovaScoreboardState.Entry entry = has ? entries.get(i) : null;
             boolean dead = has && entry.status() == StrinovaScoreboardState.Status.DEAD;
-            boolean self = has && entry.self();
+            // 服务端同步的 self 标记可能缺失：用本地玩家名字/UUID 再兜底一次
+            boolean self = has && (entry.self() || isLocalPlayer(entry.name()));
 
             int defaultRowBg = self ? ROW_SELF : dead ? ROW_DEAD : ((i % 2 == 0) ? ROW_BG : ROW_ALT);
             painter.rect(contentX, rowY, contentW, rowHeight, opacity(backgroundColor("rows", defaultRowBg)));
@@ -496,7 +497,7 @@ public final class StrinovaScoreboardOverlay {
                 // 蓝方块=武器网络点数 / 黄圆=主动+被动技能 / 绿三角=护甲+弦化
                 // 全队玩家的分色点数由 C2S_PROFILE -> S2C_MATCH_STATE 同步；默认 0，形状内显示 0。
                 int[] counts = {entry.weaponPoints(), entry.skillPoints(), entry.defensePoints()};
-                int[] active = entry.self() && StrinovaGrowthState.hasData()
+                int[] active = self && StrinovaGrowthState.hasData()
                         ? StrinovaGrowthState.activeAwakeningIndices() : new int[0];
                 int slots = 3 + (active.length > 0 ? 1 + active.length : 0);
                 int slot = Math.max(7, Math.min(16, available / slots));
@@ -799,6 +800,12 @@ public final class StrinovaScoreboardOverlay {
                     weaponPoints, skillPoints, defensePoints));
         }
         return result;
+    }
+
+    private static boolean isLocalPlayer(String name) {
+        Minecraft minecraft = Minecraft.getInstance();
+        return minecraft.player != null && name != null
+                && name.equals(minecraft.player.getName().getString());
     }
 
     private static int agentAccent(String agentName, int fallback) {
