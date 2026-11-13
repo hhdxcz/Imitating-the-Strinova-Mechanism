@@ -52,6 +52,25 @@ public final class StrinovaHudConfig {
     public boolean matchHeaderShowPortraits = true;
     public boolean matchHeaderShowPlates = true;
     public boolean matchHeaderShowCenter = true;
+    /** 顶部面板逐图层变换（图形编辑器：拖动/缩放）。 */
+    public java.util.LinkedHashMap<String, HeaderLayerStyle> matchHeaderLayers;
+
+    /** 顶部面板单个图层（图片/文字/计时/头像组）的偏移与缩放。 */
+    public static final class HeaderLayerStyle {
+        public int offsetX = 0;
+        public int offsetY = 0;
+        public float scaleX = 1.0F;
+        public float scaleY = 1.0F;
+        public boolean visible = true;
+    }
+
+    /** 取/建顶部面板图层样式。 */
+    public HeaderLayerStyle matchHeaderLayer(String key) {
+        if (matchHeaderLayers == null) {
+            matchHeaderLayers = new java.util.LinkedHashMap<>();
+        }
+        return matchHeaderLayers.computeIfAbsent(key, k -> new HeaderLayerStyle());
+    }
     public boolean scoreboardEnabled = true;
     /** HUD/计分板是否使用微软雅黑（关闭则用原版像素字体）。 */
     /** 使用内置 HUD 字体（中文 Noto Sans SC + 数字/英文 Saira）；关闭后回退原版字体。 */
@@ -295,6 +314,18 @@ public final class StrinovaHudConfig {
         matchHeaderPlateOffsetY = clamp(matchHeaderPlateOffsetY, -300, 300);
         matchHeaderCenterOffsetX = clamp(matchHeaderCenterOffsetX, -300, 300);
         matchHeaderCenterOffsetY = clamp(matchHeaderCenterOffsetY, -300, 300);
+        if (matchHeaderLayers == null) {
+            matchHeaderLayers = new java.util.LinkedHashMap<>();
+        }
+        for (HeaderLayerStyle style : matchHeaderLayers.values()) {
+            if (style == null) {
+                continue;
+            }
+            style.offsetX = clamp(style.offsetX, -400, 400);
+            style.offsetY = clamp(style.offsetY, -400, 400);
+            style.scaleX = Math.max(0.2F, Math.min(3.0F, style.scaleX));
+            style.scaleY = Math.max(0.2F, Math.min(3.0F, style.scaleY));
+        }
         crosshairGap = clamp(crosshairGap, 0, 12);
         crosshairLength = clamp(crosshairLength, 4, 16);
         crosshairThickness = clamp(crosshairThickness, 1, 4);

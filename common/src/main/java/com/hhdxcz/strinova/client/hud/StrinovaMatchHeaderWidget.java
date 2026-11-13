@@ -8,12 +8,9 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 对局顶部面板（对齐真实截图）：
- * 中间「目标 N 回合」+ 大号倒计时，左右是我的/敌方比分斜切面板；
- * 两侧各 5 个玩家头像（官方 T_Dynamic_RoleScoreboard_*，中途加入/未选角用 HalfEnterEmpty），
- * 外侧用银色斜切装饰翼收边。
- *
- * <p>所有元素仍走 {@link StrinovaHudPainter}，因此支持 HUD 编辑器自由拖动/缩放。</p>
+ * 对局顶部面板（图形编辑器版）：
+ * 左右头像行、左右比分条（sprite_235/377）、中间目标/计时都由独立图层绘制，
+ * 每个图层可在 {@link com.hhdxcz.strinova.client.StrinovaMatchHeaderEditorScreen} 中单独移动/缩放。
  */
 public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
 
@@ -22,24 +19,11 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
     private static final int PORTRAIT = 24;
     private static final int PORTRAIT_STEP = 24;
 
-    private static final int COLOR_ALLY = 0xFFBC3B47;
-    private static final int COLOR_ENEMY = 0xFF4B77DC;
-    private static final int COLOR_ALLY_TEXT = 0xFFF27C88;
-    private static final int COLOR_ENEMY_TEXT = 0xFF8FB4FF;
-    private static final int COLOR_PLATE = 0xB3101620;
-    private static final int COLOR_CENTER = 0xB30A111C;
-    private static final int COLOR_SILVER = 0x99C8D2DE;
-    private static final int COLOR_SILVER_DIM = 0x55C8D2DE;
-    private static final int CENTER_PLATE_W = 150;
-    private static final int CENTER_PLATE_H = 54;
-    private static final int SCORE_PLATE_W = 70;
-    private static final int SCORE_PLATE_H = 22;
-
-    /** 表格指定贴图：左=sprite_235（蓝），右=sprite_377（红）。 */
     private static final ResourceLocation TEX_SCORE_BLUE =
             new ResourceLocation("strinova", "textures/gui/topbar/score_blue.png");
     private static final ResourceLocation TEX_SCORE_RED =
             new ResourceLocation("strinova", "textures/gui/topbar/score_red.png");
+    private static final int COLOR_TEXT_DIM = 0xFF9FC6D8;
 
     @Override
     public StrinovaHudLayout.Element element() {
@@ -56,26 +40,53 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         return StrinovaMatchState.isActive() || StrinovaHudRenderer.isEditorRendering() ? HEIGHT : 0;
     }
 
+    /** 一个可编辑图层：key 用于配置，x/y/w/h 为当前（已应用偏移缩放）矩形。 */
+    public record Layer(String key, String type, int x, int y, int w, int h,
+                        boolean visible, int baseX, int baseY, int baseW, int baseH) {
+    }
+
     @Override
     public void render(StrinovaHudPainter painter, int x, int y) {
-        boolean active = StrinovaMatchState.isActive();
         StrinovaHudConfig config = StrinovaHudConfig.get();
-        int centerX = x + WIDTH / 2 + config.matchHeaderCenterOffsetX;
-        int centerBaseY = y + config.matchHeaderCenterOffsetY;
+        boolean active = StrinovaMatchState.isActive();
+        int alliesScore = active ? StrinovaMatchState.getAlliesScore() : 3;
+        int enemiesScore = active ? StrinovaMatchState.getEnemiesScore() : 2;
+        String scoreAlly = twoDigits(alliesScore);
+        String scoreEnemy = twoDigits(enemiesScore);
+        List<StrinovaScoreboardState.Entry> allies = StrinovaScoreboardState.allies();
+        List<StrinovaScoreboardState.Entry> enemies = StrinovaScoreboardState.enemies();
 
-        // 左右各 5 个头像（先画底，再画中央文字）
-        if (config.matchHeaderShowPortraits) {
-            List<StrinovaScoreboardState.Entry> allies = StrinovaScoreboardState.allies();
-            List<StrinovaScoreboardState.Entry> enemies = StrinovaScoreboardState.enemies();
-            int portraitY = y + (HEIGHT - PORTRAIT) / 2 + config.matchHeaderPortraitOffsetY;
-            int portraitBaseX = x + config.matchHeaderPortraitOffsetX;
-            for (int i = 0; i < 5; i++) {
-                drawTeamPortrait(painter, portraitBaseX + 4 + i * PORTRAIT_STEP, portraitY, entry(allies, i), false);
-                drawTeamPortrait(painter, portraitBaseX + WIDTH - 4 - PORTRAIT - (4 - i) * PORTRAIT_STEP,
-                        portraitY, entry(enemies, i), true);
+        for (Layer layer : layers(painter, x, y)) {
+            if (!layer.visible()) {
+                continue;
+            }
+            switch (layer.key()) {
+                case "leftTop" -> painter.textureRegion(TEX_SCORE_BLUE, layer.x(), layer.y(),
+                        layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
+                case "rightTop" -> painter.textureRegion(TEX_SCORE_RED, layer.x(), layer.y(),
+                        layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
+                case "leftBottom" -> painter.textureRegion(TEX_SCORE_BLUE, layer.x(), layer.y(),
+                        layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
+                case "rightBottom" -> painter.textureRegion(TEX_SCORE_RED, layer.x(), layer.y(),
+                        layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
+                case "leftScore" -> drawScoreText(painter, layer, scoreAlly);
+                case "rightScore" -> drawScoreText(painter, layer, scoreEnemy);
+                case "portraitsLeft" -> drawPortraitRow(painter, layer, allies);
+                case "portraitsRight" -> drawPortraitRow(painter, layer, enemies);
+                case "target" -> drawTargetText(painter, layer, active);
+                case "separator" -> drawSeparator(painter, layer);
+                case "timer" -> drawTimer(painter, layer, active);
+                default -> {
+                }
             }
         }
+    }
 
+    /** 所有图层（含隐藏图层），供渲染和编辑器共用。 */
+    public static List<Layer> layers(StrinovaHudPainter painter, int x, int y) {
+        StrinovaHudConfig config = StrinovaHudConfig.get();
+        boolean active = StrinovaMatchState.isActive();
+        int centerX = x + WIDTH / 2;
         int alliesScore = active ? StrinovaMatchState.getAlliesScore() : 3;
         int enemiesScore = active ? StrinovaMatchState.getEnemiesScore() : 2;
         int round = active ? StrinovaMatchState.getRound() : 9;
@@ -83,106 +94,126 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         if (seconds < 0) {
             seconds = 0;
         }
+        String roundText = Component.translatable("hud.strinova.match.target_round", round).getString();
+        String time = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60);
 
-        // 目标回合（表格第一行）
-        if (config.matchHeaderShowCenter) {
-            String roundText = Component.translatable("hud.strinova.match.target_round", round).getString();
-            painter.text(roundText, centerX - painter.textWidth(roundText) / 2, centerBaseY + 3,
-                    StrinovaProgrammaticPainter.COLOR_TEXT_DIM, false);
+        int portraitY = y + (HEIGHT - PORTRAIT) / 2;
+        int leftPortraitX = x + 4;
+        int rightPortraitX = x + WIDTH - 4 - PORTRAIT * 5;
 
-            // 中间分隔：— · —
-            int sepY = centerBaseY + 15;
-            painter.rect(centerX - 24, sepY, 18, 1, 0xB3FFFFFF);
-            painter.rect(centerX - 2, sepY - 1, 4, 3, 0xE6FFFFFF);
-            painter.rect(centerX + 6, sepY, 18, 1, 0xB3FFFFFF);
+        int leftTopW = 96;
+        int leftTopH = 12;
+        int leftTopX = centerX - 105 - leftTopW / 2;
+        int leftTopY = y + 3;
 
-            // 中央倒计时：官方 DP_Num 七段数码数字
-            String time = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60);
-            float digitHeight = 24.0F;
-            float timeWidth = StrinovaHudDigits.textWidth(time, digitHeight);
-            StrinovaHudDigits.draw(painter, time, Math.round(centerX - timeWidth / 2.0F), centerBaseY + 19,
-                    digitHeight, 0xFFFFFFFF, 1.0F);
-        }
-
-        // 左右比分板：每侧两层，上层横向拉长、下层保持原比例
-        if (config.matchHeaderShowPlates) {
-            int plateBaseY = y + config.matchHeaderPlateOffsetY;
-            int leftCenterX = x + WIDTH / 2 + config.matchHeaderPlateOffsetX - 105;
-            int rightCenterX = x + WIDTH / 2 + config.matchHeaderPlateOffsetX + 105;
-            drawSidePlate(painter, TEX_SCORE_BLUE, leftCenterX, plateBaseY, twoDigits(alliesScore), true);
-            drawSidePlate(painter, TEX_SCORE_RED, rightCenterX, plateBaseY, twoDigits(enemiesScore), false);
-        }
-    }
-
-    /** 图形编辑器可拖动区域。 */
-    public record EditorRegion(String key, int x, int y, int width, int height) {
-    }
-
-    /** 供图形编辑器计算可拖动区域（坐标基于渲染位置 x,y）。 */
-    public static List<EditorRegion> editorRegions(int x, int y) {
-        StrinovaHudConfig config = StrinovaHudConfig.get();
-        int centerX = x + WIDTH / 2 + config.matchHeaderCenterOffsetX;
-        int centerBaseY = y + config.matchHeaderCenterOffsetY;
-        int portraitBaseX = x + config.matchHeaderPortraitOffsetX;
-        int portraitY = y + (HEIGHT - PORTRAIT) / 2 + config.matchHeaderPortraitOffsetY;
-        int plateBaseY = y + config.matchHeaderPlateOffsetY;
-        int plateCenter = config.matchHeaderPlateOffsetX;
-        List<EditorRegion> regions = new ArrayList<>();
-        regions.add(new EditorRegion("leftPlate",
-                x + WIDTH / 2 + plateCenter - 105 - 48, plateBaseY + 3, 96, 40));
-        regions.add(new EditorRegion("rightPlate",
-                x + WIDTH / 2 + plateCenter + 105 - 48, plateBaseY + 3, 96, 40));
-        regions.add(new EditorRegion("center",
-                centerX - 70, centerBaseY + 1, 140, 43));
-        regions.add(new EditorRegion("portraits",
-                portraitBaseX + 4, portraitY,
-                WIDTH - 8, PORTRAIT));
-        return regions;
-    }
-
-    /** 比分板：严格按表格使用 sprite_235 / sprite_377。 */
-    /** 每侧两块：上层横拉长条（表格“拉长”），下层原比例比分板（表格“不变”）。 */
-    private static void drawSidePlate(StrinovaHudPainter painter, ResourceLocation texture,
-                                      int centerX, int y, String score, boolean leftSide) {
-        // 上层：横向拉长
-        int stretchW = 96;
-        int stretchH = 12;
-        painter.textureRegion(texture, centerX - stretchW / 2, y + 3, stretchW, stretchH,
-                0.0F, 0.0F, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
-
-        // 下层：保持原比例，不拉伸
         int bottomH = 22;
         int bottomW = Math.round(bottomH * 95.0F / 42.0F);
         int bottomY = y + 18;
-        int bottomX = centerX - bottomW / 2;
-        painter.textureRegion(texture, bottomX, bottomY, bottomW, bottomH,
-                0.0F, 0.0F, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
+        int leftBottomX = centerX - 105 - bottomW / 2;
+        int rightBottomX = centerX + 105 - bottomW / 2;
 
-        // 回合分数写在下面未拉伸的板上
-        int textX = centerX - painter.textWidth(score) / 2;
-        int textY = bottomY + (bottomH - painter.textHeight()) / 2;
-        painter.text(score, textX, textY, 0xFFFFFFFF, true);
+        int targetW = Math.max(1, painter.textWidth(roundText));
+        int timerW = Math.max(1, Math.round(StrinovaHudDigits.textWidth(time, 24.0F)));
+        int sepW = 42;
+
+        List<Layer> out = new ArrayList<>();
+        out.add(layer(config, "portraitsLeft", "portraits",
+                leftPortraitX, portraitY, PORTRAIT * 5, PORTRAIT));
+        out.add(layer(config, "portraitsRight", "portraits",
+                rightPortraitX, portraitY, PORTRAIT * 5, PORTRAIT));
+        out.add(layer(config, "target", "target",
+                centerX - targetW / 2, y + 3, targetW, 9));
+        out.add(layer(config, "separator", "separator",
+                centerX - sepW / 2, y + 15, sepW, 3));
+        out.add(layer(config, "timer", "timer",
+                centerX - timerW / 2, y + 19, timerW, 24));
+        out.add(layer(config, "leftTop", "image",
+                leftTopX, leftTopY, leftTopW, leftTopH));
+        out.add(layer(config, "rightTop", "image",
+                centerX + 105 - leftTopW / 2, leftTopY, leftTopW, leftTopH));
+        out.add(layer(config, "leftBottom", "image",
+                leftBottomX, bottomY, bottomW, bottomH));
+        out.add(layer(config, "rightBottom", "image",
+                rightBottomX, bottomY, bottomW, bottomH));
+        int scoreTextW = Math.max(1, painter.textWidth("00"));
+        int scoreTextH = 9;
+        int scoreTextY = bottomY + (bottomH - scoreTextH) / 2;
+        out.add(layer(config, "leftScore", "score",
+                centerX - 105 - scoreTextW / 2, scoreTextY, scoreTextW, scoreTextH));
+        out.add(layer(config, "rightScore", "score",
+                centerX + 105 - scoreTextW / 2, scoreTextY, scoreTextW, scoreTextH));
+        return out;
     }
 
-    private static int withAlpha(int color, int alpha) {
-        return (Math.max(0, Math.min(255, alpha)) << 24) | (color & 0x00FFFFFF);
+    private static Layer layer(StrinovaHudConfig config, String key, String type,
+                               int baseX, int baseY, int baseW, int baseH) {
+        StrinovaHudConfig.HeaderLayerStyle style = config.matchHeaderLayer(key);
+        int w = Math.max(2, Math.round(baseW * style.scaleX));
+        int h = Math.max(2, Math.round(baseH * style.scaleY));
+        int x = baseX + style.offsetX - (w - baseW) / 2;
+        int y = baseY + style.offsetY - (h - baseH) / 2;
+        return new Layer(key, type, x, y, w, h, style.visible, baseX, baseY, baseW, baseH);
     }
 
-    /** 顶部面板玩家头像：官方 RoleScoreboard 贴图；未选角/中途加入用 HalfEnterEmpty。 */
-    private static void drawTeamPortrait(StrinovaHudPainter painter, int x, int y,
-                                         StrinovaScoreboardState.Entry entry, boolean enemy) {
+    private static void drawScoreText(StrinovaHudPainter painter, Layer layer, String score) {
+        float scale = Math.max(0.5F, Math.min(3.0F, layer.h() / 9.0F));
+        float width = painter.textWidth(score) * scale;
+        float x = layer.x() + (layer.w() - width) / 2.0F;
+        float y = layer.y() + (layer.h() - 9.0F * scale) / 2.0F;
+        painter.textScaled(score, x, y, scale, 0xFFFFFFFF, true);
+    }
+
+    private static void drawPortraitRow(StrinovaHudPainter painter, Layer layer,
+                                        List<StrinovaScoreboardState.Entry> entries) {
+        float scale = Math.max(0.3F, layer.h() / (float) PORTRAIT);
+        int size = Math.max(6, Math.round(PORTRAIT * scale));
+        int step = Math.max(6, Math.round(layer.w() / 5.0F));
+        for (int i = 0; i < 5; i++) {
+            drawTeamPortrait(painter, layer.x() + i * step, layer.y(), size, entry(entries, i));
+        }
+    }
+
+    private static void drawTargetText(StrinovaHudPainter painter, Layer layer, boolean active) {
+        int round = active ? StrinovaMatchState.getRound() : 9;
+        String text = Component.translatable("hud.strinova.match.target_round", round).getString();
+        float scale = Math.max(0.4F, layer.h() / 9.0F);
+        float width = painter.textWidth(text) * scale;
+        painter.textScaled(text, layer.x() + (layer.w() - width) / 2.0F, layer.y(),
+                scale, COLOR_TEXT_DIM, false);
+    }
+
+    private static void drawSeparator(StrinovaHudPainter painter, Layer layer) {
+        int thickness = Math.max(1, layer.h() / 3);
+        int third = Math.max(2, layer.w() / 5);
+        int y = layer.y() + layer.h() / 2 - thickness / 2;
+        painter.rect(layer.x(), y, third, thickness, 0xB3FFFFFF);
+        painter.rect(layer.x() + layer.w() / 2 - 2, y - 1, 4, thickness + 2, 0xE6FFFFFF);
+        painter.rect(layer.x() + layer.w() - third, y, third, thickness, 0xB3FFFFFF);
+    }
+
+    private static void drawTimer(StrinovaHudPainter painter, Layer layer, boolean active) {
+        int seconds = active ? StrinovaMatchState.getRoundSecondsLeft() : 18;
+        if (seconds < 0) {
+            seconds = 0;
+        }
+        String time = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60);
+        float height = Math.max(8.0F, layer.h());
+        StrinovaHudDigits.draw(painter, time, layer.x(), layer.y(), height, 0xFFFFFFFF, 1.0F);
+    }
+
+    /** 顶部面板玩家头像：官方 RoleScoreboard 贴图。 */
+    private static void drawTeamPortrait(StrinovaHudPainter painter, int x, int y, int size,
+                                         StrinovaScoreboardState.Entry entry) {
         ResourceLocation texture = entry == null ? null
                 : StrinovaHudTextures.avatarByAgentName(entry.agentName());
         if (texture == null) {
             texture = StrinovaHudTextures.SCOREBOARD_EMPTY;
         }
-        // 头像原图 56×32：底框、边框都贴合图片本身（不再包正方形大框）
-        int fitHeight = Math.max(6, Math.round(PORTRAIT * 32.0F / 56.0F));
-        int fitY = y + (PORTRAIT - fitHeight) / 2;
-        painter.rect(x, fitY, PORTRAIT, fitHeight, 0xB3101820);
-        painter.textureRegion(texture, x, fitY, PORTRAIT, fitHeight,
+        int fitHeight = Math.max(6, Math.round(size * 32.0F / 56.0F));
+        int fitY = y + (size - fitHeight) / 2;
+        painter.rect(x, fitY, size, fitHeight, 0xB3101820);
+        painter.textureRegion(texture, x, fitY, size, fitHeight,
                 0.0F, 0.0F, 56, 32, 56, 32, 0xFFFFFFFF, 1.0F);
-        // 边框：白色细框（本人金色、死亡压暗），不再用队伍色粗框
         int border;
         if (entry != null && entry.self()) {
             border = 0xFFFFD166;
@@ -191,12 +222,7 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         } else {
             border = 0x55FFFFFF;
         }
-        painter.border(x, fitY, PORTRAIT, fitHeight, border, 1);
-        // 底部细高光，贴近真实 UI 的玻璃质感
-        painter.rect(x + 1, fitY + fitHeight - 2, PORTRAIT - 2, 1, 0x33FFFFFF);
-        if (entry != null && entry.status() == StrinovaScoreboardState.Status.ALIVE) {
-            painter.rect(x + PORTRAIT - 4, fitY + fitHeight - 4, 3, 3, 0xFF5FE08C);
-        }
+        painter.border(x, fitY, size, fitHeight, border, 1);
     }
 
     private static StrinovaScoreboardState.Entry entry(List<StrinovaScoreboardState.Entry> list, int index) {
