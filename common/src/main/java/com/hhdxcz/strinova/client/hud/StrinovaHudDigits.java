@@ -11,9 +11,10 @@ package com.hhdxcz.strinova.client.hud;
 public final class StrinovaHudDigits {
 
     private static final int CELL_COUNT = 11;
-    private static final int CELL_WIDTH = 170;
+    // 用 Noto Sans SC 数字重新排的紧凑图集（字形更圆、间距更小）
+    private static final int CELL_WIDTH = 144;
     private static final int CELL_HEIGHT = 256;
-    private static final int TEX_WIDTH = 1870;
+    private static final int TEX_WIDTH = 1584;
 
     private StrinovaHudDigits() {
     }
@@ -29,7 +30,7 @@ public final class StrinovaHudDigits {
             return 0.0F;
         }
         float digit = digitWidth(height);
-        float gap = Math.max(1.0F, height * 0.05F);
+        float gap = Math.max(1.0F, height * 0.02F);
         float width = 0.0F;
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
@@ -51,7 +52,7 @@ public final class StrinovaHudDigits {
             return;
         }
         float digit = digitWidth(height);
-        float gap = Math.max(1.0F, height * 0.05F);
+        float gap = Math.max(1.0F, height * 0.02F);
         int drawHeight = Math.max(1, Math.round(height));
         int drawDigit = Math.max(1, Math.round(digit));
         float cursor = x;
@@ -65,13 +66,13 @@ public final class StrinovaHudDigits {
                         TEX_WIDTH, CELL_HEIGHT, tint, alpha);
                 cursor += digit + gap;
             } else if (c == ':') {
-                int dot = Math.max(2, Math.round(height * 0.1F));
+                int dot = Math.max(2, Math.round(height * 0.075F));
                 int dotX = Math.round(cursor + digit * 0.05F);
-                int dot1Y = y + Math.round(height * 0.3F);
-                int dot2Y = y + Math.round(height * 0.66F);
+                int dot1Y = y + Math.round(height * 0.33F);
+                int dot2Y = y + Math.round(height * 0.67F);
                 painter.rect(dotX, dot1Y, dot, dot, tint);
                 painter.rect(dotX, dot2Y, dot, dot, tint);
-                cursor += Math.max(2.0F, digit * 0.22F) + gap;
+                cursor += Math.max(2.0F, digit * 0.14F) + gap;
             } else if (c == ' ') {
                 cursor += gap * 2;
             }
