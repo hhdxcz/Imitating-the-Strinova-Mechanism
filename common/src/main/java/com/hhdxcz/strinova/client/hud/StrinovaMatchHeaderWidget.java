@@ -34,15 +34,11 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
     private static final int SCORE_PLATE_W = 70;
     private static final int SCORE_PLATE_H = 22;
 
-    /** 顶部面板贴图（来自 SS_UI_HUDPC / T_UI_HUDPC_SPR_UI_HUDPC_ScoreLine）。 */
-    private static final ResourceLocation TEX_CENTER =
-            new ResourceLocation("strinova", "textures/gui/topbar/center_plate.png");
-    private static final ResourceLocation TEX_SCORELINE =
-            new ResourceLocation("strinova", "textures/gui/topbar/scoreline.png");
-    private static final ResourceLocation TEX_TEAM_RED =
-            new ResourceLocation("strinova", "textures/gui/topbar/score_red.png");
-    private static final ResourceLocation TEX_TEAM_BLUE =
+    /** 表格指定贴图：左=sprite_235（蓝），右=sprite_377（红）。 */
+    private static final ResourceLocation TEX_SCORE_BLUE =
             new ResourceLocation("strinova", "textures/gui/topbar/score_blue.png");
+    private static final ResourceLocation TEX_SCORE_RED =
+            new ResourceLocation("strinova", "textures/gui/topbar/score_red.png");
 
     @Override
     public StrinovaHudLayout.Element element() {
@@ -63,23 +59,6 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
     public void render(StrinovaHudPainter painter, int x, int y) {
         boolean active = StrinovaMatchState.isActive();
         int centerX = x + WIDTH / 2;
-
-        // 两侧银色斜切装饰翼
-        drawWing(painter, x, y + HEIGHT / 2, 130, false);
-        drawWing(painter, x + WIDTH - 130, y + HEIGHT / 2, 130, true);
-
-        int plateX = centerX - CENTER_PLATE_W / 2;
-        int plateY = y + 3;
-        // 中央黑色斜角底板（游戏贴图，只保留黑色板体）
-        painter.textureRegion(TEX_CENTER, plateX, plateY, CENTER_PLATE_W, CENTER_PLATE_H,
-                0.0F, 0.0F, 165, 66, 165, 66, 0xFFFFFFFF, 1.0F);
-        // 两侧白色斜线（ScoreLine 贴图）
-        painter.textureRegion(TEX_SCORELINE, plateX - 17, plateY + 2, 15, CENTER_PLATE_H,
-                0.0F, 0.0F, 101, 82, 101, 82, 0xE6FFFFFF, 1.0F);
-        painter.textureRegion(TEX_SCORELINE, plateX + CENTER_PLATE_W + 2, plateY + 2, 15, CENTER_PLATE_H,
-                0.0F, 0.0F, 101, 82, 101, 82, 0xE6FFFFFF, 1.0F);
-        painter.rect(x + 130, y + 1, WIDTH - 260, 1, COLOR_SILVER_DIM);
-        painter.rect(x + 150, y + HEIGHT - 2, WIDTH - 300, 1, COLOR_SILVER_DIM);
 
         // 左右各 5 个头像（先画底，再画中央文字）
         List<StrinovaScoreboardState.Entry> allies = StrinovaScoreboardState.allies();
@@ -112,51 +91,17 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
                 digitHeight, 0xFFFFFFFF, 1.0F);
 
         // 左右比分板（斜切）
-        int scoreY = y + 20;
-        int leftScoreX = plateX - 6 - SCORE_PLATE_W;
-        int rightScoreX = plateX + CENTER_PLATE_W + 6;
+        int scoreY = y + 18;
+        int leftScoreX = centerX - 75 - SCORE_PLATE_W;
+        int rightScoreX = centerX + 75;
+        // 严格按表格：左 sprite_235（蓝），右 sprite_377（红）
         drawScorePlate(painter, leftScoreX, scoreY, SCORE_PLATE_W, SCORE_PLATE_H, 10,
-                COLOR_PLATE, COLOR_ALLY, twoDigits(alliesScore), 0xFFFFFFFF, true, TEX_TEAM_RED);
+                COLOR_PLATE, COLOR_ALLY, twoDigits(alliesScore), 0xFFFFFFFF, true, TEX_SCORE_BLUE);
         drawScorePlate(painter, rightScoreX, scoreY, SCORE_PLATE_W, SCORE_PLATE_H, -10,
-                COLOR_PLATE, COLOR_ENEMY, twoDigits(enemiesScore), 0xFFFFFFFF, false, TEX_TEAM_BLUE);
-
-        // 中间比分连接线
-        painter.rect(centerX - 40, y + 30, 80, 1, COLOR_SILVER_DIM);
-        painter.rect(centerX - 2, y + 27, 4, 7, 0x99E8F0FA);
+                COLOR_PLATE, COLOR_ENEMY, twoDigits(enemiesScore), 0xFFFFFFFF, false, TEX_SCORE_RED);
     }
 
-    /** 斜切矩形（逐行偏移，模拟平行四边形）。 */
-    private static void slanted(StrinovaHudPainter painter, int x, int y, int width, int height,
-                                int skew, int argb) {
-        if (height <= 0 || width <= 0) {
-            return;
-        }
-        for (int i = 0; i < height; i++) {
-            float t = height <= 1 ? 0.5F : (float) i / (height - 1);
-            int offset = Math.round((t - 0.5F) * skew);
-            painter.rect(x + offset, y + i, width, 1, argb);
-        }
-    }
-
-    /** 两侧装饰翼：淡银色斜切块 + 亮边线。 */
-    private static void drawWing(StrinovaHudPainter painter, int x, int centerY, int length, boolean flip) {
-        int dir = flip ? -1 : 1;
-        int startX = flip ? x + length : x;
-        for (int i = 0; i < 18; i++) {
-            float t = i / 17.0F;
-            int w = Math.round(22 + 26 * t);
-            int oy = Math.round((t - 0.5F) * 14);
-            int px = flip ? startX - w - Math.round(6 * t) : startX + Math.round(6 * t);
-            painter.rect(px, centerY + oy - 4, w, 8, 0x38C8D2DE);
-        }
-        painter.line(startX, centerY - 10, startX + dir * (length - 34), centerY - 10, COLOR_SILVER);
-        painter.line(startX, centerY + 10, startX + dir * (length - 34), centerY + 10, COLOR_SILVER);
-        int tx = startX + dir * (length - 28);
-        painter.line(tx, centerY - 10, tx + dir * 8, centerY, COLOR_SILVER);
-        painter.line(tx, centerY + 10, tx + dir * 8, centerY, COLOR_SILVER);
-    }
-
-    /** 比分斜切板：左侧红色、右侧蓝色。 */
+    /** 比分板：严格按表格使用 sprite_235 / sprite_377。 */
     private static void drawScorePlate(StrinovaHudPainter painter, int x, int y, int width, int height,
                                        int skew, int bg, int edge, String score, int scoreColor,
                                        boolean allySide, ResourceLocation barTexture) {
