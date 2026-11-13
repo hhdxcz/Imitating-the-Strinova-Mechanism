@@ -11,10 +11,10 @@ package com.hhdxcz.strinova.client.hud;
 public final class StrinovaHudDigits {
 
     private static final int CELL_COUNT = 11;
-    // 用 Noto Sans SC 数字重新排的紧凑图集（字形更圆、间距更小）
-    private static final int CELL_WIDTH = 144;
+    // 与顶部面板「回合分数」相同的 Saira Medium 字体图集
+    private static final int CELL_WIDTH = 136;
     private static final int CELL_HEIGHT = 256;
-    private static final int TEX_WIDTH = 1584;
+    private static final int TEX_WIDTH = 1496;
 
     private StrinovaHudDigits() {
     }
@@ -30,7 +30,7 @@ public final class StrinovaHudDigits {
             return 0.0F;
         }
         float digit = digitWidth(height);
-        float gap = Math.max(1.0F, height * 0.02F);
+        float gap = Math.max(1.0F, height * 0.015F);
         float width = 0.0F;
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
@@ -52,7 +52,7 @@ public final class StrinovaHudDigits {
             return;
         }
         float digit = digitWidth(height);
-        float gap = Math.max(1.0F, height * 0.02F);
+        float gap = Math.max(1.0F, height * 0.015F);
         int drawHeight = Math.max(1, Math.round(height));
         int drawDigit = Math.max(1, Math.round(digit));
         float cursor = x;
@@ -72,7 +72,7 @@ public final class StrinovaHudDigits {
                 int dot2Y = y + Math.round(height * 0.67F);
                 painter.rect(dotX, dot1Y, dot, dot, tint);
                 painter.rect(dotX, dot2Y, dot, dot, tint);
-                cursor += Math.max(2.0F, digit * 0.14F) + gap;
+                cursor += Math.max(2.0F, digit * 0.12F) + gap;
             } else if (c == ' ') {
                 cursor += gap * 2;
             }
