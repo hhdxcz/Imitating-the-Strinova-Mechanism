@@ -2,6 +2,7 @@ package com.hhdxcz.strinova.client;
 
 import com.hhdxcz.strinova.client.hud.StrinovaHudConfig;
 import com.hhdxcz.strinova.client.hud.StrinovaHudLayout;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -146,18 +147,24 @@ public class StrinovaCombatSettingsScreen extends Screen {
         // 底部：HUD 布局编辑 + 计分板编辑 + 返回
         int bottomY = this.height - 28;
         int bottomCenterX = this.width / 2;
-        int groupStart = bottomCenterX - (BOTTOM_BUTTON_WIDTH * 3 + 8) / 2;
+        int groupStart = bottomCenterX - (BOTTOM_BUTTON_WIDTH * 4 + 12) / 2;
         this.addRenderableWidget(Button.builder(Component.translatable("config.strinova.hud.editor.entry"),
                         button -> this.openLayoutEditor())
                 .bounds(groupStart, bottomY, BOTTOM_BUTTON_WIDTH, ROW_HEIGHT)
                 .build());
+        this.addRenderableWidget(Button.builder(
+                        Component.translatable("config.strinova.hud.match_header_editor.entry"),
+                        button -> Minecraft.getInstance().setScreen(
+                                new StrinovaMatchHeaderEditorScreen(this)))
+                .bounds(groupStart + BOTTOM_BUTTON_WIDTH + 4, bottomY, BOTTOM_BUTTON_WIDTH, ROW_HEIGHT)
+                .build());
         this.addRenderableWidget(Button.builder(Component.translatable("config.strinova.hud.scoreboard_editor.entry"),
                         button -> this.openScoreboardEditor())
-                .bounds(groupStart + BOTTOM_BUTTON_WIDTH + 4, bottomY, BOTTOM_BUTTON_WIDTH, ROW_HEIGHT)
+                .bounds(groupStart + (BOTTOM_BUTTON_WIDTH + 4) * 2, bottomY, BOTTOM_BUTTON_WIDTH, ROW_HEIGHT)
                 .build());
         this.addRenderableWidget(Button.builder(Component.translatable("config.strinova.hud.back"),
                         button -> this.onClose())
-                .bounds(groupStart + (BOTTOM_BUTTON_WIDTH + 4) * 2, bottomY, BOTTOM_BUTTON_WIDTH, ROW_HEIGHT)
+                .bounds(groupStart + (BOTTOM_BUTTON_WIDTH + 4) * 3, bottomY, BOTTOM_BUTTON_WIDTH, ROW_HEIGHT)
                 .build());
 
         this.refreshWidgetState();

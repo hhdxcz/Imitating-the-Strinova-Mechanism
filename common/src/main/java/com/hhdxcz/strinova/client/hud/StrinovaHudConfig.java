@@ -42,6 +42,16 @@ public final class StrinovaHudConfig {
     public boolean skillsEnabled = true;
     public boolean stateEnabled = true;
     public boolean matchHeaderEnabled = true;
+    /** 顶部面板各部件偏移（图形编辑器拖动）。 */
+    public int matchHeaderPortraitOffsetX = 0;
+    public int matchHeaderPortraitOffsetY = 0;
+    public int matchHeaderPlateOffsetX = 0;
+    public int matchHeaderPlateOffsetY = 0;
+    public int matchHeaderCenterOffsetX = 0;
+    public int matchHeaderCenterOffsetY = 0;
+    public boolean matchHeaderShowPortraits = true;
+    public boolean matchHeaderShowPlates = true;
+    public boolean matchHeaderShowCenter = true;
     public boolean scoreboardEnabled = true;
     /** HUD/计分板是否使用微软雅黑（关闭则用原版像素字体）。 */
     /** 使用内置 HUD 字体（中文 Noto Sans SC + 数字/英文 Saira）；关闭后回退原版字体。 */
@@ -279,6 +289,12 @@ public final class StrinovaHudConfig {
             layout = new StrinovaHudLayout();
         }
         layout.ensureDefaults();
+        matchHeaderPortraitOffsetX = clamp(matchHeaderPortraitOffsetX, -300, 300);
+        matchHeaderPortraitOffsetY = clamp(matchHeaderPortraitOffsetY, -300, 300);
+        matchHeaderPlateOffsetX = clamp(matchHeaderPlateOffsetX, -300, 300);
+        matchHeaderPlateOffsetY = clamp(matchHeaderPlateOffsetY, -300, 300);
+        matchHeaderCenterOffsetX = clamp(matchHeaderCenterOffsetX, -300, 300);
+        matchHeaderCenterOffsetY = clamp(matchHeaderCenterOffsetY, -300, 300);
         crosshairGap = clamp(crosshairGap, 0, 12);
         crosshairLength = clamp(crosshairLength, 4, 16);
         crosshairThickness = clamp(crosshairThickness, 1, 4);

@@ -241,5 +241,6 @@
   "config.strinova.growth.stat.armor": "Armor",
   "config.strinova.growth.stat.speed": "Speed",
   "config.strinova.growth.upgraded": "Upgraded",
-  "config.strinova.ui.customize": "Customize"
+  "config.strinova.ui.customize": "Customize",
+  "config.strinova.hud.match_header_editor.entry": "Top panel…"
 }

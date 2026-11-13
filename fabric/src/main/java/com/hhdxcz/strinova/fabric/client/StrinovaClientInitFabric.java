@@ -207,6 +207,13 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
                                                         + com.hhdxcz.strinova.client.hud.StrinovaGrowthState.energyPoints()));
                                         return 1;
                                     })))
+                    .then(ClientCommandManager.literal("topbar")
+                            .executes(ctx -> {
+                                Minecraft client = Minecraft.getInstance();
+                                client.tell(() -> client.setScreen(
+                                        new com.hhdxcz.strinova.client.StrinovaMatchHeaderEditorScreen(client.screen)));
+                                return 1;
+                            }))
                     .then(ClientCommandManager.literal("scoreboard")
                             .executes(ctx -> {
                                 Minecraft client = Minecraft.getInstance();

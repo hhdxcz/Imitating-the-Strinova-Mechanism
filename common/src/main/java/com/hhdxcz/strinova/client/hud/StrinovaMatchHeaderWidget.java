@@ -3,6 +3,7 @@ package com.hhdxcz.strinova.client.hud;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -58,16 +59,21 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
     @Override
     public void render(StrinovaHudPainter painter, int x, int y) {
         boolean active = StrinovaMatchState.isActive();
-        int centerX = x + WIDTH / 2;
+        StrinovaHudConfig config = StrinovaHudConfig.get();
+        int centerX = x + WIDTH / 2 + config.matchHeaderCenterOffsetX;
+        int centerBaseY = y + config.matchHeaderCenterOffsetY;
 
         // 左右各 5 个头像（先画底，再画中央文字）
-        List<StrinovaScoreboardState.Entry> allies = StrinovaScoreboardState.allies();
-        List<StrinovaScoreboardState.Entry> enemies = StrinovaScoreboardState.enemies();
-        int portraitY = y + (HEIGHT - PORTRAIT) / 2;
-        for (int i = 0; i < 5; i++) {
-            drawTeamPortrait(painter, x + 4 + i * PORTRAIT_STEP, portraitY, entry(allies, i), false);
-            drawTeamPortrait(painter, x + WIDTH - 4 - PORTRAIT - (4 - i) * PORTRAIT_STEP, portraitY,
-                    entry(enemies, i), true);
+        if (config.matchHeaderShowPortraits) {
+            List<StrinovaScoreboardState.Entry> allies = StrinovaScoreboardState.allies();
+            List<StrinovaScoreboardState.Entry> enemies = StrinovaScoreboardState.enemies();
+            int portraitY = y + (HEIGHT - PORTRAIT) / 2 + config.matchHeaderPortraitOffsetY;
+            int portraitBaseX = x + config.matchHeaderPortraitOffsetX;
+            for (int i = 0; i < 5; i++) {
+                drawTeamPortrait(painter, portraitBaseX + 4 + i * PORTRAIT_STEP, portraitY, entry(allies, i), false);
+                drawTeamPortrait(painter, portraitBaseX + WIDTH - 4 - PORTRAIT - (4 - i) * PORTRAIT_STEP,
+                        portraitY, entry(enemies, i), true);
+            }
         }
 
         int alliesScore = active ? StrinovaMatchState.getAlliesScore() : 3;
@@ -79,29 +85,59 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         }
 
         // 目标回合（表格第一行）
-        String roundText = Component.translatable("hud.strinova.match.target_round", round).getString();
-        painter.text(roundText, centerX - painter.textWidth(roundText) / 2, y + 3,
-                StrinovaProgrammaticPainter.COLOR_TEXT_DIM, false);
+        if (config.matchHeaderShowCenter) {
+            String roundText = Component.translatable("hud.strinova.match.target_round", round).getString();
+            painter.text(roundText, centerX - painter.textWidth(roundText) / 2, centerBaseY + 3,
+                    StrinovaProgrammaticPainter.COLOR_TEXT_DIM, false);
 
-        // 中间分隔：— · —
-        int sepY = y + 15;
-        painter.rect(centerX - 24, sepY, 18, 1, 0xB3FFFFFF);
-        painter.rect(centerX - 2, sepY - 1, 4, 3, 0xE6FFFFFF);
-        painter.rect(centerX + 6, sepY, 18, 1, 0xB3FFFFFF);
+            // 中间分隔：— · —
+            int sepY = centerBaseY + 15;
+            painter.rect(centerX - 24, sepY, 18, 1, 0xB3FFFFFF);
+            painter.rect(centerX - 2, sepY - 1, 4, 3, 0xE6FFFFFF);
+            painter.rect(centerX + 6, sepY, 18, 1, 0xB3FFFFFF);
 
-        // 中央倒计时：官方 DP_Num 七段数码数字
-        String time = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60);
-        float digitHeight = 24.0F;
-        float timeWidth = StrinovaHudDigits.textWidth(time, digitHeight);
-        StrinovaHudDigits.draw(painter, time, Math.round(centerX - timeWidth / 2.0F), y + 19,
-                digitHeight, 0xFFFFFFFF, 1.0F);
+            // 中央倒计时：官方 DP_Num 七段数码数字
+            String time = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60);
+            float digitHeight = 24.0F;
+            float timeWidth = StrinovaHudDigits.textWidth(time, digitHeight);
+            StrinovaHudDigits.draw(painter, time, Math.round(centerX - timeWidth / 2.0F), centerBaseY + 19,
+                    digitHeight, 0xFFFFFFFF, 1.0F);
+        }
 
-        // 左右比分板（斜切）
-        // 每侧两层：上面同一张图横向拉长，下面同一张图保持原比例
-        int leftCenterX = centerX - 105;
-        int rightCenterX = centerX + 105;
-        drawSidePlate(painter, TEX_SCORE_BLUE, leftCenterX, y, twoDigits(alliesScore), true);
-        drawSidePlate(painter, TEX_SCORE_RED, rightCenterX, y, twoDigits(enemiesScore), false);
+        // 左右比分板：每侧两层，上层横向拉长、下层保持原比例
+        if (config.matchHeaderShowPlates) {
+            int plateBaseY = y + config.matchHeaderPlateOffsetY;
+            int leftCenterX = x + WIDTH / 2 + config.matchHeaderPlateOffsetX - 105;
+            int rightCenterX = x + WIDTH / 2 + config.matchHeaderPlateOffsetX + 105;
+            drawSidePlate(painter, TEX_SCORE_BLUE, leftCenterX, plateBaseY, twoDigits(alliesScore), true);
+            drawSidePlate(painter, TEX_SCORE_RED, rightCenterX, plateBaseY, twoDigits(enemiesScore), false);
+        }
+    }
+
+    /** 图形编辑器可拖动区域。 */
+    public record EditorRegion(String key, int x, int y, int width, int height) {
+    }
+
+    /** 供图形编辑器计算可拖动区域（坐标基于渲染位置 x,y）。 */
+    public static List<EditorRegion> editorRegions(int x, int y) {
+        StrinovaHudConfig config = StrinovaHudConfig.get();
+        int centerX = x + WIDTH / 2 + config.matchHeaderCenterOffsetX;
+        int centerBaseY = y + config.matchHeaderCenterOffsetY;
+        int portraitBaseX = x + config.matchHeaderPortraitOffsetX;
+        int portraitY = y + (HEIGHT - PORTRAIT) / 2 + config.matchHeaderPortraitOffsetY;
+        int plateBaseY = y + config.matchHeaderPlateOffsetY;
+        int plateCenter = config.matchHeaderPlateOffsetX;
+        List<EditorRegion> regions = new ArrayList<>();
+        regions.add(new EditorRegion("leftPlate",
+                x + WIDTH / 2 + plateCenter - 105 - 48, plateBaseY + 3, 96, 40));
+        regions.add(new EditorRegion("rightPlate",
+                x + WIDTH / 2 + plateCenter + 105 - 48, plateBaseY + 3, 96, 40));
+        regions.add(new EditorRegion("center",
+                centerX - 70, centerBaseY + 1, 140, 43));
+        regions.add(new EditorRegion("portraits",
+                portraitBaseX + 4, portraitY,
+                WIDTH - 8, PORTRAIT));
+        return regions;
     }
 
     /** 比分板：严格按表格使用 sprite_235 / sprite_377。 */

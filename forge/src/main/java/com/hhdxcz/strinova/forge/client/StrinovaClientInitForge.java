@@ -209,6 +209,13 @@ public final class StrinovaClientInitForge {
                                                     + com.hhdxcz.strinova.client.hud.StrinovaGrowthState.energyPoints()), false);
                                     return 1;
                                 })))
+                .then(Commands.literal("topbar")
+                        .executes(ctx -> {
+                            Minecraft client = Minecraft.getInstance();
+                            client.tell(() -> client.setScreen(
+                                    new com.hhdxcz.strinova.client.StrinovaMatchHeaderEditorScreen(client.screen)));
+                            return 1;
+                        }))
                 .then(Commands.literal("scoreboard")
                         .executes(ctx -> {
                             Minecraft client = Minecraft.getInstance();
