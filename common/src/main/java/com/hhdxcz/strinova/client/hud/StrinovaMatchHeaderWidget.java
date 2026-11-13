@@ -29,6 +29,10 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
     private static final int COLOR_CENTER = 0xB30A111C;
     private static final int COLOR_SILVER = 0x99C8D2DE;
     private static final int COLOR_SILVER_DIM = 0x55C8D2DE;
+    private static final int CENTER_PLATE_W = 150;
+    private static final int CENTER_PLATE_H = 54;
+    private static final int SCORE_PLATE_W = 70;
+    private static final int SCORE_PLATE_H = 22;
 
     /** 顶部面板贴图（来自 SS_UI_HUDPC / T_UI_HUDPC_SPR_UI_HUDPC_ScoreLine）。 */
     private static final ResourceLocation TEX_CENTER =
@@ -64,13 +68,15 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         drawWing(painter, x, y + HEIGHT / 2, 130, false);
         drawWing(painter, x + WIDTH - 130, y + HEIGHT / 2, 130, true);
 
-        // 中央黑色斜角底板（游戏贴图）
-        painter.textureRegion(TEX_CENTER, centerX - 150, y + 2, 300, HEIGHT - 4,
-                0.0F, 0.0F, 166, 103, 166, 103, 0xFFFFFFFF, 1.0F);
+        int plateX = centerX - CENTER_PLATE_W / 2;
+        int plateY = y + 3;
+        // 中央黑色斜角底板（游戏贴图，只保留黑色板体）
+        painter.textureRegion(TEX_CENTER, plateX, plateY, CENTER_PLATE_W, CENTER_PLATE_H,
+                0.0F, 0.0F, 165, 66, 165, 66, 0xFFFFFFFF, 1.0F);
         // 两侧白色斜线（ScoreLine 贴图）
-        painter.textureRegion(TEX_SCORELINE, centerX - 154, y + 7, 18, 46,
+        painter.textureRegion(TEX_SCORELINE, plateX - 17, plateY + 2, 15, CENTER_PLATE_H,
                 0.0F, 0.0F, 101, 82, 101, 82, 0xE6FFFFFF, 1.0F);
-        painter.textureRegion(TEX_SCORELINE, centerX + 136, y + 7, 18, 46,
+        painter.textureRegion(TEX_SCORELINE, plateX + CENTER_PLATE_W + 2, plateY + 2, 15, CENTER_PLATE_H,
                 0.0F, 0.0F, 101, 82, 101, 82, 0xE6FFFFFF, 1.0F);
         painter.rect(x + 130, y + 1, WIDTH - 260, 1, COLOR_SILVER_DIM);
         painter.rect(x + 150, y + HEIGHT - 2, WIDTH - 300, 1, COLOR_SILVER_DIM);
@@ -95,21 +101,24 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
 
         // 目标回合
         String roundText = Component.translatable("hud.strinova.match.target_round", round).getString();
-        painter.text(roundText, centerX - painter.textWidth(roundText) / 2, y + 2,
+        painter.text(roundText, centerX - painter.textWidth(roundText) / 2, y + 4,
                 StrinovaProgrammaticPainter.COLOR_TEXT_DIM, false);
 
         // 中央倒计时：官方 DP_Num 七段数码数字
         String time = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60);
-        float digitHeight = 22.0F;
+        float digitHeight = 27.0F;
         float timeWidth = StrinovaHudDigits.textWidth(time, digitHeight);
-        StrinovaHudDigits.draw(painter, time, Math.round(centerX - timeWidth / 2.0F), y + 12,
+        StrinovaHudDigits.draw(painter, time, Math.round(centerX - timeWidth / 2.0F), y + 16,
                 digitHeight, 0xFFFFFFFF, 1.0F);
 
         // 左右比分板（斜切）
-        drawScorePlate(painter, centerX - 132, y + 20, 74, 22, 10, COLOR_PLATE, COLOR_ALLY,
-                twoDigits(alliesScore), COLOR_ALLY_TEXT, true, TEX_TEAM_RED);
-        drawScorePlate(painter, centerX + 58, y + 20, 74, 22, -10, COLOR_PLATE, COLOR_ENEMY,
-                twoDigits(enemiesScore), COLOR_ENEMY_TEXT, false, TEX_TEAM_BLUE);
+        int scoreY = y + 20;
+        int leftScoreX = plateX - 6 - SCORE_PLATE_W;
+        int rightScoreX = plateX + CENTER_PLATE_W + 6;
+        drawScorePlate(painter, leftScoreX, scoreY, SCORE_PLATE_W, SCORE_PLATE_H, 10,
+                COLOR_PLATE, COLOR_ALLY, twoDigits(alliesScore), COLOR_ALLY_TEXT, true, TEX_TEAM_RED);
+        drawScorePlate(painter, rightScoreX, scoreY, SCORE_PLATE_W, SCORE_PLATE_H, -10,
+                COLOR_PLATE, COLOR_ENEMY, twoDigits(enemiesScore), COLOR_ENEMY_TEXT, false, TEX_TEAM_BLUE);
 
         // 中间比分连接线
         painter.rect(centerX - 40, y + 30, 80, 1, COLOR_SILVER_DIM);
