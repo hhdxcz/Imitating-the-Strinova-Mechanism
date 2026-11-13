@@ -227,8 +227,9 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         String time = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60);
         float scale = Math.max(0.8F, layer.h() / 9.0F);
         float width = painter.textWidth(time) * scale;
+        // 与 TAB 计分板数值一致：同一 Saira Medium 字体、无阴影
         painter.textScaled(time, layer.x() + (layer.w() - width) / 2.0F, layer.y(),
-                scale, 0xFFFFFFFF, true);
+                scale, 0xFFFFFFFF, false);
     }
 
     /** 顶部面板玩家头像：官方 RoleScoreboard 贴图。 */
