@@ -78,42 +78,54 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
             seconds = 0;
         }
 
-        // 目标回合
+        // 目标回合（表格第一行）
         String roundText = Component.translatable("hud.strinova.match.target_round", round).getString();
-        painter.text(roundText, centerX - painter.textWidth(roundText) / 2, y + 4,
+        painter.text(roundText, centerX - painter.textWidth(roundText) / 2, y + 3,
                 StrinovaProgrammaticPainter.COLOR_TEXT_DIM, false);
+
+        // 中间分隔：— · —
+        int sepY = y + 15;
+        painter.rect(centerX - 24, sepY, 18, 1, 0xB3FFFFFF);
+        painter.rect(centerX - 2, sepY - 1, 4, 3, 0xE6FFFFFF);
+        painter.rect(centerX + 6, sepY, 18, 1, 0xB3FFFFFF);
 
         // 中央倒计时：官方 DP_Num 七段数码数字
         String time = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60);
-        float digitHeight = 27.0F;
+        float digitHeight = 24.0F;
         float timeWidth = StrinovaHudDigits.textWidth(time, digitHeight);
-        StrinovaHudDigits.draw(painter, time, Math.round(centerX - timeWidth / 2.0F), y + 16,
+        StrinovaHudDigits.draw(painter, time, Math.round(centerX - timeWidth / 2.0F), y + 19,
                 digitHeight, 0xFFFFFFFF, 1.0F);
 
         // 左右比分板（斜切）
-        int scoreY = y + 18;
-        int leftScoreX = centerX - 75 - SCORE_PLATE_W;
-        int rightScoreX = centerX + 75;
-        // 严格按表格：左 sprite_235（蓝），右 sprite_377（红）
-        drawScorePlate(painter, leftScoreX, scoreY, SCORE_PLATE_W, SCORE_PLATE_H, 10,
-                COLOR_PLATE, COLOR_ALLY, twoDigits(alliesScore), 0xFFFFFFFF, true, TEX_SCORE_BLUE);
-        drawScorePlate(painter, rightScoreX, scoreY, SCORE_PLATE_W, SCORE_PLATE_H, -10,
-                COLOR_PLATE, COLOR_ENEMY, twoDigits(enemiesScore), 0xFFFFFFFF, false, TEX_SCORE_RED);
+        // 每侧两层：上面同一张图横向拉长，下面同一张图保持原比例
+        int leftCenterX = centerX - 105;
+        int rightCenterX = centerX + 105;
+        drawSidePlate(painter, TEX_SCORE_BLUE, leftCenterX, y, twoDigits(alliesScore), true);
+        drawSidePlate(painter, TEX_SCORE_RED, rightCenterX, y, twoDigits(enemiesScore), false);
     }
 
     /** 比分板：严格按表格使用 sprite_235 / sprite_377。 */
-    private static void drawScorePlate(StrinovaHudPainter painter, int x, int y, int width, int height,
-                                       int skew, int bg, int edge, String score, int scoreColor,
-                                       boolean allySide, ResourceLocation barTexture) {
-        // 平行四边形比分板（sprite_377=红 / sprite_235=蓝），横向拉长贴合区域
-        painter.textureRegion(barTexture, x, y, width, height,
+    /** 每侧两块：上层横拉长条（表格“拉长”），下层原比例比分板（表格“不变”）。 */
+    private static void drawSidePlate(StrinovaHudPainter painter, ResourceLocation texture,
+                                      int centerX, int y, String score, boolean leftSide) {
+        // 上层：横向拉长
+        int stretchW = 96;
+        int stretchH = 12;
+        painter.textureRegion(texture, centerX - stretchW / 2, y + 3, stretchW, stretchH,
                 0.0F, 0.0F, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
-        int textY = y + (height - painter.textHeight()) / 2;
-        if (allySide) {
-            painter.textRightAligned(score, x + width - 8, textY, scoreColor, true);
-        } else {
-            painter.text(score, x + 8, textY, scoreColor, true);
-        }
+
+        // 下层：保持原比例，不拉伸
+        int bottomH = 22;
+        int bottomW = Math.round(bottomH * 95.0F / 42.0F);
+        int bottomY = y + 18;
+        int bottomX = centerX - bottomW / 2;
+        painter.textureRegion(texture, bottomX, bottomY, bottomW, bottomH,
+                0.0F, 0.0F, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
+
+        // 回合分数写在下面未拉伸的板上
+        int textX = centerX - painter.textWidth(score) / 2;
+        int textY = bottomY + (bottomH - painter.textHeight()) / 2;
+        painter.text(score, textX, textY, 0xFFFFFFFF, true);
     }
 
     private static int withAlpha(int color, int alpha) {
