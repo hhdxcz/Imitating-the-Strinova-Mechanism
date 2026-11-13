@@ -4,6 +4,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -42,7 +43,8 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
 
     /** 一个可编辑图层：key 用于配置，x/y/w/h 为当前（已应用偏移缩放）矩形。 */
     public record Layer(String key, String type, int x, int y, int w, int h,
-                        boolean visible, int baseX, int baseY, int baseW, int baseH) {
+                        boolean visible, int baseX, int baseY, int baseW, int baseH,
+                        float rotation, float opacity, boolean mirrorX, boolean mirrorY, int order) {
     }
 
     @Override
@@ -56,28 +58,40 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         List<StrinovaScoreboardState.Entry> allies = StrinovaScoreboardState.allies();
         List<StrinovaScoreboardState.Entry> enemies = StrinovaScoreboardState.enemies();
 
-        for (Layer layer : layers(painter, x, y)) {
+        List<Layer> sorted = new ArrayList<>(layers(painter, x, y));
+        sorted.sort(Comparator.comparingInt(Layer::order));
+        for (Layer layer : sorted) {
             if (!layer.visible()) {
                 continue;
             }
+            boolean transformed = layer.rotation() != 0.0F || layer.mirrorX() || layer.mirrorY();
+            if (transformed) {
+                painter.pushTransform(layer.x() + layer.w() / 2.0F, layer.y() + layer.h() / 2.0F,
+                        layer.rotation(), layer.mirrorX(), layer.mirrorY());
+            }
+            StrinovaHudPainter draw = layer.opacity() < 0.999F
+                    ? new StrinovaAlphaPainter(painter, layer.opacity()) : painter;
             switch (layer.key()) {
-                case "leftTop" -> painter.textureRegion(TEX_SCORE_BLUE, layer.x(), layer.y(),
+                case "leftTop" -> draw.textureRegion(TEX_SCORE_BLUE, layer.x(), layer.y(),
                         layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
-                case "rightTop" -> painter.textureRegion(TEX_SCORE_RED, layer.x(), layer.y(),
+                case "rightTop" -> draw.textureRegion(TEX_SCORE_RED, layer.x(), layer.y(),
                         layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
-                case "leftBottom" -> painter.textureRegion(TEX_SCORE_BLUE, layer.x(), layer.y(),
+                case "leftBottom" -> draw.textureRegion(TEX_SCORE_BLUE, layer.x(), layer.y(),
                         layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
-                case "rightBottom" -> painter.textureRegion(TEX_SCORE_RED, layer.x(), layer.y(),
+                case "rightBottom" -> draw.textureRegion(TEX_SCORE_RED, layer.x(), layer.y(),
                         layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
-                case "leftScore" -> drawScoreText(painter, layer, scoreAlly);
-                case "rightScore" -> drawScoreText(painter, layer, scoreEnemy);
-                case "portraitsLeft" -> drawPortraitRow(painter, layer, allies);
-                case "portraitsRight" -> drawPortraitRow(painter, layer, enemies);
-                case "target" -> drawTargetText(painter, layer, active);
-                case "separator" -> drawSeparator(painter, layer);
-                case "timer" -> drawTimer(painter, layer, active);
+                case "leftScore" -> drawScoreText(draw, layer, scoreAlly);
+                case "rightScore" -> drawScoreText(draw, layer, scoreEnemy);
+                case "portraitsLeft" -> drawPortraitRow(draw, layer, allies);
+                case "portraitsRight" -> drawPortraitRow(draw, layer, enemies);
+                case "target" -> drawTargetText(draw, layer, active);
+                case "separator" -> drawSeparator(draw, layer);
+                case "timer" -> drawTimer(draw, layer, active);
                 default -> {
                 }
+            }
+            if (transformed) {
+                painter.popTransform();
             }
         }
     }
@@ -152,7 +166,8 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         int h = Math.max(2, Math.round(baseH * style.scaleY));
         int x = baseX + style.offsetX - (w - baseW) / 2;
         int y = baseY + style.offsetY - (h - baseH) / 2;
-        return new Layer(key, type, x, y, w, h, style.visible, baseX, baseY, baseW, baseH);
+        return new Layer(key, type, x, y, w, h, style.visible, baseX, baseY, baseW, baseH,
+                style.rotation, style.opacity, style.mirrorX, style.mirrorY, style.order);
     }
 
     private static void drawScoreText(StrinovaHudPainter painter, Layer layer, String score) {

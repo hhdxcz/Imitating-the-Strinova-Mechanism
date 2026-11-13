@@ -163,6 +163,24 @@ public final class StrinovaProgrammaticPainter implements StrinovaHudPainter {
     }
 
     @Override
+    public void pushTransform(float centerX, float centerY, float rotationDeg,
+                              boolean mirrorX, boolean mirrorY) {
+        var pose = this.graphics.pose();
+        pose.pushPose();
+        pose.translate(centerX, centerY, 0.0D);
+        if (rotationDeg != 0.0F) {
+            pose.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(rotationDeg));
+        }
+        pose.scale(mirrorX ? -1.0F : 1.0F, mirrorY ? -1.0F : 1.0F, 1.0F);
+        pose.translate(-centerX, -centerY, 0.0D);
+    }
+
+    @Override
+    public void popTransform() {
+        this.graphics.pose().popPose();
+    }
+
+    @Override
     public void textureRegion(ResourceLocation texture, int x, int y, int width, int height,
                               float u, float v, int uWidth, int vHeight, int texWidth, int texHeight,
                               int argb, float alpha) {

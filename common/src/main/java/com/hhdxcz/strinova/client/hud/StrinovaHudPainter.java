@@ -70,4 +70,11 @@ public interface StrinovaHudPainter {
     void textureRegion(ResourceLocation texture, int x, int y, int width, int height,
                        float u, float v, int uWidth, int vHeight, int texWidth, int texHeight,
                        int argb, float alpha);
+
+    /** 以 (centerX, centerY) 为中心压入旋转/镜像变换（配对 popTransform）。 */
+    void pushTransform(float centerX, float centerY, float rotationDeg,
+                       boolean mirrorX, boolean mirrorY);
+
+    /** 弹出 pushTransform 的变换。 */
+    void popTransform();
 }

@@ -11,14 +11,20 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * 顶部面板图形化编辑器（类画图工具）：
- * 选择单个图层后拖动移动，拖动 8 个控制点可拉伸/缩放；支持显隐、复位。
- *
- * <p>打开：{@code /strinova_client topbar} 或战斗设置「顶部面板…」。</p>
+ * 顶部面板画图式编辑器：
+ * 单击选中，Ctrl 单击多选，拖动移动；8 控制点缩放（Shift 等比）；
+ * 支持旋转、透明度、镜像、层级顺序。
  */
 public class StrinovaMatchHeaderEditorScreen extends Screen {
 
@@ -27,16 +33,13 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
     private static final int HANDLE = 5;
 
     private final Screen parent;
+    private final Set<String> selected = new LinkedHashSet<>();
     private int previewX;
     private int previewY;
-    private String selected;
     private String dragMode;
+    private String activeLayer;
     private double dragStartX;
     private double dragStartY;
-    private int startOffsetX;
-    private int startOffsetY;
-    private float startScaleX;
-    private float startScaleY;
     private int startLayerX;
     private int startLayerY;
     private int startLayerW;
@@ -45,6 +48,7 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
     private int startBaseH;
     private int startBaseX;
     private int startBaseY;
+    private final Map<String, int[]> startOffsets = new LinkedHashMap<>();
 
     public StrinovaMatchHeaderEditorScreen(@Nullable Screen parent) {
         super(Component.literal("顶部面板编辑器"));
@@ -56,6 +60,25 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
         StrinovaHudMockData.ensureScoreboardPreview();
         this.previewX = Math.max(4, (this.width - WIDTH) / 2);
         this.previewY = 78;
+        int cx = this.width / 2;
+
+        this.addRenderableWidget(Button.builder(Component.literal("旋转 -15"), b -> rotate(-15.0F))
+                .bounds(cx - 172, this.height - 78, 80, 20).build());
+        this.addRenderableWidget(Button.builder(Component.literal("旋转 +15"), b -> rotate(15.0F))
+                .bounds(cx - 88, this.height - 78, 80, 20).build());
+        this.addRenderableWidget(Button.builder(Component.literal("透明 -"), b -> opacity(-0.1F))
+                .bounds(cx - 4, this.height - 78, 80, 20).build());
+        this.addRenderableWidget(Button.builder(Component.literal("透明 +"), b -> opacity(0.1F))
+                .bounds(cx + 80, this.height - 78, 80, 20).build());
+
+        this.addRenderableWidget(Button.builder(Component.literal("镜像 X"), b -> mirror(true))
+                .bounds(cx - 172, this.height - 54, 80, 20).build());
+        this.addRenderableWidget(Button.builder(Component.literal("镜像 Y"), b -> mirror(false))
+                .bounds(cx - 88, this.height - 54, 80, 20).build());
+        this.addRenderableWidget(Button.builder(Component.literal("上移一层"), b -> order(1))
+                .bounds(cx - 4, this.height - 54, 80, 20).build());
+        this.addRenderableWidget(Button.builder(Component.literal("下移一层"), b -> order(-1))
+                .bounds(cx + 80, this.height - 54, 80, 20).build());
 
         this.addRenderableWidget(Button.builder(Component.literal("全部复位"), b -> {
             StrinovaHudConfig config = StrinovaHudConfig.get();
@@ -64,41 +87,45 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
                 style.offsetY = 0;
                 style.scaleX = 1.0F;
                 style.scaleY = 1.0F;
+                style.rotation = 0.0F;
+                style.opacity = 1.0F;
+                style.mirrorX = false;
+                style.mirrorY = false;
                 style.visible = true;
+                style.order = 0;
             }
-        }).bounds(this.width / 2 - 155, this.height - 28, 80, 20).build());
+        }).bounds(cx - 172, this.height - 28, 80, 20).build());
         this.addRenderableWidget(Button.builder(Component.literal("显隐选中"), b -> {
-            if (this.selected != null) {
-                StrinovaHudConfig.HeaderLayerStyle style = StrinovaHudConfig.get().matchHeaderLayer(this.selected);
+            for (String key : this.selected) {
+                StrinovaHudConfig.HeaderLayerStyle style = StrinovaHudConfig.get().matchHeaderLayer(key);
                 style.visible = !style.visible;
             }
-        }).bounds(this.width / 2 - 70, this.height - 28, 80, 20).build());
+        }).bounds(cx - 88, this.height - 28, 80, 20).build());
         this.addRenderableWidget(Button.builder(Component.literal("完成"), b -> this.saveAndClose())
-                .bounds(this.width / 2 + 15, this.height - 28, 60, 20).build());
+                .bounds(cx - 4, this.height - 28, 80, 20).build());
         this.addRenderableWidget(Button.builder(Component.literal("返回"), b -> this.onClose())
-                .bounds(this.width / 2 + 80, this.height - 28, 60, 20).build());
+                .bounds(cx + 80, this.height - 28, 80, 20).build());
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
         StrinovaProgrammaticPainter painter = new StrinovaProgrammaticPainter(graphics);
-        StrinovaMatchHeaderWidget widget = new StrinovaMatchHeaderWidget();
-        widget.render(painter, this.previewX, this.previewY);
+        new StrinovaMatchHeaderWidget().render(painter, this.previewX, this.previewY);
 
         List<StrinovaMatchHeaderWidget.Layer> layers =
                 StrinovaMatchHeaderWidget.layers(painter, this.previewX, this.previewY);
         for (StrinovaMatchHeaderWidget.Layer layer : layers) {
-            boolean isSelected = layer.key().equals(this.selected);
+            boolean isSelected = this.selected.contains(layer.key());
             int color = isSelected ? 0xFFFF4FA3 : 0x33FFFFFF;
             painter.border(layer.x() - 1, layer.y() - 1, layer.w() + 2, layer.h() + 2, color, 1);
             if (!layer.visible()) {
                 painter.text("OFF", layer.x() + 1, layer.y() + 1, 0x99FFD166, false);
             }
         }
-        if (this.selected != null) {
+        if (this.selected.size() == 1) {
             for (StrinovaMatchHeaderWidget.Layer layer : layers) {
-                if (layer.key().equals(this.selected)) {
+                if (layer.key().equals(this.selected.iterator().next())) {
                     drawHandles(painter, layer);
                     break;
                 }
@@ -107,11 +134,19 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
 
         graphics.drawCenteredString(this.font, this.title, this.width / 2, 12, 0xFFFFFFFF);
         graphics.drawCenteredString(this.font,
-                Component.literal("单击选中图层；拖动内部移动；拖动 8 个控制点拉伸大小；「显隐选中」切换显示"),
+                Component.literal("单击选中，Ctrl+单击多选；拖动移动；8点缩放（Shift 等比）；Delete 隐藏"),
                 this.width / 2, 32, 0xFFAAAAAA);
-        graphics.drawCenteredString(this.font,
-                Component.literal("选中：" + (this.selected == null ? "无" : this.selected)),
-                this.width / 2, 50, 0xFFFFD166);
+        String info = this.selected.isEmpty() ? "选中：无" : "选中：" + String.join(", ", this.selected);
+        graphics.drawCenteredString(this.font, Component.literal(info), this.width / 2, 50, 0xFFFFD166);
+        StrinovaHudConfig.HeaderLayerStyle active = this.selected.size() == 1
+                ? StrinovaHudConfig.get().matchHeaderLayer(this.selected.iterator().next()) : null;
+        if (active != null) {
+            String detail = String.format(java.util.Locale.ROOT,
+                    "旋转 %.0f°  透明度 %.0f%%  层级 %d  镜像 X:%s Y:%s",
+                    active.rotation, active.opacity * 100.0F, active.order,
+                    active.mirrorX ? "开" : "关", active.mirrorY ? "开" : "关");
+            graphics.drawCenteredString(this.font, Component.literal(detail), this.width / 2, 64, 0xFFFFFFFF);
+        }
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
@@ -141,10 +176,10 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
         List<StrinovaMatchHeaderWidget.Layer> layers =
                 StrinovaMatchHeaderWidget.layers(painter, this.previewX, this.previewY);
 
-        // 先判断当前选中图层的控制点
-        if (this.selected != null) {
+        if (this.selected.size() == 1) {
+            String key = this.selected.iterator().next();
             for (StrinovaMatchHeaderWidget.Layer layer : layers) {
-                if (!layer.key().equals(this.selected)) {
+                if (!layer.key().equals(key)) {
                     continue;
                 }
                 String mode = handleAt(layer, mouseX, mouseY);
@@ -154,29 +189,42 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
                 }
             }
         }
-        // 再选中最上层图层
+
+        StrinovaMatchHeaderWidget.Layer hit = null;
         for (int i = layers.size() - 1; i >= 0; i--) {
-            StrinovaMatchHeaderWidget.Layer layer = layers.get(i);
-            if (inside(layer, mouseX, mouseY)) {
-                this.selected = layer.key();
-                this.beginDrag(layer, "move", mouseX, mouseY);
-                return true;
+            if (inside(layers.get(i), mouseX, mouseY)) {
+                hit = layers.get(i);
+                break;
             }
         }
-        this.selected = null;
-        return false;
+        if (hit == null) {
+            if (!Screen.hasControlDown()) {
+                this.selected.clear();
+            }
+            return false;
+        }
+        if (Screen.hasControlDown()) {
+            if (this.selected.contains(hit.key())) {
+                this.selected.remove(hit.key());
+            } else {
+                this.selected.add(hit.key());
+            }
+            return true;
+        }
+        if (!this.selected.contains(hit.key())) {
+            this.selected.clear();
+            this.selected.add(hit.key());
+        }
+        this.beginDrag(hit, "move", mouseX, mouseY);
+        return true;
     }
 
     private void beginDrag(StrinovaMatchHeaderWidget.Layer layer, String mode, double mouseX, double mouseY) {
-        StrinovaHudConfig.HeaderLayerStyle style = StrinovaHudConfig.get().matchHeaderLayer(layer.key());
+        StrinovaHudConfig config = StrinovaHudConfig.get();
         this.dragMode = mode;
-        this.selected = layer.key();
+        this.activeLayer = layer.key();
         this.dragStartX = mouseX;
         this.dragStartY = mouseY;
-        this.startOffsetX = style.offsetX;
-        this.startOffsetY = style.offsetY;
-        this.startScaleX = style.scaleX;
-        this.startScaleY = style.scaleY;
         this.startLayerX = layer.x();
         this.startLayerY = layer.y();
         this.startLayerW = layer.w();
@@ -185,61 +233,73 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
         this.startBaseH = layer.baseH();
         this.startBaseX = layer.baseX();
         this.startBaseY = layer.baseY();
+        this.startOffsets.clear();
+        for (String key : this.selected) {
+            StrinovaHudConfig.HeaderLayerStyle style = config.matchHeaderLayer(key);
+            this.startOffsets.put(key, new int[]{style.offsetX, style.offsetY});
+        }
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (this.dragMode != null && this.selected != null && button == 0) {
-            StrinovaHudConfig.HeaderLayerStyle style = StrinovaHudConfig.get().matchHeaderLayer(this.selected);
-            int dx = (int) Math.round(mouseX - this.dragStartX);
-            int dy = (int) Math.round(mouseY - this.dragStartY);
+        if (this.dragMode == null || this.activeLayer == null || button != 0) {
+            return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        }
+        StrinovaHudConfig config = StrinovaHudConfig.get();
+        int dx = (int) Math.round(mouseX - this.dragStartX);
+        int dy = (int) Math.round(mouseY - this.dragStartY);
 
-            if ("move".equals(this.dragMode)) {
-                style.offsetX = this.startOffsetX + dx;
-                style.offsetY = this.startOffsetY + dy;
-                return true;
+        if ("move".equals(this.dragMode)) {
+            for (Map.Entry<String, int[]> entry : this.startOffsets.entrySet()) {
+                StrinovaHudConfig.HeaderLayerStyle style = config.matchHeaderLayer(entry.getKey());
+                style.offsetX = entry.getValue()[0] + dx;
+                style.offsetY = entry.getValue()[1] + dy;
             }
-
-            boolean west = this.dragMode.contains("w");
-            boolean east = this.dragMode.contains("e");
-            boolean north = this.dragMode.contains("n");
-            boolean south = this.dragMode.contains("s");
-
-            int left = this.startLayerX + (west ? dx : 0);
-            int right = this.startLayerX + this.startLayerW + (east ? dx : 0);
-            int top = this.startLayerY + (north ? dy : 0);
-            int bottom = this.startLayerY + this.startLayerH + (south ? dy : 0);
-            int newW = Math.max(6, right - left);
-            int newH = Math.max(6, bottom - top);
-
-            float scaleX = clamp(newW / (float) this.startBaseW);
-            float scaleY = clamp(newH / (float) this.startBaseH);
-            boolean uniform = isTextLayer(this.selected);
-            if (uniform) {
-                float scale = Math.max(scaleX, scaleY);
-                scaleX = scale;
-                scaleY = scale;
-                newW = Math.max(6, Math.round(this.startBaseW * scale));
-                newH = Math.max(6, Math.round(this.startBaseH * scale));
-                if (west) {
-                    left = right - newW;
-                } else if (east) {
-                    right = left + newW;
-                }
-                if (north) {
-                    top = bottom - newH;
-                } else if (south) {
-                    bottom = top + newH;
-                }
-            }
-
-            style.scaleX = scaleX;
-            style.scaleY = scaleY;
-            style.offsetX = left - this.startBaseX + (newW - this.startBaseW) / 2;
-            style.offsetY = top - this.startBaseY + (newH - this.startBaseH) / 2;
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+
+        if (this.selected.size() != 1) {
+            return true;
+        }
+        StrinovaHudConfig.HeaderLayerStyle style = config.matchHeaderLayer(this.activeLayer);
+        boolean west = this.dragMode.contains("w");
+        boolean east = this.dragMode.contains("e");
+        boolean north = this.dragMode.contains("n");
+        boolean south = this.dragMode.contains("s");
+
+        int left = this.startLayerX + (west ? dx : 0);
+        int right = this.startLayerX + this.startLayerW + (east ? dx : 0);
+        int top = this.startLayerY + (north ? dy : 0);
+        int bottom = this.startLayerY + this.startLayerH + (south ? dy : 0);
+        int newW = Math.max(6, right - left);
+        int newH = Math.max(6, bottom - top);
+
+        float scaleX = clamp(newW / (float) this.startBaseW);
+        float scaleY = clamp(newH / (float) this.startBaseH);
+        boolean uniform = isTextLayer(this.activeLayer) || Screen.hasShiftDown();
+        if (uniform) {
+            float scale = Math.max(scaleX, scaleY);
+            scaleX = scale;
+            scaleY = scale;
+            newW = Math.max(6, Math.round(this.startBaseW * scale));
+            newH = Math.max(6, Math.round(this.startBaseH * scale));
+            if (west) {
+                left = right - newW;
+            } else if (east) {
+                right = left + newW;
+            }
+            if (north) {
+                top = bottom - newH;
+            } else if (south) {
+                bottom = top + newH;
+            }
+        }
+
+        style.scaleX = scaleX;
+        style.scaleY = scaleY;
+        style.offsetX = left - this.startBaseX + (newW - this.startBaseW) / 2;
+        style.offsetY = top - this.startBaseY + (newH - this.startBaseH) / 2;
+        return true;
     }
 
     private static boolean isTextLayer(String key) {
@@ -282,10 +342,111 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (this.dragMode != null && button == 0) {
             this.dragMode = null;
+            this.activeLayer = null;
             StrinovaHudConfig.get().save();
             return true;
         }
         return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_DELETE || keyCode == GLFW.GLFW_KEY_BACKSPACE) {
+            for (String key : this.selected) {
+                StrinovaHudConfig.get().matchHeaderLayer(key).visible =
+                        !StrinovaHudConfig.get().matchHeaderLayer(key).visible;
+            }
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_LEFT_BRACKET) {
+            rotate(-15.0F);
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_RIGHT_BRACKET) {
+            rotate(15.0F);
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_MINUS) {
+            opacity(-0.1F);
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_EQUAL) {
+            opacity(0.1F);
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_M) {
+            mirror(!Screen.hasShiftDown());
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_PAGE_UP) {
+            order(1);
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_PAGE_DOWN) {
+            order(-1);
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    private void rotate(float delta) {
+        for (String key : this.selected) {
+            StrinovaHudConfig.HeaderLayerStyle style = StrinovaHudConfig.get().matchHeaderLayer(key);
+            style.rotation = Math.max(-180.0F, Math.min(180.0F, style.rotation + delta));
+        }
+    }
+
+    private void opacity(float delta) {
+        for (String key : this.selected) {
+            StrinovaHudConfig.HeaderLayerStyle style = StrinovaHudConfig.get().matchHeaderLayer(key);
+            style.opacity = Math.max(0.0F, Math.min(1.0F, style.opacity + delta));
+        }
+    }
+
+    private void mirror(boolean xAxis) {
+        for (String key : this.selected) {
+            StrinovaHudConfig.HeaderLayerStyle style = StrinovaHudConfig.get().matchHeaderLayer(key);
+            if (xAxis) {
+                style.mirrorX = !style.mirrorX;
+            } else {
+                style.mirrorY = !style.mirrorY;
+            }
+        }
+    }
+
+    private void order(int delta) {
+        if (this.selected.isEmpty()) {
+            return;
+        }
+        StrinovaProgrammaticPainter painter = new StrinovaProgrammaticPainter(null);
+        List<StrinovaMatchHeaderWidget.Layer> layers =
+                StrinovaMatchHeaderWidget.layers(painter, this.previewX, this.previewY);
+        layers.sort(Comparator.comparingInt(StrinovaMatchHeaderWidget.Layer::order));
+        List<String> keys = new ArrayList<>();
+        for (StrinovaMatchHeaderWidget.Layer layer : layers) {
+            keys.add(layer.key());
+        }
+        List<String> moved = new ArrayList<>(this.selected);
+        moved.sort(Comparator.comparingInt(keys::indexOf));
+        if (delta > 0) {
+            java.util.Collections.reverse(moved);
+        }
+        for (String key : moved) {
+            int index = keys.indexOf(key);
+            if (index < 0) {
+                continue;
+            }
+            int target = Math.max(0, Math.min(keys.size() - 1, index + delta));
+            if (target == index) {
+                continue;
+            }
+            keys.remove(index);
+            keys.add(target, key);
+        }
+        StrinovaHudConfig config = StrinovaHudConfig.get();
+        for (int i = 0; i < keys.size(); i++) {
+            config.matchHeaderLayer(keys.get(i)).order = i;
+        }
     }
 
     @Override

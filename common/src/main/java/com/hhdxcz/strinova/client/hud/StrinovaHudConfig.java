@@ -62,6 +62,11 @@ public final class StrinovaHudConfig {
         public float scaleX = 1.0F;
         public float scaleY = 1.0F;
         public boolean visible = true;
+        public float rotation = 0.0F;
+        public float opacity = 1.0F;
+        public boolean mirrorX = false;
+        public boolean mirrorY = false;
+        public int order = 0;
     }
 
     /** 取/建顶部面板图层样式。 */
@@ -325,6 +330,9 @@ public final class StrinovaHudConfig {
             style.offsetY = clamp(style.offsetY, -400, 400);
             style.scaleX = Math.max(0.2F, Math.min(3.0F, style.scaleX));
             style.scaleY = Math.max(0.2F, Math.min(3.0F, style.scaleY));
+            style.rotation = Math.max(-360.0F, Math.min(360.0F, style.rotation));
+            style.opacity = Math.max(0.0F, Math.min(1.0F, style.opacity));
+            style.order = Math.max(-100, Math.min(100, style.order));
         }
         crosshairGap = clamp(crosshairGap, 0, 12);
         crosshairLength = clamp(crosshairLength, 4, 16);
