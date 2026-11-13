@@ -1,0 +1,8 @@
+name,file,x,y,w,h,target,stretch,slice,tint,notes
+center_plate,center_plate.png,,,,center_plate,none,,none,中央黑色斜角底板
+score_red,score_red.png,,,,score_red,horizontal,,white,红队比分底条
+score_blue,score_blue.png,,,,score_blue,horizontal,,white,蓝队比分底条
+frame_left,frame_left.png,,,,frame,none,,white,左侧白色斜线
+frame_right,frame_right.png,,,,frame,none,,white,右侧白色斜线
+portrait_frame,portrait_frame.png,,,,portrait,none,,white,头像白框
+faction_badge,faction_badge.png,,,,faction,none,,white,头像下白色小徽章
