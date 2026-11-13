@@ -30,6 +30,16 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
     private static final int COLOR_SILVER = 0x99C8D2DE;
     private static final int COLOR_SILVER_DIM = 0x55C8D2DE;
 
+    /** 顶部面板贴图（来自 SS_UI_HUDPC / T_UI_HUDPC_SPR_UI_HUDPC_ScoreLine）。 */
+    private static final ResourceLocation TEX_CENTER =
+            new ResourceLocation("strinova", "textures/gui/topbar/center_plate.png");
+    private static final ResourceLocation TEX_SCORELINE =
+            new ResourceLocation("strinova", "textures/gui/topbar/scoreline.png");
+    private static final ResourceLocation TEX_TEAM_RED =
+            new ResourceLocation("strinova", "textures/gui/topbar/team_red.png");
+    private static final ResourceLocation TEX_TEAM_BLUE =
+            new ResourceLocation("strinova", "textures/gui/topbar/team_blue.png");
+
     @Override
     public StrinovaHudLayout.Element element() {
         return StrinovaHudLayout.Element.MATCH_HEADER;
@@ -54,8 +64,14 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         drawWing(painter, x, y + HEIGHT / 2, 130, false);
         drawWing(painter, x + WIDTH - 130, y + HEIGHT / 2, 130, true);
 
-        // 中央斜切暗底
-        slanted(painter, centerX - 150, y + 3, 300, HEIGHT - 6, 12, COLOR_CENTER);
+        // 中央黑色斜角底板（游戏贴图）
+        painter.textureRegion(TEX_CENTER, centerX - 150, y + 2, 300, HEIGHT - 4,
+                0.0F, 0.0F, 166, 103, 166, 103, 0xFFFFFFFF, 1.0F);
+        // 两侧白色斜线（ScoreLine 贴图）
+        painter.textureRegion(TEX_SCORELINE, centerX - 154, y + 7, 18, 46,
+                0.0F, 0.0F, 101, 82, 101, 82, 0xE6FFFFFF, 1.0F);
+        painter.textureRegion(TEX_SCORELINE, centerX + 136, y + 7, 18, 46,
+                0.0F, 0.0F, 101, 82, 101, 82, 0xE6FFFFFF, 1.0F);
         painter.rect(x + 130, y + 1, WIDTH - 260, 1, COLOR_SILVER_DIM);
         painter.rect(x + 150, y + HEIGHT - 2, WIDTH - 300, 1, COLOR_SILVER_DIM);
 
@@ -91,9 +107,9 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
 
         // 左右比分板（斜切）
         drawScorePlate(painter, centerX - 132, y + 20, 74, 22, 10, COLOR_PLATE, COLOR_ALLY,
-                twoDigits(alliesScore), COLOR_ALLY_TEXT, true);
+                twoDigits(alliesScore), COLOR_ALLY_TEXT, true, TEX_TEAM_RED);
         drawScorePlate(painter, centerX + 58, y + 20, 74, 22, -10, COLOR_PLATE, COLOR_ENEMY,
-                twoDigits(enemiesScore), COLOR_ENEMY_TEXT, false);
+                twoDigits(enemiesScore), COLOR_ENEMY_TEXT, false, TEX_TEAM_BLUE);
 
         // 中间比分连接线
         painter.rect(centerX - 40, y + 30, 80, 1, COLOR_SILVER_DIM);
@@ -134,23 +150,21 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
     /** 比分斜切板：左侧红色、右侧蓝色。 */
     private static void drawScorePlate(StrinovaHudPainter painter, int x, int y, int width, int height,
                                        int skew, int bg, int edge, String score, int scoreColor,
-                                       boolean allySide) {
-        slanted(painter, x, y, width, height, skew, bg);
-        for (int i = 0; i < height; i++) {
-            float t = height <= 1 ? 0.5F : (float) i / (height - 1);
-            int offset = Math.round((t - 0.5F) * skew);
-            if (i == 0 || i == height - 1) {
-                painter.rect(x + offset, y + i, width, 1, edge);
-            }
-        }
+                                       boolean allySide, ResourceLocation barTexture) {
+        // 游戏内红/蓝比分条（六边形端 + 斜边），整条拉伸到比分板区域
+        painter.textureRegion(barTexture, x, y, width, height,
+                0.0F, 0.0F, 450, 44, 450, 44, 0xFFFFFFFF, 1.0F);
+        painter.border(x, y, width, height, withAlpha(edge, 0x99), 1);
         int textY = y + (height - painter.textHeight()) / 2;
         if (allySide) {
-            painter.textRightAligned(score, x + width - 10, textY, scoreColor, true);
-            painter.rect(x + width - 6, y + 4, 2, height - 8, edge);
+            painter.textRightAligned(score, x + width - 8, textY, scoreColor, true);
         } else {
-            painter.text(score, x + 10, textY, scoreColor, true);
-            painter.rect(x + 4, y + 4, 2, height - 8, edge);
+            painter.text(score, x + 8, textY, scoreColor, true);
         }
+    }
+
+    private static int withAlpha(int color, int alpha) {
+        return (Math.max(0, Math.min(255, alpha)) << 24) | (color & 0x00FFFFFF);
     }
 
     /** 顶部面板玩家头像：官方 RoleScoreboard 贴图；未选角/中途加入用 HalfEnterEmpty。 */
