@@ -24,6 +24,11 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
             new ResourceLocation("strinova", "textures/gui/topbar/score_blue.png");
     private static final ResourceLocation TEX_SCORE_RED =
             new ResourceLocation("strinova", "textures/gui/topbar/score_red.png");
+    /** 最上层两张长条：sprite_666（蓝）/ sprite_777（红）。 */
+    private static final ResourceLocation TEX_TOP_BLUE =
+            new ResourceLocation("strinova", "textures/gui/topbar/top_blue.png");
+    private static final ResourceLocation TEX_TOP_RED =
+            new ResourceLocation("strinova", "textures/gui/topbar/top_red.png");
     private static final int COLOR_TEXT_DIM = 0xFF9FC6D8;
 
     @Override
@@ -72,10 +77,10 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
             StrinovaHudPainter draw = layer.opacity() < 0.999F
                     ? new StrinovaAlphaPainter(painter, layer.opacity()) : painter;
             switch (layer.key()) {
-                case "leftTop" -> draw.textureRegion(TEX_SCORE_BLUE, layer.x(), layer.y(),
-                        layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
-                case "rightTop" -> draw.textureRegion(TEX_SCORE_RED, layer.x(), layer.y(),
-                        layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
+                case "leftTop" -> draw.textureRegion(TEX_TOP_BLUE, layer.x(), layer.y(),
+                        layer.w(), layer.h(), 0, 0, 587, 42, 587, 42, 0xFFFFFFFF, 1.0F);
+                case "rightTop" -> draw.textureRegion(TEX_TOP_RED, layer.x(), layer.y(),
+                        layer.w(), layer.h(), 0, 0, 588, 42, 588, 42, 0xFFFFFFFF, 1.0F);
                 case "leftBottom" -> draw.textureRegion(TEX_SCORE_BLUE, layer.x(), layer.y(),
                         layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
                 case "rightBottom" -> draw.textureRegion(TEX_SCORE_RED, layer.x(), layer.y(),
