@@ -40,9 +40,9 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
     private static final ResourceLocation TEX_SCORELINE =
             new ResourceLocation("strinova", "textures/gui/topbar/scoreline.png");
     private static final ResourceLocation TEX_TEAM_RED =
-            new ResourceLocation("strinova", "textures/gui/topbar/team_red.png");
+            new ResourceLocation("strinova", "textures/gui/topbar/score_red.png");
     private static final ResourceLocation TEX_TEAM_BLUE =
-            new ResourceLocation("strinova", "textures/gui/topbar/team_blue.png");
+            new ResourceLocation("strinova", "textures/gui/topbar/score_blue.png");
 
     @Override
     public StrinovaHudLayout.Element element() {
@@ -116,9 +116,9 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         int leftScoreX = plateX - 6 - SCORE_PLATE_W;
         int rightScoreX = plateX + CENTER_PLATE_W + 6;
         drawScorePlate(painter, leftScoreX, scoreY, SCORE_PLATE_W, SCORE_PLATE_H, 10,
-                COLOR_PLATE, COLOR_ALLY, twoDigits(alliesScore), COLOR_ALLY_TEXT, true, TEX_TEAM_RED);
+                COLOR_PLATE, COLOR_ALLY, twoDigits(alliesScore), 0xFFFFFFFF, true, TEX_TEAM_RED);
         drawScorePlate(painter, rightScoreX, scoreY, SCORE_PLATE_W, SCORE_PLATE_H, -10,
-                COLOR_PLATE, COLOR_ENEMY, twoDigits(enemiesScore), COLOR_ENEMY_TEXT, false, TEX_TEAM_BLUE);
+                COLOR_PLATE, COLOR_ENEMY, twoDigits(enemiesScore), 0xFFFFFFFF, false, TEX_TEAM_BLUE);
 
         // 中间比分连接线
         painter.rect(centerX - 40, y + 30, 80, 1, COLOR_SILVER_DIM);
@@ -160,10 +160,9 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
     private static void drawScorePlate(StrinovaHudPainter painter, int x, int y, int width, int height,
                                        int skew, int bg, int edge, String score, int scoreColor,
                                        boolean allySide, ResourceLocation barTexture) {
-        // 游戏内红/蓝比分条（六边形端 + 斜边），整条拉伸到比分板区域
+        // 平行四边形比分板（sprite_377=红 / sprite_235=蓝），横向拉长贴合区域
         painter.textureRegion(barTexture, x, y, width, height,
-                0.0F, 0.0F, 450, 44, 450, 44, 0xFFFFFFFF, 1.0F);
-        painter.border(x, y, width, height, withAlpha(edge, 0x99), 1);
+                0.0F, 0.0F, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
         int textY = y + (height - painter.textHeight()) / 2;
         if (allySide) {
             painter.textRightAligned(score, x + width - 8, textY, scoreColor, true);
