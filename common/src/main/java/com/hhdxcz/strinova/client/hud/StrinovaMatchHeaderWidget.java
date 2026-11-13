@@ -137,7 +137,8 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         int rightBottomX = centerX + 105 - bottomW / 2;
 
         int targetW = Math.max(1, painter.textWidth(roundText));
-        int timerW = Math.max(1, Math.round(StrinovaHudDigits.textWidth(time, 24.0F)));
+        // 倒计时按 HUD 字体绘制（实心圆润数字），不再使用 DP_Num 七段贴图
+        int timerW = Math.max(1, Math.round(painter.textWidth(time) * (24.0F / 9.0F)));
         int sepW = 42;
 
         List<Layer> out = new ArrayList<>();
@@ -206,7 +207,7 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         float scale = Math.max(0.4F, layer.h() / 9.0F);
         float width = painter.textWidth(text) * scale;
         painter.textScaled(text, layer.x() + (layer.w() - width) / 2.0F, layer.y(),
-                scale, COLOR_TEXT_DIM, false);
+                scale, COLOR_TEXT_DIM, true);
     }
 
     private static void drawSeparator(StrinovaHudPainter painter, Layer layer) {
@@ -224,8 +225,10 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
             seconds = 0;
         }
         String time = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60);
-        float height = Math.max(8.0F, layer.h());
-        StrinovaHudDigits.draw(painter, time, layer.x(), layer.y(), height, 0xFFFFFFFF, 1.0F);
+        float scale = Math.max(0.8F, layer.h() / 9.0F);
+        float width = painter.textWidth(time) * scale;
+        painter.textScaled(time, layer.x() + (layer.w() - width) / 2.0F, layer.y(),
+                scale, 0xFFFFFFFF, true);
     }
 
     /** 顶部面板玩家头像：官方 RoleScoreboard 贴图。 */
