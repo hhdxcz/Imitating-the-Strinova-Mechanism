@@ -137,8 +137,7 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         int rightBottomX = centerX + 105 - bottomW / 2;
 
         int targetW = Math.max(1, painter.textWidth(roundText));
-        // 倒计时按 HUD 字体绘制（实心圆润数字），不再使用 DP_Num 七段贴图
-        int timerW = Math.max(1, Math.round(painter.textWidth(time) * (24.0F / 9.0F)));
+        int timerW = Math.max(1, Math.round(StrinovaHudDigits.textWidth(time, 24.0F)));
         int sepW = 42;
 
         List<Layer> out = new ArrayList<>();
@@ -225,11 +224,11 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
             seconds = 0;
         }
         String time = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60);
-        float scale = Math.max(0.8F, layer.h() / 9.0F);
-        float width = painter.textWidth(time) * scale;
-        // 与 TAB 计分板数值一致：同一 Saira Medium 字体、无阴影
-        painter.textScaled(time, layer.x() + (layer.w() - width) / 2.0F, layer.y(),
-                scale, 0xFFFFFFFF, false);
+        float height = Math.max(8.0F, layer.h());
+        float width = StrinovaHudDigits.textWidth(time, height);
+        int x = Math.round(layer.x() + (layer.w() - width) / 2.0F);
+        // 高分辨率 Saira Medium 数字图集：和 TAB 数值同款字形，无阴影、不发糊
+        StrinovaHudDigits.draw(painter, time, x, layer.y(), height, 0xFFFFFFFF, 1.0F);
     }
 
     /** 顶部面板玩家头像：官方 RoleScoreboard 贴图。 */
