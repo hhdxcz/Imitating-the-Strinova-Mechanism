@@ -8,6 +8,7 @@
 模式:
   components  每个 alpha 连通块一张图（保留所有碎片）
   grouped     先按连通块，再把 bbox 相交/相邻(gap) 的块合并成整个图标，再过滤小碎片
+  morph       先对 alpha 做形态学膨胀（--close 半径）再取连通块，避免 bbox 链式误合并
 """
 import argparse
 import json
@@ -48,6 +49,45 @@ def components(im):
             x0 = min(p[0] for p in pts); x1 = max(p[0] for p in pts)
             y0 = min(p[1] for p in pts); y1 = max(p[1] for p in pts)
             result.append({'x': x0, 'y': y0, 'w': x1 - x0 + 1, 'h': y1 - y0 + 1, 'area': len(pts)})
+    return result
+
+
+def morph_components(im, radius):
+    """先膨胀 alpha 再取连通块，再用原始 alpha 像素计算 bbox。"""
+    from PIL import ImageFilter
+    rgba = np.array(im.convert('RGBA'))
+    h, w = rgba.shape[:2]
+    alpha = rgba[:, :, 3]
+    mask = (alpha > 8).astype(np.uint8) * 255
+    dilated = Image.fromarray(mask, 'L').filter(ImageFilter.MaxFilter(radius * 2 + 1))
+    dmask = np.array(dilated) > 127
+    visited = np.zeros((h, w), dtype=bool)
+    result = []
+    for y in range(h):
+        for x in range(w):
+            if not dmask[y, x] or visited[y, x]:
+                continue
+            q = deque([(x, y)])
+            visited[y, x] = True
+            pts = []
+            while q:
+                cx, cy = q.popleft()
+                pts.append((cx, cy))
+                for dy in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        if dx == 0 and dy == 0:
+                            continue
+                        nx, ny = cx + dx, cy + dy
+                        if 0 <= nx < w and 0 <= ny < h and dmask[ny, nx] and not visited[ny, nx]:
+                            visited[ny, nx] = True
+                            q.append((nx, ny))
+            xs = [p[0] for p in pts if alpha[p[1], p[0]] > 8]
+            ys = [p[1] for p in pts if alpha[p[1], p[0]] > 8]
+            if not xs:
+                continue
+            result.append({'x': min(xs), 'y': min(ys),
+                           'w': max(xs) - min(xs) + 1, 'h': max(ys) - min(ys) + 1,
+                           'area': len(xs)})
     return result
 
 
@@ -114,16 +154,20 @@ def main():
     parser = argparse.ArgumentParser(description='Slice sprite sheet with alpha into PNGs')
     parser.add_argument('input')
     parser.add_argument('output_dir')
-    parser.add_argument('--mode', choices=['components', 'grouped'], default='grouped')
+    parser.add_argument('--mode', choices=['components', 'grouped', 'morph'], default='grouped')
     parser.add_argument('--gap', type=int, default=1, help='grouped 模式下合并 bbox 的间隔像素')
+    parser.add_argument('--close', type=int, default=2, help='morph 模式的膨胀半径')
     parser.add_argument('--pad', type=int, default=2, help='每个切片四周留白')
     parser.add_argument('--min-size', type=int, default=4, help='过滤掉宽高都小于等于该值的碎片')
     parser.add_argument('--min-area', type=int, default=8, help='过滤掉面积小于该值的碎片')
     args = parser.parse_args()
 
     im = Image.open(args.input).convert('RGBA')
-    rects = components(im)
-    items = group(rects, args.gap) if args.mode == 'grouped' else rects
+    if args.mode == 'morph':
+        items = morph_components(im, args.close)
+    else:
+        rects = components(im)
+        items = group(rects, args.gap) if args.mode == 'grouped' else rects
 
     filtered = []
     for r in items:
