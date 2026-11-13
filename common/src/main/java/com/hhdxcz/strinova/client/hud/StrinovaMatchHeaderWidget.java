@@ -29,6 +29,9 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
             new ResourceLocation("strinova", "textures/gui/topbar/top_blue.png");
     private static final ResourceLocation TEX_TOP_RED =
             new ResourceLocation("strinova", "textures/gui/topbar/top_red.png");
+    /** 额外底板：sprite_206（灰色梯形）。 */
+    private static final ResourceLocation TEX_EXTRA_206 =
+            new ResourceLocation("strinova", "textures/gui/topbar/extra_206.png");
     private static final int COLOR_TEXT_DIM = 0xFF9FC6D8;
 
     @Override
@@ -85,6 +88,8 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
                         layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
                 case "rightBottom" -> draw.textureRegion(TEX_SCORE_RED, layer.x(), layer.y(),
                         layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
+                case "extra206" -> draw.textureRegion(TEX_EXTRA_206, layer.x(), layer.y(),
+                        layer.w(), layer.h(), 0, 0, 256, 77, 256, 77, 0xFFFFFFFF, 1.0F);
                 case "leftScore" -> drawScoreText(draw, layer, scoreAlly);
                 case "rightScore" -> drawScoreText(draw, layer, scoreEnemy);
                 case "portraitsLeft" -> drawPortraitRow(draw, layer, allies);
@@ -136,6 +141,8 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         int sepW = 42;
 
         List<Layer> out = new ArrayList<>();
+        out.add(layer(config, "extra206", "image206",
+                centerX - 110, y - 3, 220, 66));
         out.add(layer(config, "portraitsLeft", "portraits",
                 leftPortraitX, portraitY, PORTRAIT * 5, PORTRAIT));
         out.add(layer(config, "portraitsRight", "portraits",
