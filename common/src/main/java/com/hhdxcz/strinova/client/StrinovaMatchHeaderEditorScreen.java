@@ -49,6 +49,7 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
     private int startBaseX;
     private int startBaseY;
     private final Map<String, int[]> startOffsets = new LinkedHashMap<>();
+    private String status = "";
 
     public StrinovaMatchHeaderEditorScreen(@Nullable Screen parent) {
         super(Component.literal("顶部面板编辑器"));
@@ -59,7 +60,7 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
     protected void init() {
         StrinovaHudMockData.ensureScoreboardPreview();
         this.previewX = Math.max(4, (this.width - WIDTH) / 2);
-        this.previewY = 78;
+        this.previewY = 94;
         int cx = this.width / 2;
 
         this.addRenderableWidget(Button.builder(Component.literal("旋转 -15"), b -> rotate(-15.0F))
@@ -80,6 +81,10 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
         this.addRenderableWidget(Button.builder(Component.literal("下移一层"), b -> order(-1))
                 .bounds(cx + 80, this.height - 54, 80, 20).build());
 
+        this.addRenderableWidget(Button.builder(Component.literal("导出布局"), b -> this.exportLayout())
+                .bounds(cx - 172, this.height - 102, 80, 20).build());
+        this.addRenderableWidget(Button.builder(Component.literal("导入剪贴板"), b -> this.importLayout())
+                .bounds(cx - 88, this.height - 102, 80, 20).build());
         this.addRenderableWidget(Button.builder(Component.literal("全部复位"), b -> {
             StrinovaHudConfig config = StrinovaHudConfig.get();
             for (StrinovaHudConfig.HeaderLayerStyle style : config.matchHeaderLayers.values()) {
@@ -138,6 +143,10 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
                 this.width / 2, 32, 0xFFAAAAAA);
         String info = this.selected.isEmpty() ? "选中：无" : "选中：" + String.join(", ", this.selected);
         graphics.drawCenteredString(this.font, Component.literal(info), this.width / 2, 50, 0xFFFFD166);
+        if (!this.status.isEmpty()) {
+            graphics.drawCenteredString(this.font, Component.literal(this.status),
+                    this.width / 2, 76, 0xFF7CFF9E);
+        }
         StrinovaHudConfig.HeaderLayerStyle active = this.selected.size() == 1
                 ? StrinovaHudConfig.get().matchHeaderLayer(this.selected.iterator().next()) : null;
         if (active != null) {
@@ -446,6 +455,39 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
         StrinovaHudConfig config = StrinovaHudConfig.get();
         for (int i = 0; i < keys.size(); i++) {
             config.matchHeaderLayer(keys.get(i)).order = i;
+        }
+    }
+
+    private void exportLayout() {
+        try {
+            StrinovaHudConfig config = StrinovaHudConfig.get();
+            String json = config.matchHeaderExportJson();
+            java.nio.file.Path path = StrinovaHudConfig.matchHeaderExportPath();
+            java.nio.file.Files.createDirectories(path.getParent());
+            java.nio.file.Files.writeString(path, json, java.nio.charset.StandardCharsets.UTF_8);
+            if (Minecraft.getInstance().keyboardHandler != null) {
+                Minecraft.getInstance().keyboardHandler.setClipboard(json);
+            }
+            this.status = "已导出并复制到剪贴板: " + path;
+        } catch (Exception e) {
+            this.status = "导出失败: " + e.getMessage();
+        }
+    }
+
+    private void importLayout() {
+        try {
+            String clip = "";
+            if (Minecraft.getInstance().getWindow() != null) {
+                clip = GLFW.glfwGetClipboardString(Minecraft.getInstance().getWindow().getWindow());
+            }
+            if (clip != null && StrinovaHudConfig.get().matchHeaderImportJson(clip)) {
+                StrinovaHudConfig.get().save();
+                this.status = "已导入剪贴板中的顶部面板布局";
+            } else {
+                this.status = "导入失败：剪贴板不是有效的顶部面板布局 JSON";
+            }
+        } catch (Exception e) {
+            this.status = "导入失败: " + e.getMessage();
         }
     }
 

@@ -406,6 +406,48 @@ public final class StrinovaHudConfig {
     }
 
     /** 导出计分板全部自定义配置为 JSON（尺寸/位置/字号/行高/列宽/逐部件样式）。 */
+    /** 顶部面板布局导出 JSON（只包含图层偏移/缩放/旋转/透明度/镜像/层级/显隐）。 */
+    public String matchHeaderExportJson() {
+        JsonObject root = new JsonObject();
+        root.addProperty("_type", "strinova_match_header");
+        root.add("layers", GSON.toJsonTree(matchHeaderLayers));
+        return GSON.toJson(root);
+    }
+
+    /** 从 JSON 导入顶部面板布局；成功返回 true。 */
+    public boolean matchHeaderImportJson(String json) {
+        if (json == null || json.isBlank()) {
+            return false;
+        }
+        try {
+            JsonObject root = JsonParser.parseString(json.trim()).getAsJsonObject();
+            JsonObject layers = root.getAsJsonObject("layers");
+            if (layers == null) {
+                return false;
+            }
+            LinkedHashMap<String, HeaderLayerStyle> imported = new LinkedHashMap<>();
+            for (Map.Entry<String, JsonElement> entry : layers.entrySet()) {
+                HeaderLayerStyle style = GSON.fromJson(entry.getValue(), HeaderLayerStyle.class);
+                if (style != null) {
+                    imported.put(entry.getKey(), style);
+                }
+            }
+            if (imported.isEmpty()) {
+                return false;
+            }
+            matchHeaderLayers = imported;
+            sanitize();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** 顶部面板布局导出文件：config/strinova-match-header.json。 */
+    public static Path matchHeaderExportPath() {
+        return Platform.getConfigFolder().resolve("strinova-match-header.json");
+    }
+
     public String scoreboardExportJson() {
         sanitize();
         Map<String, Object> map = new LinkedHashMap<>();
