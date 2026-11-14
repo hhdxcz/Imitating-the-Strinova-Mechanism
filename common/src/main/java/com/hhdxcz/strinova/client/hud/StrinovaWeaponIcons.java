@@ -1,9 +1,11 @@
 package com.hhdxcz.strinova.client.hud;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
+import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -166,6 +168,24 @@ public final class StrinovaWeaponIcons {
 
     /** 贴图固定为「整张贴图」绘制，UV 用 1x1 归一化即可，无需知道实际像素尺寸。 */
     public static final int UV_SIZE = 1;
+
+    /**
+     * 绘制武器剪影贴图（打开 Alpha 混合）。
+     *
+     * <p>关键：GUI 里直接 {@code graphics.blit} 时环境混合状态不一定开着，官方剪影边缘是半透明的，
+     * 不开混合会把边缘直接截成硬锯齿（看起来又糊又毛）。HUD 的 painter 自己开了混合所以一直很清楚，
+     * 这里让增幅网络/选角界面走同一套状态。</p>
+     */
+    public static void blit(GuiGraphics graphics, ResourceLocation texture, int x, int y, int width, int height) {
+        boolean blendWasEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        graphics.blit(texture, x, y, width, height, 0.0F, 0.0F, UV_SIZE, UV_SIZE, UV_SIZE, UV_SIZE);
+        if (!blendWasEnabled) {
+            RenderSystem.disableBlend();
+        }
+    }
 
     /**
      * 没有官方贴图时的「仿制剪影」：用矩形拼一个白色武器形状。

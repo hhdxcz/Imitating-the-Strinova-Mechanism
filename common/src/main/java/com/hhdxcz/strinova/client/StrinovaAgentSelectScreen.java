@@ -1258,10 +1258,10 @@ public class StrinovaAgentSelectScreen extends Screen {
         net.minecraft.resources.ResourceLocation texture =
                 com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.textureFor(name);
         if (texture != null) {
-            // 官方原始剪影：等比适配、只缩不放，避免拉伸/放大发糊
+            // 官方原始剪影：等比适配、只缩不放；blit 内部会打开 Alpha 混合，保留剪影的抗锯齿边缘
             int[] box = com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.fit(texture, x, y, boxW, boxH);
-            int uv = com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.UV_SIZE;
-            graphics.blit(texture, box[0], box[1], box[2], box[3], 0.0F, 0.0F, uv, uv, uv, uv);
+            com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.blit(
+                    graphics, texture, box[0], box[1], box[2], box[3]);
             return;
         }
         // 程序化仿制剪影（没有官方贴图的武器，如潮音/枫鸣等）

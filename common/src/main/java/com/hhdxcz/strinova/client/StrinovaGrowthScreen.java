@@ -815,8 +815,7 @@ public class StrinovaGrowthScreen extends Screen {
         net.minecraft.resources.ResourceLocation texture = StrinovaWeaponIcons.textureFor(name);
         if (texture != null) {
             int[] box = StrinovaWeaponIcons.fit(texture, x, y, boxW, boxH);
-            int uv = StrinovaWeaponIcons.UV_SIZE;
-            graphics.blit(texture, box[0], box[1], box[2], box[3], 0.0F, 0.0F, uv, uv, uv, uv);
+            StrinovaWeaponIcons.blit(graphics, texture, box[0], box[1], box[2], box[3]);
             return;
         }
         // 程序化仿制剪影（没有官方贴图的武器，如潮音/枫鸣等）
