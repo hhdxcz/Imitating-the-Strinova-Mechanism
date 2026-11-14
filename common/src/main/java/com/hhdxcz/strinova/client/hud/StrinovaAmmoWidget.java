@@ -92,8 +92,8 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
             boolean isSelected = i == selected;
             painter.rect(slotX, slotY, SLOT, SLOT, isSelected ? 0xCC12222C : 0x88101820);
             painter.border(slotX, slotY, SLOT, SLOT, isSelected ? 0xFFEAF6FF : 0x66445566, 1);
-            drawWeaponIcon(painter, kinds[i], slotX + 3, slotY + 3, SLOT - 6,
-                    isSelected ? 0xFFEAF6FF : 0xCCEAF6FF);
+            drawWeaponArt(painter, names[i], kinds[i], slotX + 2, slotY + 2,
+                    SLOT - 4, isSelected ? 0xFFFFFFFF : 0xCCEAF6FF);
 
             // 数字键徽标挂在槽位右侧
             painter.rect(badgeX, slotY + (SLOT - BADGE_HEIGHT) / 2, BADGE_WIDTH, BADGE_HEIGHT, 0x88101820);
@@ -108,7 +108,11 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
         // 当前武器卡片（向左展开，与最下方槽位底对齐）
         int cardY = y + HEIGHT - CARD_HEIGHT - 2;
         int cardX = x;
-        painter.panel(cardX, cardY, CARD_WIDTH, CARD_HEIGHT, StrinovaProgrammaticPainter.COLOR_ACCENT_CYAN);
+        painter.rect(cardX, cardY, CARD_WIDTH, CARD_HEIGHT, 0xCC15181E);
+        painter.border(cardX, cardY, CARD_WIDTH, CARD_HEIGHT, 0x66FFFFFF, 1);
+        painter.textureRegion(StrinovaWeaponIcons.selectedLine(),
+                cardX + CARD_WIDTH - 5, cardY + 2, 5, CARD_HEIGHT - 4,
+                0, 0, 12, 63, 12, 63, 0xFFE8F2FF, 1.0F);
 
         // 卡片左上角的小型弹匣/导轨指示（几何线条）
         int markX = cardX + 5;
@@ -122,7 +126,8 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
         if (selectedKind == null) {
             selectedKind = StrinovaTaczCompat.IconKind.EMPTY;
         }
-        drawWeaponIcon(painter, selectedKind, cardX + 8, cardY + 12, 52, 0xFFEAF6FF);
+        drawWeaponArt(painter, names[selected], selectedKind, cardX + 6, cardY + 8,
+                CARD_WIDTH - 76, 0xFFEAF6FF);
 
         // 左下：武器名
         String selectedName = names[selected];
@@ -154,6 +159,23 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
             painter.bar(cardX + 4, cardY + CARD_HEIGHT - 3, CARD_WIDTH - 8, 2, reload,
                     StrinovaProgrammaticPainter.COLOR_WARN, 0x66222B33);
         }
+    }
+
+    /** 优先用官方武器/投掷物剪影贴图；没有则回退程序化几何剪影。 */
+    private static void drawWeaponArt(StrinovaHudPainter painter, String name,
+                                      StrinovaTaczCompat.IconKind kind, int x, int y,
+                                      int width, int color) {
+        net.minecraft.resources.ResourceLocation texture = StrinovaWeaponIcons.textureFor(name);
+        if (texture != null) {
+            int w = Math.max(8, width);
+            int h = Math.max(4, Math.round(w * (float) StrinovaWeaponIcons.TEX_HEIGHT
+                    / StrinovaWeaponIcons.TEX_WIDTH));
+            painter.textureRegion(texture, x, y, w, h,
+                    0.0F, 0.0F, StrinovaWeaponIcons.TEX_WIDTH, StrinovaWeaponIcons.TEX_HEIGHT,
+                    StrinovaWeaponIcons.TEX_WIDTH, StrinovaWeaponIcons.TEX_HEIGHT, color, 1.0F);
+            return;
+        }
+        drawWeaponIcon(painter, kind, x, y, Math.max(8, width), color);
     }
 
     private static ItemStack hotbarStack(LocalPlayer player, int index) {
