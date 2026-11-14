@@ -1200,11 +1200,11 @@ public class StrinovaAgentSelectScreen extends Screen {
         this.border(graphics, contentX, this.weaponTop, contentW, mainH, withAlpha(accent, 0x88));
         this.drawText(graphics, "1 " + Component.translatable(WEAPON_KEYS[0]).getString(),
                 contentX + 5, this.weaponTop + 3, COLOR_DIM);
-        int iconSize = clamp(14, 30, mainH - 12);
-        int iconX = contentX + (contentW - iconSize) / 2;
-        int iconY = this.weaponTop + (mainH - iconSize) / 2 + 2;
+        int iconW = Math.max(20, Math.min(contentW - 12, (mainH - 10) * 2));
+        int iconX = contentX + (contentW - iconW) / 2;
+        int iconY = this.weaponTop + Math.max(2, (mainH - iconW / 2) / 2);
         String primaryIconName = hasPrimary ? wiki.weapon().name() : "警探";
-        this.drawWeaponPanelIcon(graphics, primaryIconName, 0, iconX, iconY, iconSize,
+        this.drawWeaponPanelIcon(graphics, primaryIconName, 0, iconX, iconY, iconW,
                 0xFFE8F2FF);
         String primaryName = hasPrimary
                 ? wiki.weapon().name()
@@ -1238,16 +1238,16 @@ public class StrinovaAgentSelectScreen extends Screen {
             }
             this.drawText(graphics, Integer.toString(i + 1), x + 3, y + 2, COLOR_DIM);
             this.drawText(graphics, this.truncate(typeLabel, cellW - 14), x + 12, y + 2, COLOR_DEAD);
-            int smallIcon = clamp(10, 18, this.weaponCellH - 16);
+            int smallW = Math.max(14, Math.min(cellW - 8, (this.weaponCellH - 8) * 2));
             String fallback = switch (i) {
                 case 1 -> "雪鸮";
                 case 2 -> "忍锋";
                 case 3 -> "手雷";
                 default -> "闪光弹";
             };
-            this.drawWeaponPanelIcon(graphics, fallback, i,
-                    x + (cellW - smallIcon) / 2, y + this.weaponCellH / 2 - 1,
-                    smallIcon, 0xCCE8F2FF);
+            int smallX = x + (cellW - smallW) / 2;
+            int smallY = y + Math.max(2, (this.weaponCellH - smallW / 2) / 2);
+            this.drawWeaponPanelIcon(graphics, fallback, i, smallX, smallY, smallW, 0xCCE8F2FF);
         }
     }
 

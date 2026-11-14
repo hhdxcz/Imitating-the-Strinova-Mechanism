@@ -68,6 +68,12 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
             }
         }
 
+        // 1 号槽是角色主武器：优先用选角界面当前角色对应的 wiki 武器
+        String agentWeapon = selectedAgentWeaponName();
+        if (!agentWeapon.isEmpty()) {
+            names[0] = agentWeapon;
+        }
+
         // 贴图名：没有可用武器名时按槽位用默认官方图标
         String[] iconNames = names.clone();
         String[] defaultIcons = {"警探", "雪鸮", "忍锋", "手雷", "闪光弹"};
@@ -172,6 +178,23 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
         if (reload > 0.0F) {
             painter.bar(cardX + 4, cardY + CARD_HEIGHT - 3, CARD_WIDTH - 8, 2, reload,
                     StrinovaProgrammaticPainter.COLOR_WARN, 0x66222B33);
+        }
+    }
+
+    /** 当前选角角色的主武器名（香奈美 → 谢幕曲）。 */
+    private static String selectedAgentWeaponName() {
+        try {
+            String id = StrinovaHudConfig.get().selectedAgentId;
+            if (id == null || id.isEmpty()) {
+                return "";
+            }
+            StrinovaWikiData.Agent agent = StrinovaWikiData.byId(id);
+            if (agent == null || agent.weapon() == null || agent.weapon().name() == null) {
+                return "";
+            }
+            return agent.weapon().name();
+        } catch (Throwable ignored) {
+            return "";
         }
     }
 
