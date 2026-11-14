@@ -21,9 +21,9 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
     private static final int BADGE_WIDTH = 11;
     private static final int BADGE_HEIGHT = 10;
     private static final int BADGE_GAP = 4;
-    /** 槽位图标区：贴图按游戏尺寸的 0.8 倍完整显示（不缩成小图标），右侧留一点空隙。 */
-    private static final int ICON_W = 90;
-    private static final int ICON_H = 30;
+    /** 槽位图标区：贴图再缩 0.8 倍（完整显示、不缩成小图标），右侧留一点空隙。 */
+    private static final int ICON_W = 72;
+    private static final int ICON_H = 24;
     private static final int ICON_GAP = 3;
     /** 槽位间距按游戏比例。 */
     private static final int SLOT_STEP = 44;
@@ -31,6 +31,9 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
     private static final int HEIGHT = ICON_H + 4 * SLOT_STEP + 6;
     /** 卡片高度：包住武器贴图 + 下面的武器名。 */
     private static final int CARD_HEIGHT = 52;
+    /** 投掷物用的灰框：只包住贴图和名字，比枪械卡片窄。 */
+    private static final int CARD_NARROW_W = ICON_W + 20;
+    private static final int CARD_NARROW_H = 40;
     private static final int AMMO_BLUE = 0xFF6FB6FF;
 
     private static final String[] DEFAULT_SLOT_NAMES = {"主武器", "副武器", "近战", "战术道具", "战术道具"};
@@ -129,11 +132,16 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
 
         int selectedSlotY = bottomY - Math.max(0, Math.min(4, selected)) * SLOT_STEP;
 
-        // 选中行的灰黑色矩形：右边缘贴着数字键，向下延伸放武器名
-        int cardY = selectedSlotY - (CARD_HEIGHT - ICON_H) / 2;
-        int cardX = x;
-        painter.rect(cardX, cardY, CARD_WIDTH, CARD_HEIGHT, 0xCC2A2F36);
-        painter.border(cardX, cardY, CARD_WIDTH, CARD_HEIGHT, 0x66445566, 1);
+        // 选中行的灰黑色矩形：右边缘贴着数字键，向下延伸放武器名。
+        // 投掷物只需要包住贴图+名字，用窄一点的灰框；枪械用整宽卡片放大剪影+弹药。
+        int cardW = throwable ? CARD_NARROW_W : CARD_WIDTH;
+        int cardH = throwable ? CARD_NARROW_H : CARD_HEIGHT;
+        int cardX = throwable ? iconRight - cardW : x;
+        int cardY = throwable
+                ? selectedSlotY - 4
+                : selectedSlotY - (cardH - ICON_H) / 2;
+        painter.rect(cardX, cardY, cardW, cardH, 0xCC2A2F36);
+        painter.border(cardX, cardY, cardW, cardH, 0x66445566, 1);
 
         // 槽位贴图：枪械选中行的贴图由矩形里的大图代替，其余全部按原样绘制
         for (int i = 0; i < 5; i++) {
@@ -177,8 +185,8 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
         } else {
             // 枪械/近战：矩形里放大剪影 + 左下名字 + 右侧弹药
             drawWeaponArt(painter, iconNames[selected], selectedKind, cardX + 6, cardY + 8,
-                    CARD_WIDTH - 44, CARD_HEIGHT - 16, 0xFFEAF6FF, false);
-            painter.text(selectedName, cardX + 6, cardY + CARD_HEIGHT - 12,
+                    cardW - 44, cardH - 16, 0xFFEAF6FF, false);
+            painter.text(selectedName, cardX + 6, cardY + cardH - 12,
                     StrinovaProgrammaticPainter.COLOR_TEXT, false);
             if (magazine >= 0) {
                 String magText = String.valueOf(magazine);
@@ -187,17 +195,17 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
                 int magColor = magazine <= 5
                         ? StrinovaProgrammaticPainter.COLOR_HP_LOW
                         : StrinovaProgrammaticPainter.COLOR_TEXT;
-                painter.textScaled(magText, cardX + CARD_WIDTH - 10 - magWidth, cardY + 6,
+                painter.textScaled(magText, cardX + cardW - 10 - magWidth, cardY + 6,
                         magScale, magColor, true);
                 if (reserve >= 0) {
-                    painter.textRightAligned(String.valueOf(reserve), cardX + CARD_WIDTH - 12,
+                    painter.textRightAligned(String.valueOf(reserve), cardX + cardW - 12,
                             cardY + 30, AMMO_BLUE, false);
                 }
             } else if (selectedKind == StrinovaTaczCompat.IconKind.KNIFE) {
                 // 刀没有子弹，显示无限符号
                 float infScale = 1.6F;
                 int infWidth = Math.round(painter.textWidth("∞") * infScale);
-                painter.textScaled("∞", cardX + CARD_WIDTH - 12 - infWidth, cardY + 14,
+                painter.textScaled("∞", cardX + cardW - 12 - infWidth, cardY + 14,
                         infScale, AMMO_BLUE, true);
             }
         }
@@ -205,16 +213,16 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
         // 换弹进度（有换弹时卡片底部细条）
         float reload = mock ? StrinovaHudState.reloadProgress() : 0.0F;
         if (reload > 0.0F) {
-            painter.bar(cardX + 4, cardY + CARD_HEIGHT - 3, CARD_WIDTH - 8, 2, reload,
+            painter.bar(cardX + 4, cardY + cardH - 3, cardW - 8, 2, reload,
                     StrinovaProgrammaticPainter.COLOR_WARN, 0x66222B33);
         }
 
         // 数字键旁边那条白色装饰线（sprite_211）：按官方 12x63 比例竖直居中在灰黑矩形右边缘，
         // 右侧紧挨数字键，和游戏一致
         int lineWidth = 6;
-        int lineHeight = 32;
+        int lineHeight = Math.min(32, cardH - 4);
         int lineX = iconRight - 3;
-        int lineY = cardY + (CARD_HEIGHT - lineHeight) / 2;
+        int lineY = cardY + (cardH - lineHeight) / 2;
         painter.textureRegion(StrinovaWeaponIcons.selectedLine(), lineX, lineY, lineWidth, lineHeight,
                 0, 0, 12, 63, 12, 63, 0xFFFFFFFF, 1.0F);
     }
