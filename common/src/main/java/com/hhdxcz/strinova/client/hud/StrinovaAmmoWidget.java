@@ -150,7 +150,26 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
                     isSelected ? 0xFFEAF6FF : 0xFF9FC6D8, false);
         }
 
-        // 弹药数字固定显示在武器贴图右侧那一条：枪械＝弹匣（白）+ 备弹（蓝），刀＝∞
+        // 武器名：主武器/副武器/刀写在武器栏左下角；投掷物写在自己贴图的正下方
+        String selectedName = names[selected];
+        if (selectedName == null || selectedName.isEmpty()) {
+            selectedName = mock ? DEFAULT_SLOT_NAMES[selected] : "未装备";
+        }
+        boolean throwableName = selectedKind == StrinovaTaczCompat.IconKind.GRENADE
+                || selectedKind == StrinovaTaczCompat.IconKind.MEDKIT
+                || selectedKind == StrinovaTaczCompat.IconKind.GENERIC
+                || selectedKind == StrinovaTaczCompat.IconKind.EMPTY;
+        if (throwableName) {
+            painter.text(selectedName,
+                    slotX + Math.max(0, (ICON_W - painter.textWidth(selectedName)) / 2),
+                    selectedSlotY + ICON_H + 2,
+                    StrinovaProgrammaticPainter.COLOR_TEXT, true);
+        } else {
+            painter.text(selectedName, x + 4, y + HEIGHT - 11,
+                    StrinovaProgrammaticPainter.COLOR_TEXT, true);
+        }
+
+        // 弹药数字叠在武器贴图右侧上方：枪械＝弹匣（白）+ 备弹（蓝），刀＝∞
         if (knife) {
             int infWidth = Math.round(painter.textWidth("∞") * 1.4F);
             painter.textScaled("∞", dividerX - 4 - infWidth, selectedSlotY + 9,
