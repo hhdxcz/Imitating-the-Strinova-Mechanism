@@ -1200,10 +1200,10 @@ public class StrinovaAgentSelectScreen extends Screen {
         this.border(graphics, contentX, this.weaponTop, contentW, mainH, withAlpha(accent, 0x88));
         this.drawText(graphics, "1 " + Component.translatable(WEAPON_KEYS[0]).getString(),
                 contentX + 5, this.weaponTop + 3, COLOR_DIM);
-        int iconBoxW = Math.max(20, contentW - 12);
+        int iconBoxW = Math.max(20, contentW);
         int iconBoxH = Math.max(8, mainH - 22);
         String primaryIconName = hasPrimary ? wiki.weapon().name() : "警探";
-        this.drawWeaponPanelIcon(graphics, primaryIconName, 0, contentX + 6, this.weaponTop + 11,
+        this.drawWeaponPanelIcon(graphics, primaryIconName, 0, contentX, this.weaponTop + 11,
                 iconBoxW, iconBoxH, 0xFFE8F2FF);
         String primaryName = hasPrimary
                 ? wiki.weapon().name()
@@ -1237,7 +1237,7 @@ public class StrinovaAgentSelectScreen extends Screen {
             }
             this.drawText(graphics, Integer.toString(i + 1), x + 3, y + 2, COLOR_DIM);
             this.drawText(graphics, this.truncate(typeLabel, cellW - 14), x + 12, y + 2, COLOR_DEAD);
-            int smallBoxW = cellW - 8;
+            int smallBoxW = cellW;
             int smallBoxH = this.weaponCellH - 12;
             String fallback = switch (i) {
                 case 1 -> "雪鸮";
@@ -1246,26 +1246,27 @@ public class StrinovaAgentSelectScreen extends Screen {
                 default -> "闪光弹";
             };
             if (smallBoxW >= 12 && smallBoxH >= 6) {
-                this.drawWeaponPanelIcon(graphics, fallback, i, x + 4, y + 10,
+                this.drawWeaponPanelIcon(graphics, fallback, i, x, y + 10,
                         smallBoxW, smallBoxH, 0xCCE8F2FF);
             }
         }
     }
 
-    /** 优先用官方武器剪影贴图，无贴图回退几何图标。 */
+    /** 优先用官方武器剪影贴图，无贴图回退程序化仿制剪影。 */
     private void drawWeaponPanelIcon(GuiGraphics graphics, String name, int index,
                                      int x, int y, int boxW, int boxH, int color) {
         net.minecraft.resources.ResourceLocation texture =
                 com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.textureFor(name);
         if (texture != null) {
-            // 原始剪影宽高比各不相同，等比适配后绘制，避免拉伸发糊
+            // 官方原始剪影：等比适配、只缩不放，避免拉伸/放大发糊
             int[] box = com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.fit(texture, x, y, boxW, boxH);
             int uv = com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.UV_SIZE;
             graphics.blit(texture, box[0], box[1], box[2], box[3], 0.0F, 0.0F, uv, uv, uv, uv);
             return;
         }
-        int size = Math.max(8, Math.min(boxW, boxH));
-        this.drawWeaponIcon(graphics, x + (boxW - size) / 2, y + (boxH - size) / 2, size, index, color);
+        // 程序化仿制剪影（没有官方贴图的武器，如潮音/枫鸣等）
+        com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.drawProcedural(
+                graphics, index, x, y, boxW, boxH, color);
     }
 
     /** 外观页签占位内容：菱形几何图形 + 标签（外观系统待接入）。 */
@@ -1287,42 +1288,6 @@ public class StrinovaAgentSelectScreen extends Screen {
                 this.truncate(Component.translatable("config.strinova.agent.appearance_select").getString(),
                         contentW - 8),
                 cx, Math.min(bottom - 11, cy + radius + 6), COLOR_DIM, false);
-    }
-
-    /** 武器占位图标：主武器/副武器用枪形、近战用斜刀刃、战术道具用方形十字（纯矩形拼绘）。 */
-    private void drawWeaponIcon(GuiGraphics graphics, int x, int y, int size, int index, int color) {
-        int inset = Math.max(2, size / 6);
-        switch (index) {
-            case 0 -> {
-                // 主武器：长枪管 + 枪托
-                graphics.fill(x + inset, y + size / 2 - 1, x + size - inset, y + size / 2 + 1, color);
-                graphics.fill(x + inset, y + size / 2 + 1, x + size / 2, y + size - inset, color);
-                graphics.fill(x + size - inset - 2, y + size / 2 - 3, x + size - inset, y + size / 2 - 1, color);
-            }
-            case 1 -> {
-                // 副武器：短枪管 + 握把
-                graphics.fill(x + size / 3, y + size / 2 - 1, x + size - inset, y + size / 2 + 1, color);
-                graphics.fill(x + size / 3, y + size / 2 + 1, x + size / 2 + 1, y + size - inset, color);
-            }
-            case 2 -> {
-                // 近战武器：斜向刀刃
-                int steps = Math.max(3, size - inset * 2);
-                for (int i = 0; i < steps; i++) {
-                    int px = x + inset + i;
-                    int py = y + size - inset - i;
-                    graphics.fill(px, py, px + 2, py + 2, color);
-                }
-            }
-            default -> {
-                // 战术道具：方形 + 十字
-                int cx = x + size / 2;
-                int cy = y + size / 2;
-                int box = Math.max(2, size / 4);
-                graphics.fill(cx - box, cy - box, cx + box, cy + box, color);
-                graphics.fill(cx - 1, cy - size / 3, cx + 1, cy + size / 3, color);
-                graphics.fill(cx - size / 3, cy - 1, cx + size / 3, cy + 1, color);
-            }
-        }
     }
 
     // ------------------------------------------------------------------

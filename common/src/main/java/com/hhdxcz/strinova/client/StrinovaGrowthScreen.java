@@ -763,14 +763,15 @@ public class StrinovaGrowthScreen extends Screen {
                     x + 13, y + 3, COLOR_TEXT_DISABLED, false);
         }
 
-        // 居中武器图标：贴图是零重采样的原始剪影，按原始宽高比等比放大到最大
-        int iconBoxW = width - 12;
+        // 居中武器图标：贴图是官方原始剪影（270x90 / 72x72），按原始比例放进卡片，
+        // 只缩不放，避免放大发糊；没有贴图的武器（潮音等）画程序化仿制剪影
+        int iconBoxW = width;
         int iconBoxH = height - 22;
         if (iconBoxW >= 10 && iconBoxH >= 6) {
-            int iconX = x + 6;
+            int iconX = x;
             int iconY = y + 11;
             String iconName = name;
-            if (StrinovaWeaponIcons.textureFor(iconName) == null) {
+            if (StrinovaWeaponIcons.textureFor(iconName) == null && index > 0) {
                 iconName = switch (index) {
                     case 1 -> "雪鸮";
                     case 2 -> "忍锋";
@@ -808,7 +809,7 @@ public class StrinovaGrowthScreen extends Screen {
             "config.strinova.agent.weapon_gadget"
     };
 
-    /** 优先用武器/道具真实剪影贴图，没有贴图时回退程序化几何图标。 */
+    /** 优先用武器/道具真实剪影贴图，没有贴图时回退程序化仿制剪影。 */
     private static void drawWeaponCardIcon(GuiGraphics graphics, String name, int index,
                                           int x, int y, int boxW, int boxH) {
         net.minecraft.resources.ResourceLocation texture = StrinovaWeaponIcons.textureFor(name);
@@ -818,61 +819,9 @@ public class StrinovaGrowthScreen extends Screen {
             graphics.blit(texture, box[0], box[1], box[2], box[3], 0.0F, 0.0F, uv, uv, uv, uv);
             return;
         }
-        int size = Math.max(8, Math.min(boxW, boxH));
-        drawWeaponIcon(graphics, index, x, y + (boxH - size) / 2, size,
+        // 程序化仿制剪影（没有官方贴图的武器，如潮音/枫鸣等）
+        StrinovaWeaponIcons.drawProcedural(graphics, index, x, y, boxW, boxH,
                 index == 0 ? 0xFFC8D4E0 : COLOR_TEXT_DIM);
-    }
-
-    /** 程序化绘制武器几何图标：0 主武器（长枪）、1 副武器（手枪）、2 近战（斜刃）、3+ 战术道具（菱形手雷）。 */
-    private static void drawWeaponIcon(GuiGraphics graphics, int index, int x, int y, int size, int color) {
-        if (size < 8) {
-            graphics.fill(x, y, x + size, y + size, color);
-            return;
-        }
-        switch (index) {
-            case 0 -> {
-                // 主武器：长枪身 + 枪管 + 弹匣
-                graphics.fill(x + size / 8, y + size * 35 / 100,
-                        x + size * 85 / 100, y + size * 55 / 100, color);
-                graphics.fill(x + size * 85 / 100, y + size * 42 / 100,
-                        x + size, y + size * 48 / 100, color);
-                graphics.fill(x + size * 25 / 100, y + size * 55 / 100,
-                        x + size * 40 / 100, y + size * 85 / 100, color);
-            }
-            case 1 -> {
-                // 副武器：短枪身 + 枪管 + 握把
-                graphics.fill(x + size / 8, y + size * 32 / 100,
-                        x + size * 75 / 100, y + size * 52 / 100, color);
-                graphics.fill(x + size * 75 / 100, y + size * 38 / 100,
-                        x + size * 95 / 100, y + size * 45 / 100, color);
-                graphics.fill(x + size * 45 / 100, y + size * 52 / 100,
-                        x + size * 60 / 100, y + size * 85 / 100, color);
-            }
-            case 2 -> {
-                // 近战：斜向刀刃 + 护手
-                int steps = Math.max(4, size * 6 / 10);
-                for (int i = 0; i < steps; i++) {
-                    int px = x + size * 10 / 100 + i;
-                    int py = y + size * 85 / 100 - i;
-                    graphics.fill(px, py, px + 2, py + 2, color);
-                }
-                graphics.fill(x + size * 12 / 100, y + size * 62 / 100,
-                        x + size * 30 / 100, y + size * 78 / 100, color);
-            }
-            default -> {
-                // 战术道具：菱形手雷 + 拉环
-                int centerX = x + size / 2;
-                int centerY = y + size * 55 / 100;
-                int radius = Math.max(2, size / 4);
-                for (int dy = -radius; dy <= radius; dy++) {
-                    int half = radius - Math.abs(dy);
-                    graphics.fill(centerX - half, centerY + dy,
-                            centerX + half + 1, centerY + dy + 1, color);
-                }
-                graphics.fill(centerX - 1, y + size * 15 / 100,
-                        centerX + 2, centerY - radius, color);
-            }
-        }
     }
 
     /** 武器卡右下角黄色「切换 / 更换」图标：纯形状绘制的双向箭头（装饰，无功能）。 */
