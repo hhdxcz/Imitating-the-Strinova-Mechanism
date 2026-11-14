@@ -763,11 +763,12 @@ public class StrinovaGrowthScreen extends Screen {
                     x + 13, y + 3, COLOR_TEXT_DISABLED, false);
         }
 
-        // 居中武器图标
-        int iconSize = Math.max(8, Math.min(width - 12, height - 22));
-        if (iconSize >= 8) {
-            int iconX = x + (width - iconSize) / 2;
-            int iconY = y + 11 + Math.max(0, (height - 14 - iconSize) / 2);
+        // 居中武器图标：贴图是 2:1，按可用高度放大，避免又小又糊
+        int iconW = Math.max(10, Math.min(width - 12, (height - 22) * 2));
+        int iconH = Math.max(5, iconW / 2);
+        if (iconW >= 10) {
+            int iconX = x + (width - iconW) / 2;
+            int iconY = y + 11 + Math.max(0, (height - 14 - iconH) / 2);
             String iconName = name;
             if (StrinovaWeaponIcons.textureFor(iconName) == null) {
                 iconName = switch (index) {
@@ -777,7 +778,7 @@ public class StrinovaGrowthScreen extends Screen {
                     default -> "闪光弹";
                 };
             }
-            drawWeaponCardIcon(graphics, iconName, index, iconX, iconY, iconSize);
+            drawWeaponCardIcon(graphics, iconName, index, iconX, iconY, iconW);
         }
 
         // 底部说明文字：只显示武器名称（战术道具槽不再显示红色提示）
