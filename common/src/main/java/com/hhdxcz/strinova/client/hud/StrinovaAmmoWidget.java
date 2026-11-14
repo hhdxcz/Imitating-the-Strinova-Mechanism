@@ -68,6 +68,15 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
             }
         }
 
+        // 贴图名：没有可用武器名时按槽位用默认官方图标
+        String[] iconNames = names.clone();
+        String[] defaultIcons = {"警探", "雪鸮", "忍锋", "手雷", "闪光弹"};
+        for (int i = 0; i < 5; i++) {
+            if (StrinovaWeaponIcons.textureFor(iconNames[i]) == null) {
+                iconNames[i] = defaultIcons[i];
+            }
+        }
+
         // 当前选中槽的弹药
         int magazine = -1;
         int reserve = -1;
@@ -92,8 +101,8 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
             boolean isSelected = i == selected;
             painter.rect(slotX, slotY, SLOT, SLOT, isSelected ? 0xCC12222C : 0x88101820);
             painter.border(slotX, slotY, SLOT, SLOT, isSelected ? 0xFFEAF6FF : 0x66445566, 1);
-            drawWeaponArt(painter, names[i], kinds[i], slotX + 2, slotY + 2,
-                    SLOT - 4, isSelected ? 0xFFFFFFFF : 0xCCEAF6FF);
+            drawWeaponArt(painter, iconNames[i], kinds[i], slotX + 2, slotY + 2,
+                    SLOT - 4, SLOT - 4, isSelected ? 0xFFFFFFFF : 0xCCEAF6FF);
 
             // 数字键徽标挂在槽位右侧
             painter.rect(badgeX, slotY + (SLOT - BADGE_HEIGHT) / 2, BADGE_WIDTH, BADGE_HEIGHT, 0x88101820);
@@ -126,8 +135,8 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
         if (selectedKind == null) {
             selectedKind = StrinovaTaczCompat.IconKind.EMPTY;
         }
-        drawWeaponArt(painter, names[selected], selectedKind, cardX + 6, cardY + 8,
-                CARD_WIDTH - 76, 0xFFEAF6FF);
+        drawWeaponArt(painter, iconNames[selected], selectedKind, cardX + 6, cardY + 8,
+                CARD_WIDTH - 82, CARD_HEIGHT - 16, 0xFFEAF6FF);
 
         // 左下：武器名
         String selectedName = names[selected];
@@ -164,18 +173,19 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
     /** 优先用官方武器/投掷物剪影贴图；没有则回退程序化几何剪影。 */
     private static void drawWeaponArt(StrinovaHudPainter painter, String name,
                                       StrinovaTaczCompat.IconKind kind, int x, int y,
-                                      int width, int color) {
+                                      int maxWidth, int maxHeight, int color) {
         net.minecraft.resources.ResourceLocation texture = StrinovaWeaponIcons.textureFor(name);
+        int fit = Math.max(8, Math.min(maxWidth, maxHeight * 2));
+        int h = Math.max(4, Math.round(fit * (float) StrinovaWeaponIcons.TEX_HEIGHT
+                / StrinovaWeaponIcons.TEX_WIDTH));
         if (texture != null) {
-            int w = Math.max(8, width);
-            int h = Math.max(4, Math.round(w * (float) StrinovaWeaponIcons.TEX_HEIGHT
-                    / StrinovaWeaponIcons.TEX_WIDTH));
-            painter.textureRegion(texture, x, y, w, h,
+            int drawY = y + Math.max(0, (maxHeight - h) / 2);
+            painter.textureRegion(texture, x, drawY, fit, h,
                     0.0F, 0.0F, StrinovaWeaponIcons.TEX_WIDTH, StrinovaWeaponIcons.TEX_HEIGHT,
                     StrinovaWeaponIcons.TEX_WIDTH, StrinovaWeaponIcons.TEX_HEIGHT, color, 1.0F);
             return;
         }
-        drawWeaponIcon(painter, kind, x, y, Math.max(8, width), color);
+        drawWeaponIcon(painter, kind, x, y, Math.max(8, Math.min(maxWidth, maxHeight)), color);
     }
 
     private static ItemStack hotbarStack(LocalPlayer player, int index) {

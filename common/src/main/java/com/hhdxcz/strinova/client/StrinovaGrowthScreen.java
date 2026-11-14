@@ -768,7 +768,16 @@ public class StrinovaGrowthScreen extends Screen {
         if (iconSize >= 8) {
             int iconX = x + (width - iconSize) / 2;
             int iconY = y + 11 + Math.max(0, (height - 14 - iconSize) / 2);
-            drawWeaponCardIcon(graphics, name, index, iconX, iconY, iconSize);
+            String iconName = name;
+            if (StrinovaWeaponIcons.textureFor(iconName) == null) {
+                iconName = switch (index) {
+                    case 1 -> "雪鸮";
+                    case 2 -> "忍锋";
+                    case 3 -> "手雷";
+                    default -> "闪光弹";
+                };
+            }
+            drawWeaponCardIcon(graphics, iconName, index, iconX, iconY, iconSize);
         }
 
         // 底部说明文字：只显示武器名称（战术道具槽不再显示红色提示）
