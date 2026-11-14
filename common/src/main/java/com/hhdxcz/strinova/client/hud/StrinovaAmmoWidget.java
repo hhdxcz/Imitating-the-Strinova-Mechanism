@@ -122,19 +122,23 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
                 || selectedKind == StrinovaTaczCompat.IconKind.GENERIC
                 || selectedKind == StrinovaTaczCompat.IconKind.EMPTY;
 
+        // 选中贴图实际绘制宽度：投掷物灰框和名字都按它来对齐（贴图是右对齐的）
+        net.minecraft.resources.ResourceLocation selectedTex =
+                StrinovaWeaponIcons.textureFor(iconNames[selected]);
+        int selectedIconW = ICON_W;
+        if (selectedTex != null) {
+            selectedIconW = Math.max(1, StrinovaWeaponIcons.fit(selectedTex, 0, 0, ICON_W, ICON_H)[2]);
+        }
+        // 贴图右对齐后的左边缘
+        int selectedIconLeft = slotX + ICON_W - ICON_GAP - selectedIconW;
+
         // 选中行：一行高的灰底（透明度 20%）。
         // 枪械/刀：灰框向左加宽，左下角写武器名；投掷物：灰框只包住自己贴图，宽度按贴图收窄。
         int cardH = ICON_H + 6;
         int cardY = selectedSlotY - 3;
         int cardW;
         if (throwableName) {
-            int fitted = ICON_W;
-            net.minecraft.resources.ResourceLocation selTex =
-                    StrinovaWeaponIcons.textureFor(iconNames[selected]);
-            if (selTex != null) {
-                fitted = StrinovaWeaponIcons.fit(selTex, 0, 0, ICON_W, ICON_H)[2];
-            }
-            cardW = Math.max(26, fitted + 10);
+            cardW = Math.max(26, selectedIconW + 10);
         } else {
             cardW = ICON_W + 49;
         }
@@ -167,15 +171,14 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
                     isSelected ? 0xFFEAF6FF : 0xFF9FC6D8, false);
         }
 
-        // 武器名：主武器/副武器/刀写在灰框左下角；投掷物写在自己贴图的正下方
+        // 武器名：主武器/副武器/刀写在灰框左下角；投掷物写在自己贴图的正下方（按贴图实际中心对齐）
         String selectedName = names[selected];
         if (selectedName == null || selectedName.isEmpty()) {
             selectedName = mock ? DEFAULT_SLOT_NAMES[selected] : "未装备";
         }
         if (throwableName) {
-            painter.text(selectedName,
-                    slotX + Math.max(0, (ICON_W - painter.textWidth(selectedName)) / 2),
-                    selectedSlotY + ICON_H + 2,
+            int nameX = selectedIconLeft + selectedIconW / 2 - painter.textWidth(selectedName) / 2;
+            painter.text(selectedName, nameX, selectedSlotY + ICON_H + 2,
                     StrinovaProgrammaticPainter.COLOR_TEXT, true);
         } else {
             painter.text(selectedName, cardX + 4, cardY + cardH - 11,
