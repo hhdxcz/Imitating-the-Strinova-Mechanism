@@ -185,17 +185,29 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
     private static String selectedAgentWeaponName() {
         try {
             String id = StrinovaHudConfig.get().selectedAgentId;
-            if (id == null || id.isEmpty()) {
-                return "";
+            if (id != null && !id.isEmpty()) {
+                StrinovaWikiData.Agent agent = StrinovaWikiData.byId(id);
+                if (agent != null && agent.weapon() != null && agent.weapon().name() != null) {
+                    return agent.weapon().name();
+                }
             }
-            StrinovaWikiData.Agent agent = StrinovaWikiData.byId(id);
-            if (agent == null || agent.weapon() == null || agent.weapon().name() == null) {
-                return "";
+            // 兜底：从计分板自己的角色列反查（选角未落盘/服务端已同步时也能拿到）
+            for (StrinovaScoreboardState.Entry entry : StrinovaScoreboardState.entries()) {
+                if (!entry.self() || entry.agentName() == null || entry.agentName().isEmpty()) {
+                    continue;
+                }
+                for (StrinovaAgentRoster.Agent agent : StrinovaAgentRoster.agents()) {
+                    if (agent.name().equals(entry.agentName())) {
+                        StrinovaWikiData.Agent wiki = StrinovaWikiData.byId(agent.id());
+                        if (wiki != null && wiki.weapon() != null && wiki.weapon().name() != null) {
+                            return wiki.weapon().name();
+                        }
+                    }
+                }
             }
-            return agent.weapon().name();
         } catch (Throwable ignored) {
-            return "";
         }
+        return "";
     }
 
     /** 优先用官方武器/投掷物剪影贴图；没有则回退程序化几何剪影。 */
