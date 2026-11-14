@@ -101,7 +101,8 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
         int badgeX = x + WIDTH - BADGE_WIDTH;
         int bottomY = y + HEIGHT - SLOT;
 
-        // 竖排 5 个槽位：1 在最下，5 在最上
+        // 竖排 5 个槽位：1 在最下，5 在最上。槽位底框统一（选中态只体现在展开卡片和白线上），
+        // 与游戏一致——游戏里选中槽不会额外套一个亮框。
         int selectedSlotY = bottomY;
         for (int i = 0; i < 5; i++) {
             int slotY = bottomY - i * SLOT_STEP;
@@ -109,18 +110,19 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
                 selectedSlotY = slotY;
             }
             boolean isSelected = i == selected;
-            painter.rect(slotX, slotY, SLOT, SLOT, isSelected ? 0xCC3A3F45 : 0x88101820);
-            painter.border(slotX, slotY, SLOT, SLOT, isSelected ? 0xFFCBD3DA : 0x66445566, 1);
+            painter.rect(slotX, slotY, SLOT, SLOT, 0x88101820);
+            painter.border(slotX, slotY, SLOT, SLOT, 0x66445566, 1);
             drawWeaponArt(painter, iconNames[i], kinds[i], slotX + 2, slotY + 2,
                     SLOT - 4, SLOT - 4, isSelected ? 0xFFFFFFFF : 0xCCEAF6FF);
 
-            // 数字键徽标挂在槽位右侧
-            painter.rect(badgeX, slotY + (SLOT - BADGE_HEIGHT) / 2, BADGE_WIDTH, BADGE_HEIGHT, 0x88101820);
-            painter.border(badgeX, slotY + (SLOT - BADGE_HEIGHT) / 2, BADGE_WIDTH, BADGE_HEIGHT,
+            // 数字键徽标挂在槽位右侧：只有选中的那个亮白（游戏里选中键位是高亮的）
+            int badgeY = slotY + (SLOT - BADGE_HEIGHT) / 2;
+            painter.rect(badgeX, badgeY, BADGE_WIDTH, BADGE_HEIGHT, 0x88101820);
+            painter.border(badgeX, badgeY, BADGE_WIDTH, BADGE_HEIGHT,
                     isSelected ? 0xFFEAF6FF : 0x66445566, 1);
             String number = String.valueOf(i + 1);
             painter.text(number, badgeX + (BADGE_WIDTH - painter.textWidth(number)) / 2,
-                    slotY + (SLOT - BADGE_HEIGHT) / 2 + 1,
+                    badgeY + 1,
                     isSelected ? 0xFFEAF6FF : 0xFF9FC6D8, false);
         }
 
@@ -129,18 +131,9 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
                 selectedSlotY - (CARD_HEIGHT - SLOT) / 2));
         int cardX = x;
         painter.rect(cardX, cardY, CARD_WIDTH, CARD_HEIGHT, 0xCC2A2F36);
-        painter.border(cardX, cardY, CARD_WIDTH, CARD_HEIGHT, 0x99CBD3DA, 1);
-        painter.textureRegion(StrinovaWeaponIcons.selectedLine(),
-                cardX + CARD_WIDTH - 5, cardY + 2, 5, CARD_HEIGHT - 4,
-                0, 0, 12, 63, 12, 63, 0xFFE8F2FF, 1.0F);
+        painter.border(cardX, cardY, CARD_WIDTH, CARD_HEIGHT, 0x66445566, 1);
 
-        // 卡片左上角的小型弹匣/导轨指示（几何线条）
-        int markX = cardX + 5;
-        int markY = cardY + 4;
-        painter.rect(markX, markY, 2, 8, 0xCCEAF6FF);
-        painter.rect(markX + 4, markY + 2, 2, 6, 0xCCEAF6FF);
-        painter.rect(markX + 8, markY + 4, 2, 4, 0xCCEAF6FF);
-
+        // 卡片内容（先画内容，最后再画右侧连接卡槽的白色装饰线，压在卡片右边沿上）
         // 大号武器剪影
         StrinovaTaczCompat.IconKind selectedKind = kinds[selected];
         if (selectedKind == null) {
@@ -179,6 +172,15 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
             painter.bar(cardX + 4, cardY + CARD_HEIGHT - 3, CARD_WIDTH - 8, 2, reload,
                     StrinovaProgrammaticPainter.COLOR_WARN, 0x66222B33);
         }
+
+        // 卡片右边缘连接槽位列的白色装饰线（sprite_211）：竖直居中在选中的槽位那一行，
+        // 尺寸按官方像素（12x63，约等于 GUI 2 倍缩放下 6x32），而不是被拉成整张卡片高
+        int lineWidth = 6;
+        int lineHeight = 32;
+        int lineX = cardX + CARD_WIDTH - 3;
+        int lineY = selectedSlotY + SLOT / 2 - lineHeight / 2;
+        painter.textureRegion(StrinovaWeaponIcons.selectedLine(), lineX, lineY, lineWidth, lineHeight,
+                0, 0, 12, 63, 12, 63, 0xFFFFFFFF, 1.0F);
     }
 
     /** 当前选角角色的主武器名（香奈美 → 谢幕曲）。 */
