@@ -1237,16 +1237,18 @@ public class StrinovaAgentSelectScreen extends Screen {
             }
             this.drawText(graphics, Integer.toString(i + 1), x + 3, y + 2, COLOR_DIM);
             this.drawText(graphics, this.truncate(typeLabel, cellW - 14), x + 12, y + 2, COLOR_DEAD);
-            int smallBoxW = Math.max(14, cellW - 8);
-            int smallBoxH = Math.max(8, this.weaponCellH - 12);
+            int smallBoxW = cellW - 8;
+            int smallBoxH = this.weaponCellH - 12;
             String fallback = switch (i) {
                 case 1 -> "雪鸮";
                 case 2 -> "忍锋";
                 case 3 -> "手雷";
                 default -> "闪光弹";
             };
-            this.drawWeaponPanelIcon(graphics, fallback, i, x + 4, y + 10,
-                    smallBoxW, smallBoxH, 0xCCE8F2FF);
+            if (smallBoxW >= 12 && smallBoxH >= 6) {
+                this.drawWeaponPanelIcon(graphics, fallback, i, x + 4, y + 10,
+                        smallBoxW, smallBoxH, 0xCCE8F2FF);
+            }
         }
     }
 

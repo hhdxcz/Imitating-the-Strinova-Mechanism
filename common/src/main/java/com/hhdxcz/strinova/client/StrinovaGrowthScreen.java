@@ -764,9 +764,9 @@ public class StrinovaGrowthScreen extends Screen {
         }
 
         // 居中武器图标：贴图是零重采样的原始剪影，按原始宽高比等比放大到最大
-        int iconBoxW = Math.max(10, width - 12);
-        int iconBoxH = Math.max(6, height - 22);
-        if (iconBoxW >= 10) {
+        int iconBoxW = width - 12;
+        int iconBoxH = height - 22;
+        if (iconBoxW >= 10 && iconBoxH >= 6) {
             int iconX = x + 6;
             int iconY = y + 11;
             String iconName = name;
