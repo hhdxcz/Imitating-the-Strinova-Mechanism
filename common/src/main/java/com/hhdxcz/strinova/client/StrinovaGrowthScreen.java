@@ -763,12 +763,12 @@ public class StrinovaGrowthScreen extends Screen {
                     x + 13, y + 3, COLOR_TEXT_DISABLED, false);
         }
 
-        // 居中武器图标：贴图是 2:1，按可用高度放大，避免又小又糊
-        int iconW = Math.max(10, Math.min(width - 12, (height - 22) * 2));
-        int iconH = Math.max(5, iconW / 2);
-        if (iconW >= 10) {
-            int iconX = x + (width - iconW) / 2;
-            int iconY = y + 11 + Math.max(0, (height - 14 - iconH) / 2);
+        // 居中武器图标：贴图是零重采样的原始剪影，按原始宽高比等比放大到最大
+        int iconBoxW = Math.max(10, width - 12);
+        int iconBoxH = Math.max(6, height - 22);
+        if (iconBoxW >= 10) {
+            int iconX = x + 6;
+            int iconY = y + 11;
             String iconName = name;
             if (StrinovaWeaponIcons.textureFor(iconName) == null) {
                 iconName = switch (index) {
@@ -778,7 +778,7 @@ public class StrinovaGrowthScreen extends Screen {
                     default -> "闪光弹";
                 };
             }
-            drawWeaponCardIcon(graphics, iconName, index, iconX, iconY, iconW);
+            drawWeaponCardIcon(graphics, iconName, index, iconX, iconY, iconBoxW, iconBoxH);
         }
 
         // 底部说明文字：只显示武器名称（战术道具槽不再显示红色提示）
@@ -810,19 +810,17 @@ public class StrinovaGrowthScreen extends Screen {
 
     /** 优先用武器/道具真实剪影贴图，没有贴图时回退程序化几何图标。 */
     private static void drawWeaponCardIcon(GuiGraphics graphics, String name, int index,
-                                          int x, int y, int size) {
+                                          int x, int y, int boxW, int boxH) {
         net.minecraft.resources.ResourceLocation texture = StrinovaWeaponIcons.textureFor(name);
         if (texture != null) {
-            int drawW = Math.max(8, size);
-            int drawH = Math.max(4, Math.round(drawW * (float) StrinovaWeaponIcons.TEX_HEIGHT
-                    / StrinovaWeaponIcons.TEX_WIDTH));
-            int drawY = y + (size - drawH) / 2;
-            graphics.blit(texture, x, drawY, drawW, drawH,
-                    0.0F, 0.0F, StrinovaWeaponIcons.TEX_WIDTH, StrinovaWeaponIcons.TEX_HEIGHT,
-                    StrinovaWeaponIcons.TEX_WIDTH, StrinovaWeaponIcons.TEX_HEIGHT);
+            int[] box = StrinovaWeaponIcons.fit(texture, x, y, boxW, boxH);
+            int uv = StrinovaWeaponIcons.UV_SIZE;
+            graphics.blit(texture, box[0], box[1], box[2], box[3], 0.0F, 0.0F, uv, uv, uv, uv);
             return;
         }
-        drawWeaponIcon(graphics, index, x, y, size, index == 0 ? 0xFFC8D4E0 : COLOR_TEXT_DIM);
+        int size = Math.max(8, Math.min(boxW, boxH));
+        drawWeaponIcon(graphics, index, x, y + (boxH - size) / 2, size,
+                index == 0 ? 0xFFC8D4E0 : COLOR_TEXT_DIM);
     }
 
     /** 程序化绘制武器几何图标：0 主武器（长枪）、1 副武器（手枪）、2 近战（斜刃）、3+ 战术道具（菱形手雷）。 */

@@ -215,14 +215,12 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
                                       StrinovaTaczCompat.IconKind kind, int x, int y,
                                       int maxWidth, int maxHeight, int color) {
         net.minecraft.resources.ResourceLocation texture = StrinovaWeaponIcons.textureFor(name);
-        int fit = Math.max(8, Math.min(maxWidth, maxHeight * 2));
-        int h = Math.max(4, Math.round(fit * (float) StrinovaWeaponIcons.TEX_HEIGHT
-                / StrinovaWeaponIcons.TEX_WIDTH));
         if (texture != null) {
-            int drawY = y + Math.max(0, (maxHeight - h) / 2);
-            painter.textureRegion(texture, x, drawY, fit, h,
-                    0.0F, 0.0F, StrinovaWeaponIcons.TEX_WIDTH, StrinovaWeaponIcons.TEX_HEIGHT,
-                    StrinovaWeaponIcons.TEX_WIDTH, StrinovaWeaponIcons.TEX_HEIGHT, color, 1.0F);
+            // 贴图是按 alpha 裁剪的原始剪影，宽高比各不相同，必须等比适配，不能拉伸
+            int[] box = StrinovaWeaponIcons.fit(texture, x, y, maxWidth, maxHeight);
+            int uv = StrinovaWeaponIcons.UV_SIZE;
+            painter.textureRegion(texture, box[0], box[1], box[2], box[3],
+                    0.0F, 0.0F, uv, uv, uv, uv, color, 1.0F);
             return;
         }
         drawWeaponIcon(painter, kind, x, y, Math.max(8, Math.min(maxWidth, maxHeight)), color);

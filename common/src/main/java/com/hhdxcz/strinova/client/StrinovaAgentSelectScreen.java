@@ -1200,12 +1200,11 @@ public class StrinovaAgentSelectScreen extends Screen {
         this.border(graphics, contentX, this.weaponTop, contentW, mainH, withAlpha(accent, 0x88));
         this.drawText(graphics, "1 " + Component.translatable(WEAPON_KEYS[0]).getString(),
                 contentX + 5, this.weaponTop + 3, COLOR_DIM);
-        int iconW = Math.max(20, Math.min(contentW - 12, (mainH - 10) * 2));
-        int iconX = contentX + (contentW - iconW) / 2;
-        int iconY = this.weaponTop + Math.max(2, (mainH - iconW / 2) / 2);
+        int iconBoxW = Math.max(20, contentW - 12);
+        int iconBoxH = Math.max(8, mainH - 22);
         String primaryIconName = hasPrimary ? wiki.weapon().name() : "警探";
-        this.drawWeaponPanelIcon(graphics, primaryIconName, 0, iconX, iconY, iconW,
-                0xFFE8F2FF);
+        this.drawWeaponPanelIcon(graphics, primaryIconName, 0, contentX + 6, this.weaponTop + 11,
+                iconBoxW, iconBoxH, 0xFFE8F2FF);
         String primaryName = hasPrimary
                 ? wiki.weapon().name()
                 : Component.translatable("hud.strinova.weapon.none").getString();
@@ -1238,39 +1237,33 @@ public class StrinovaAgentSelectScreen extends Screen {
             }
             this.drawText(graphics, Integer.toString(i + 1), x + 3, y + 2, COLOR_DIM);
             this.drawText(graphics, this.truncate(typeLabel, cellW - 14), x + 12, y + 2, COLOR_DEAD);
-            int smallW = Math.max(14, Math.min(cellW - 8, (this.weaponCellH - 8) * 2));
+            int smallBoxW = Math.max(14, cellW - 8);
+            int smallBoxH = Math.max(8, this.weaponCellH - 12);
             String fallback = switch (i) {
                 case 1 -> "雪鸮";
                 case 2 -> "忍锋";
                 case 3 -> "手雷";
                 default -> "闪光弹";
             };
-            int smallX = x + (cellW - smallW) / 2;
-            int smallY = y + Math.max(2, (this.weaponCellH - smallW / 2) / 2);
-            this.drawWeaponPanelIcon(graphics, fallback, i, smallX, smallY, smallW, 0xCCE8F2FF);
+            this.drawWeaponPanelIcon(graphics, fallback, i, x + 4, y + 10,
+                    smallBoxW, smallBoxH, 0xCCE8F2FF);
         }
     }
 
     /** 优先用官方武器剪影贴图，无贴图回退几何图标。 */
     private void drawWeaponPanelIcon(GuiGraphics graphics, String name, int index,
-                                     int x, int y, int size, int color) {
+                                     int x, int y, int boxW, int boxH, int color) {
         net.minecraft.resources.ResourceLocation texture =
                 com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.textureFor(name);
         if (texture != null) {
-            int drawW = Math.max(8, size);
-            int drawH = Math.max(4, Math.round(drawW
-                    * (float) com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.TEX_HEIGHT
-                    / com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.TEX_WIDTH));
-            int drawY = y + (size - drawH) / 2;
-            graphics.blit(texture, x, drawY, drawW, drawH,
-                    0.0F, 0.0F,
-                    com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.TEX_WIDTH,
-                    com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.TEX_HEIGHT,
-                    com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.TEX_WIDTH,
-                    com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.TEX_HEIGHT);
+            // 原始剪影宽高比各不相同，等比适配后绘制，避免拉伸发糊
+            int[] box = com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.fit(texture, x, y, boxW, boxH);
+            int uv = com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons.UV_SIZE;
+            graphics.blit(texture, box[0], box[1], box[2], box[3], 0.0F, 0.0F, uv, uv, uv, uv);
             return;
         }
-        this.drawWeaponIcon(graphics, x, y, size, index, color);
+        int size = Math.max(8, Math.min(boxW, boxH));
+        this.drawWeaponIcon(graphics, x + (boxW - size) / 2, y + (boxH - size) / 2, size, index, color);
     }
 
     /** 外观页签占位内容：菱形几何图形 + 标签（外观系统待接入）。 */
