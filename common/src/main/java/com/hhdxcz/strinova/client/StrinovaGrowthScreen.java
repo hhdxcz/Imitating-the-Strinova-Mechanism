@@ -7,6 +7,7 @@ import com.hhdxcz.strinova.client.hud.StrinovaHudConfig;
 import com.hhdxcz.strinova.client.hud.StrinovaHudState;
 import com.hhdxcz.strinova.client.hud.StrinovaMatchState;
 import com.hhdxcz.strinova.client.hud.StrinovaWikiData;
+import com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -767,8 +768,7 @@ public class StrinovaGrowthScreen extends Screen {
         if (iconSize >= 8) {
             int iconX = x + (width - iconSize) / 2;
             int iconY = y + 11 + Math.max(0, (height - 14 - iconSize) / 2);
-            drawWeaponIcon(graphics, index, iconX, iconY, iconSize,
-                    selected ? COLOR_CYAN : (index == 0 ? 0xFFC8D4E0 : COLOR_TEXT_DIM));
+            drawWeaponCardIcon(graphics, name, index, iconX, iconY, iconSize);
         }
 
         // 底部说明文字：只显示武器名称（战术道具槽不再显示红色提示）
@@ -797,6 +797,23 @@ public class StrinovaGrowthScreen extends Screen {
             "config.strinova.agent.weapon_gadget",
             "config.strinova.agent.weapon_gadget"
     };
+
+    /** 优先用武器/道具真实剪影贴图，没有贴图时回退程序化几何图标。 */
+    private static void drawWeaponCardIcon(GuiGraphics graphics, String name, int index,
+                                          int x, int y, int size) {
+        net.minecraft.resources.ResourceLocation texture = StrinovaWeaponIcons.textureFor(name);
+        if (texture != null) {
+            int drawW = Math.max(8, size);
+            int drawH = Math.max(4, Math.round(drawW * (float) StrinovaWeaponIcons.TEX_HEIGHT
+                    / StrinovaWeaponIcons.TEX_WIDTH));
+            int drawY = y + (size - drawH) / 2;
+            graphics.blit(texture, x, drawY, drawW, drawH,
+                    0.0F, 0.0F, StrinovaWeaponIcons.TEX_WIDTH, StrinovaWeaponIcons.TEX_HEIGHT,
+                    StrinovaWeaponIcons.TEX_WIDTH, StrinovaWeaponIcons.TEX_HEIGHT);
+            return;
+        }
+        drawWeaponIcon(graphics, index, x, y, size, index == 0 ? 0xFFC8D4E0 : COLOR_TEXT_DIM);
+    }
 
     /** 程序化绘制武器几何图标：0 主武器（长枪）、1 副武器（手枪）、2 近战（斜刃）、3+ 战术道具（菱形手雷）。 */
     private static void drawWeaponIcon(GuiGraphics graphics, int index, int x, int y, int size, int color) {
