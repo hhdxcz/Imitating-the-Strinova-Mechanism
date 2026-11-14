@@ -133,23 +133,19 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
         int selectedSlotY = bottomY - Math.max(0, Math.min(4, selected)) * SLOT_STEP;
 
         // 选中行的灰黑色矩形：右边缘贴着数字键，向下延伸放武器名。
-        // 投掷物只需要包住贴图+名字，用窄一点的灰框；枪械用整宽卡片放大剪影+弹药。
-        int cardW = throwable ? CARD_NARROW_W : CARD_WIDTH;
-        int cardH = throwable ? CARD_NARROW_H : CARD_HEIGHT;
-        int cardX = throwable ? iconRight - cardW : x;
-        int cardY = throwable
-                ? selectedSlotY - 4
-                : selectedSlotY - (cardH - ICON_H) / 2;
+        // 武器贴图大小保持不变（切换时不会变大），枪械只是额外多显示弹匣/备弹。
+        boolean showAmmo = !throwable && selectedKind != StrinovaTaczCompat.IconKind.KNIFE;
+        int cardW = showAmmo ? ICON_W + ICON_GAP + 34 : CARD_NARROW_W;
+        int cardH = CARD_NARROW_H;
+        int cardX = iconRight - cardW;
+        int cardY = selectedSlotY - 4;
         painter.rect(cardX, cardY, cardW, cardH, 0xCC2A2F36);
         painter.border(cardX, cardY, cardW, cardH, 0x66445566, 1);
 
-        // 槽位贴图：枪械选中行的贴图由矩形里的大图代替，其余全部按原样绘制
+        // 5 把武器始终按同一尺寸绘制（选中的那把只是变亮，不会变大）
         for (int i = 0; i < 5; i++) {
             int slotY = bottomY - i * SLOT_STEP;
             boolean isSelected = i == selected;
-            if (isSelected && !throwable) {
-                continue;
-            }
             drawWeaponArt(painter, iconNames[i], kinds[i], slotX, slotY, ICON_W, ICON_H,
                     isSelected ? 0xFFFFFFFF : 0xDDDCE8F2, true);
         }
@@ -175,39 +171,27 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
         if (selectedName == null || selectedName.isEmpty()) {
             selectedName = mock ? DEFAULT_SLOT_NAMES[selected] : "未装备";
         }
+        // 武器名：居中写在贴图下方
+        painter.text(selectedName,
+                slotX + Math.max(0, (ICON_W - painter.textWidth(selectedName)) / 2),
+                selectedSlotY + ICON_H + 3,
+                StrinovaProgrammaticPainter.COLOR_TEXT, false);
 
-        if (throwable) {
-            // 道具：名字居中写在贴图下方
-            painter.text(selectedName,
-                    slotX + Math.max(0, (ICON_W - painter.textWidth(selectedName)) / 2),
-                    selectedSlotY + ICON_H + 3,
-                    StrinovaProgrammaticPainter.COLOR_TEXT, false);
-        } else {
-            // 枪械/近战：矩形里放大剪影 + 左下名字 + 右侧弹药
-            drawWeaponArt(painter, iconNames[selected], selectedKind, cardX + 6, cardY + 8,
-                    cardW - 44, cardH - 16, 0xFFEAF6FF, false);
-            painter.text(selectedName, cardX + 6, cardY + cardH - 12,
-                    StrinovaProgrammaticPainter.COLOR_TEXT, false);
+        // 枪械：灰框左侧多显示弹匣（白，大号）+ 备弹（蓝）；刀没有子弹，显示 ∞
+        if (showAmmo) {
             if (magazine >= 0) {
                 String magText = String.valueOf(magazine);
-                float magScale = 1.9F;
-                int magWidth = Math.round(painter.textWidth(magText) * magScale);
                 int magColor = magazine <= 5
                         ? StrinovaProgrammaticPainter.COLOR_HP_LOW
                         : StrinovaProgrammaticPainter.COLOR_TEXT;
-                painter.textScaled(magText, cardX + cardW - 10 - magWidth, cardY + 6,
-                        magScale, magColor, true);
+                painter.textScaled(magText, cardX + 6, cardY + 4, 1.6F, magColor, true);
                 if (reserve >= 0) {
-                    painter.textRightAligned(String.valueOf(reserve), cardX + cardW - 12,
-                            cardY + 30, AMMO_BLUE, false);
+                    painter.text(String.valueOf(reserve), cardX + 7, cardY + 24,
+                            AMMO_BLUE, false);
                 }
-            } else if (selectedKind == StrinovaTaczCompat.IconKind.KNIFE) {
-                // 刀没有子弹，显示无限符号
-                float infScale = 1.6F;
-                int infWidth = Math.round(painter.textWidth("∞") * infScale);
-                painter.textScaled("∞", cardX + cardW - 12 - infWidth, cardY + 14,
-                        infScale, AMMO_BLUE, true);
             }
+        } else if (selectedKind == StrinovaTaczCompat.IconKind.KNIFE) {
+            painter.textScaled("∞", cardX + 6, cardY + 14, 1.4F, AMMO_BLUE, true);
         }
 
         // 换弹进度（有换弹时卡片底部细条）
