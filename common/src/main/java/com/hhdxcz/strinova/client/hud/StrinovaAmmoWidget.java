@@ -117,11 +117,28 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
 
         int selectedSlotY = bottomY - Math.max(0, Math.min(4, selected)) * SLOT_STEP;
 
-        // 选中行：一行高的灰底（透明度 20%），贴着贴图那行，不会伸到武器栏下面去
-        int cardX = slotX - 3;
-        int cardW = dividerX - cardX;
+        boolean throwableName = selectedKind == StrinovaTaczCompat.IconKind.GRENADE
+                || selectedKind == StrinovaTaczCompat.IconKind.MEDKIT
+                || selectedKind == StrinovaTaczCompat.IconKind.GENERIC
+                || selectedKind == StrinovaTaczCompat.IconKind.EMPTY;
+
+        // 选中行：一行高的灰底（透明度 20%）。
+        // 枪械/刀：灰框向左加宽，左下角写武器名；投掷物：灰框只包住自己贴图，宽度按贴图收窄。
         int cardH = ICON_H + 6;
         int cardY = selectedSlotY - 3;
+        int cardW;
+        if (throwableName) {
+            int fitted = ICON_W;
+            net.minecraft.resources.ResourceLocation selTex =
+                    StrinovaWeaponIcons.textureFor(iconNames[selected]);
+            if (selTex != null) {
+                fitted = StrinovaWeaponIcons.fit(selTex, 0, 0, ICON_W, ICON_H)[2];
+            }
+            cardW = Math.max(26, fitted + 10);
+        } else {
+            cardW = ICON_W + 49;
+        }
+        int cardX = dividerX - cardW;
         painter.rect(cardX, cardY, cardW, cardH, 0x332A2F36);
         painter.border(cardX, cardY, cardW, cardH, 0x55445566, 1);
 
@@ -150,22 +167,18 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
                     isSelected ? 0xFFEAF6FF : 0xFF9FC6D8, false);
         }
 
-        // 武器名：主武器/副武器/刀写在武器栏左下角；投掷物写在自己贴图的正下方
+        // 武器名：主武器/副武器/刀写在灰框左下角；投掷物写在自己贴图的正下方
         String selectedName = names[selected];
         if (selectedName == null || selectedName.isEmpty()) {
             selectedName = mock ? DEFAULT_SLOT_NAMES[selected] : "未装备";
         }
-        boolean throwableName = selectedKind == StrinovaTaczCompat.IconKind.GRENADE
-                || selectedKind == StrinovaTaczCompat.IconKind.MEDKIT
-                || selectedKind == StrinovaTaczCompat.IconKind.GENERIC
-                || selectedKind == StrinovaTaczCompat.IconKind.EMPTY;
         if (throwableName) {
             painter.text(selectedName,
                     slotX + Math.max(0, (ICON_W - painter.textWidth(selectedName)) / 2),
                     selectedSlotY + ICON_H + 2,
                     StrinovaProgrammaticPainter.COLOR_TEXT, true);
         } else {
-            painter.text(selectedName, x + 4, y + HEIGHT - 11,
+            painter.text(selectedName, cardX + 4, cardY + cardH - 11,
                     StrinovaProgrammaticPainter.COLOR_TEXT, true);
         }
 
