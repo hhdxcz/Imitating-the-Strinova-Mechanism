@@ -16,14 +16,16 @@ import java.util.List;
  */
 public final class StrinovaAmmoWidget implements StrinovaHudWidget {
 
-    private static final int WIDTH = 204;
-    private static final int HEIGHT = 148;
-    private static final int SLOT = 22;
-    private static final int SLOT_STEP = 24;
+    /** 展开卡片宽度。 */
+    private static final int CARD_WIDTH = 166;
     private static final int BADGE_WIDTH = 11;
     private static final int BADGE_HEIGHT = 10;
+    private static final int WIDTH = 204;
+    private static final int HEIGHT = 148;
+    /** 槽位图标尺寸（游戏里没有小方框，图标直接浮在 HUD 上）。 */
+    private static final int SLOT = 22;
+    private static final int SLOT_STEP = 24;
     private static final int CARD_HEIGHT = 52;
-    private static final int CARD_WIDTH = WIDTH - 38;
     private static final int AMMO_BLUE = 0xFF6FB6FF;
 
     private static final String[] DEFAULT_SLOT_NAMES = {"主武器", "副武器", "近战", "战术道具", "战术道具"};
@@ -97,12 +99,19 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
             }
         }
 
-        int slotX = x + WIDTH - BADGE_WIDTH - 2 - SLOT;
-        int badgeX = x + WIDTH - BADGE_WIDTH;
+        // 槽位列：和游戏一致——图标直接浮在 HUD 上（没有小方框），数字键在分隔线右侧
+        int slotX = x + CARD_WIDTH + 3;
+        int dividerX = slotX + SLOT;
+        int badgeX = dividerX + 2;
         int bottomY = y + HEIGHT - SLOT;
+        int columnTop = bottomY - 4 * SLOT_STEP - 2;
+        int columnBottom = y + HEIGHT;
 
-        // 竖排 5 个槽位：1 在最下，5 在最上。槽位底框统一（选中态只体现在展开卡片和白线上），
-        // 与游戏一致——游戏里选中槽不会额外套一个亮框。
+        // 图标列背后很淡的暗色衬底（游戏里有一层半透明底，避免白色剪影在亮背景上看不清）
+        painter.rect(slotX - 2, columnTop, SLOT + 4, columnBottom - columnTop, 0x40101820);
+        // 图标列与数字键之间的细竖线
+        painter.rect(dividerX, columnTop, 1, columnBottom - columnTop, 0x66B4C0CC);
+
         int selectedSlotY = bottomY;
         for (int i = 0; i < 5; i++) {
             int slotY = bottomY - i * SLOT_STEP;
@@ -110,12 +119,12 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
                 selectedSlotY = slotY;
             }
             boolean isSelected = i == selected;
-            painter.rect(slotX, slotY, SLOT, SLOT, 0x88101820);
-            painter.border(slotX, slotY, SLOT, SLOT, 0x66445566, 1);
-            drawWeaponArt(painter, iconNames[i], kinds[i], slotX + 2, slotY + 2,
-                    SLOT - 4, SLOT - 4, isSelected ? 0xFFFFFFFF : 0xCCEAF6FF);
+            // 选中的那一格不画小图标：游戏里该位置被展开的武器卡片取代，只剩右侧数字键
+            if (!isSelected) {
+                drawWeaponArt(painter, iconNames[i], kinds[i], slotX, slotY, SLOT, SLOT, 0xDDDCE8F2);
+            }
 
-            // 数字键徽标挂在槽位右侧：只有选中的那个亮白（游戏里选中键位是高亮的）
+            // 数字键徽标在分隔线右侧：只有选中的那个亮白高亮
             int badgeY = slotY + (SLOT - BADGE_HEIGHT) / 2;
             painter.rect(badgeX, badgeY, BADGE_WIDTH, BADGE_HEIGHT, 0x88101820);
             painter.border(badgeX, badgeY, BADGE_WIDTH, BADGE_HEIGHT,
@@ -126,7 +135,7 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
                     isSelected ? 0xFFEAF6FF : 0xFF9FC6D8, false);
         }
 
-        // 当前武器卡片：从选中的那一层向左展开（不固定在最下面）
+        // 当前武器卡片：从选中的那一层向左展开（不固定在最下面），右边缘紧贴槽位列
         int cardY = Math.max(y, Math.min(y + HEIGHT - CARD_HEIGHT,
                 selectedSlotY - (CARD_HEIGHT - SLOT) / 2));
         int cardX = x;
@@ -173,12 +182,12 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
                     StrinovaProgrammaticPainter.COLOR_WARN, 0x66222B33);
         }
 
-        // 卡片右边缘连接槽位列的白色装饰线（sprite_211）：竖直居中在选中的槽位那一行，
-        // 尺寸按官方像素（12x63，约等于 GUI 2 倍缩放下 6x32），而不是被拉成整张卡片高
+        // 卡片右边缘连接槽位列的白色装饰线（sprite_211）：按官方 12x63 比例并竖直居中在卡片上，
+        // 而不是被拉成整张卡片高；卡片上下夹紧时白线也跟着卡片走（和游戏一致）
         int lineWidth = 6;
         int lineHeight = 32;
         int lineX = cardX + CARD_WIDTH - 3;
-        int lineY = selectedSlotY + SLOT / 2 - lineHeight / 2;
+        int lineY = cardY + (CARD_HEIGHT - lineHeight) / 2;
         painter.textureRegion(StrinovaWeaponIcons.selectedLine(), lineX, lineY, lineWidth, lineHeight,
                 0, 0, 12, 63, 12, 63, 0xFFFFFFFF, 1.0F);
     }
