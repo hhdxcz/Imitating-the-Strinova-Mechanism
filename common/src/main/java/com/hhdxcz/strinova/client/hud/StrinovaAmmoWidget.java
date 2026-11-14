@@ -95,12 +95,16 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
         int badgeX = x + WIDTH - BADGE_WIDTH;
         int bottomY = y + HEIGHT - SLOT;
 
-        // 竖排 5 个槽位（1 号在最下方）
+        // 竖排 5 个槽位：1 在最下，5 在最上
+        int selectedSlotY = bottomY;
         for (int i = 0; i < 5; i++) {
-            int slotY = bottomY - (4 - i) * SLOT_STEP;
+            int slotY = bottomY - i * SLOT_STEP;
+            if (i == selected) {
+                selectedSlotY = slotY;
+            }
             boolean isSelected = i == selected;
-            painter.rect(slotX, slotY, SLOT, SLOT, isSelected ? 0xCC12222C : 0x88101820);
-            painter.border(slotX, slotY, SLOT, SLOT, isSelected ? 0xFFEAF6FF : 0x66445566, 1);
+            painter.rect(slotX, slotY, SLOT, SLOT, isSelected ? 0xCC3A3F45 : 0x88101820);
+            painter.border(slotX, slotY, SLOT, SLOT, isSelected ? 0xFFCBD3DA : 0x66445566, 1);
             drawWeaponArt(painter, iconNames[i], kinds[i], slotX + 2, slotY + 2,
                     SLOT - 4, SLOT - 4, isSelected ? 0xFFFFFFFF : 0xCCEAF6FF);
 
@@ -114,11 +118,12 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
                     isSelected ? 0xFFEAF6FF : 0xFF9FC6D8, false);
         }
 
-        // 当前武器卡片（向左展开，与最下方槽位底对齐）
-        int cardY = y + HEIGHT - CARD_HEIGHT - 2;
+        // 当前武器卡片：从选中的那一层向左展开（不固定在最下面）
+        int cardY = Math.max(y, Math.min(y + HEIGHT - CARD_HEIGHT,
+                selectedSlotY - (CARD_HEIGHT - SLOT) / 2));
         int cardX = x;
-        painter.rect(cardX, cardY, CARD_WIDTH, CARD_HEIGHT, 0xCC15181E);
-        painter.border(cardX, cardY, CARD_WIDTH, CARD_HEIGHT, 0x66FFFFFF, 1);
+        painter.rect(cardX, cardY, CARD_WIDTH, CARD_HEIGHT, 0xCC2A2F36);
+        painter.border(cardX, cardY, CARD_WIDTH, CARD_HEIGHT, 0x99CBD3DA, 1);
         painter.textureRegion(StrinovaWeaponIcons.selectedLine(),
                 cardX + CARD_WIDTH - 5, cardY + 2, 5, CARD_HEIGHT - 4,
                 0, 0, 12, 63, 12, 63, 0xFFE8F2FF, 1.0F);
