@@ -1035,12 +1035,13 @@ public final class StrinovaNetwork {
             }
         }
         FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-        writeMatchState(buf, server, kills, damageEvents);
+        writeMatchState(buf, server, target, kills, damageEvents);
         NetworkManager.sendToPlayer(target, S2C_MATCH_STATE, buf);
     }
 
     // 写入对局快照：对局信息 + 击杀事件 + 所有在线玩家战斗数据 + 目标玩家本人的伤害数字事件
-    private static void writeMatchState(FriendlyByteBuf buf, MinecraftServer server,
+    // 注意：所有队伍相关字段都按「目标玩家自己的队伍」翻转后再写，保证每个客户端只看到自己的队友/选角内容
+    private static void writeMatchState(FriendlyByteBuf buf, MinecraftServer server, ServerPlayer target,
                                         List<StrinovaCombatManager.KillEvent> kills,
                                         List<StrinovaCombatManager.DamageEvent> damageEvents) {
         boolean active = StrinovaMatchManager.isActive();
@@ -1048,24 +1049,41 @@ public final class StrinovaNetwork {
         if (!active) {
             return;
         }
+        UUID targetId = target == null ? null : target.getUUID();
+        boolean selectPhase = StrinovaMatchManager.phase() == StrinovaMatchManager.Phase.SELECT;
+        // 目标玩家在服务端的敌方队伍里 -> 需要把「我方/敌方」整体对调
+        boolean flip = StrinovaMatchManager.isEnemy(targetId);
+        boolean targetInTeam = flip || StrinovaMatchManager.isAlly(targetId);
+        int allyScore = flip ? StrinovaMatchManager.enemiesScore() : StrinovaMatchManager.alliesScore();
+        int enemyScore = flip ? StrinovaMatchManager.alliesScore() : StrinovaMatchManager.enemiesScore();
+        String allyTeamKey = flip ? StrinovaMatchManager.enemiesTeamKey() : StrinovaMatchManager.alliesTeamKey();
+        String enemyTeamKey = flip ? StrinovaMatchManager.alliesTeamKey() : StrinovaMatchManager.enemiesTeamKey();
+        boolean allyAttacking = flip
+                ? !StrinovaMatchManager.alliesAttacking()
+                : StrinovaMatchManager.alliesAttacking();
+        int winner = StrinovaMatchManager.winner();
+        if (flip && winner != 0) {
+            winner = winner == 1 ? 2 : 1;
+        }
         buf.writeUtf(StrinovaMatchState.getModeKey(), 128);
         buf.writeInt(StrinovaMatchManager.round());
         buf.writeInt(StrinovaMatchManager.secondsLeft());
-        buf.writeInt(StrinovaMatchManager.alliesScore());
-        buf.writeInt(StrinovaMatchManager.enemiesScore());
-        buf.writeUtf(StrinovaMatchManager.alliesTeamKey(), 128);
-        buf.writeUtf(StrinovaMatchManager.enemiesTeamKey(), 128);
+        buf.writeInt(allyScore);
+        buf.writeInt(enemyScore);
+        buf.writeUtf(allyTeamKey, 128);
+        buf.writeUtf(enemyTeamKey, 128);
         // 阶段（选角/预备/战斗/休整/结束）、攻防方、目标回合数、胜者
         buf.writeVarInt(StrinovaMatchManager.phase().ordinal());
-        buf.writeBoolean(StrinovaMatchManager.alliesAttacking());
+        buf.writeBoolean(allyAttacking);
         buf.writeInt(StrinovaMatchManager.targetWins());
-        buf.writeVarInt(StrinovaMatchManager.winner());
+        buf.writeVarInt(winner);
 
         // 回合记录：哪方赢下 + 赢法（炸弹爆炸/拆除/灭队/时间耗尽）
         List<StrinovaMatchManager.RoundResult> results = StrinovaMatchManager.roundResults();
         buf.writeVarInt(results.size());
         for (StrinovaMatchManager.RoundResult result : results) {
-            buf.writeBoolean(result.allyWon());
+            // 回合胜负同样按客户端视角翻转
+            buf.writeBoolean(flip != result.allyWon());
             buf.writeUtf(result.reasonKey() == null ? "" : result.reasonKey(), 128);
         }
 
@@ -1090,9 +1108,18 @@ public final class StrinovaNetwork {
                     : player.getMainHandItem().getHoverName().getString();
             buf.writeUUID(playerId);
             buf.writeUtf(player.getGameProfile().getName(), 64);
-            // 角色名：由客户端 C2S_PROFILE 上报 -> StrinovaPlayerProfile（未选角为空串）
-            buf.writeUtf(StrinovaPlayerProfile.agentName(playerId), 64);
-            buf.writeBoolean(StrinovaMatchManager.isAlly(playerId));
+            // 「队友」标记按目标玩家自己的队伍算：只有和自己同队的玩家才是 ally
+            boolean sameTeam = targetInTeam
+                    ? StrinovaMatchManager.sameTeam(targetId, playerId)
+                    : StrinovaMatchManager.isAlly(playerId);
+            // 角色名：由客户端 C2S_PROFILE 上报 -> StrinovaPlayerProfile（未选角为空串）；
+            // 选角阶段敌方玩家的选角内容不下发（两队选角互不可见）
+            String agentName = StrinovaPlayerProfile.agentName(playerId);
+            if (selectPhase && !sameTeam) {
+                agentName = "";
+            }
+            buf.writeUtf(agentName, 64);
+            buf.writeBoolean(sameTeam);
             buf.writeInt(state.kills());
             buf.writeInt(state.deaths());
             buf.writeInt(state.assists());

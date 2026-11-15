@@ -286,9 +286,23 @@ public final class StrinovaMatchManager {
         return false;
     }
 
-    // 查询某玩家是否属于我方；null/不在名单内返回 false
+    // 查询某玩家是否属于我方（服务端视角的 ALLIES 队伍）；null/不在名单内返回 false
     public static boolean isAlly(UUID playerId) {
         return playerId != null && ALLIES.contains(playerId);
+    }
+
+    // 查询某玩家是否属于敌方（服务端视角的 ENEMIES 队伍）
+    public static boolean isEnemy(UUID playerId) {
+        return playerId != null && ENEMIES.contains(playerId);
+    }
+
+    // 两名玩家是否在同一队（用于按客户端视角下发「队友」标记）
+    public static boolean sameTeam(UUID a, UUID b) {
+        if (a == null || b == null) {
+            return false;
+        }
+        return (ALLIES.contains(a) && ALLIES.contains(b))
+                || (ENEMIES.contains(a) && ENEMIES.contains(b));
     }
 
     // 我方名单快照（只读，取快照后不受后续对局状态变化影响）
