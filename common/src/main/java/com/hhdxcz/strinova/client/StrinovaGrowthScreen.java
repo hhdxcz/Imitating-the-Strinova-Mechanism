@@ -31,7 +31,7 @@ import java.util.List;
  * <p>纯 {@link GuiGraphics} 程序化绘制，不依赖任何贴图；小窗口会自动隐藏立绘、觉醒描述
  * 与武器名称等次要信息，保证 320×240 ~ 高分辨率下都不溢出。</p>
  */
-public class StrinovaGrowthScreen extends Screen {
+public class StrinovaGrowthScreen extends StrinovaScaledScreen {
 
     // ==================== 配色（Strinova 风格：青蓝 / 品红 / 金色点缀） ====================
     private static final int COLOR_BG_TOP = 0xFF0A1018;
@@ -174,6 +174,8 @@ public class StrinovaGrowthScreen extends Screen {
     /** 初始化界面：解析当前角色、计算自适应布局并添加右上角「自定义」与关闭按钮。 */
     @Override
     protected void init() {
+        // 统一设计分辨率：先记录真实 GUI 尺寸，再把 width/height 换成设计坐标
+        this.beginDesignSpace();
         this.clearWidgets();
         this.agent = resolveAgent();
         StrinovaGrowthState.selectAgent(this.agent == null ? "" : this.agent.id());
@@ -404,6 +406,9 @@ public class StrinovaGrowthScreen extends Screen {
     /** 渲染界面：深色底（可叠加自定义压暗）→ 顶部栏 → 左立绘 → 中成长网格 → 右武器栏 → 底部觉醒 → 控件/提示。 */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         StrinovaGrowthUi ui = StrinovaHudConfig.get().growthUi;
         this.renderBackground(graphics);
         graphics.fillGradient(0, 0, this.width, this.height, COLOR_BG_TOP, COLOR_BG_BOTTOM);
@@ -432,6 +437,7 @@ public class StrinovaGrowthScreen extends Screen {
         } else {
             this.renderHoverTooltips(graphics, mouseX, mouseY);
         }
+        this.popDesignSpace(graphics);
     }
 
     // ==================== 顶部栏 ====================
@@ -1483,29 +1489,14 @@ public class StrinovaGrowthScreen extends Screen {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         // 0) 武器更换面板打开时优先处理：点候选=装配，点面板外=关闭（面板内空白不关闭）
         if (this.weaponPopupSlot >= 0) {
-            if (button == 0) {
-                for (int i = 0; i < this.weaponPopupRects.size(); i++) {
-                    if (insideRect(mouseX, mouseY, this.weaponPopupRects.get(i))) {
-                        int index = this.weaponPopupScroll + i;
-                        if (index >= 0 && index < this.weaponPopupEntries.size()) {
-                            this.selectWeapon(this.weaponPopupEntries.get(index));
-                        }
-                        return true;
-                    }
-                }
-                boolean insidePanel = mouseX >= this.weaponPopupX
-                        && mouseX < this.weaponPopupX + this.weaponPopupW
-                        && mouseY >= this.weaponPopupY
-                        && mouseY < this.weaponPopupY + this.weaponPopupH;
-                if (!insidePanel) {
-                    this.closeWeaponPopup();
-                }
-            }
-            return true;
+            return this.handleWeaponPopupClick(this.uiMouseX(mouseX), this.uiMouseY(mouseY), button);
         }
         if (super.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
+        // 控件已由基类按设计坐标处理；下面自己的命中判定也换算成设计坐标
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         if (button != 0) {
             return false;
         }
@@ -1555,6 +1546,29 @@ public class StrinovaGrowthScreen extends Screen {
             }
         }
         return false;
+    }
+
+    /** 武器更换面板的点击处理（坐标为设计坐标）：点候选=装配，点面板外=关闭。 */
+    private boolean handleWeaponPopupClick(double mouseX, double mouseY, int button) {
+        if (button == 0) {
+            for (int i = 0; i < this.weaponPopupRects.size(); i++) {
+                if (insideRect(mouseX, mouseY, this.weaponPopupRects.get(i))) {
+                    int index = this.weaponPopupScroll + i;
+                    if (index >= 0 && index < this.weaponPopupEntries.size()) {
+                        this.selectWeapon(this.weaponPopupEntries.get(index));
+                    }
+                    return true;
+                }
+            }
+            boolean insidePanel = mouseX >= this.weaponPopupX
+                    && mouseX < this.weaponPopupX + this.weaponPopupW
+                    && mouseY >= this.weaponPopupY
+                    && mouseY < this.weaponPopupY + this.weaponPopupH;
+            if (!insidePanel) {
+                this.closeWeaponPopup();
+            }
+        }
+        return true;
     }
 
     /** ESC：优先关闭武器更换面板，其次退出界面。 */

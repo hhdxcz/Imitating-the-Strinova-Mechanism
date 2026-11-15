@@ -35,7 +35,7 @@ import java.util.List;
  * {@link StrinovaScoreboardState}（队友）与 {@link StrinovaMatchState}（倒计时/攻防），
  * 锁定结果写入 {@link StrinovaHudConfig#selectedAgentId} 并落盘。
  */
-public class StrinovaAgentSelectScreen extends Screen {
+public class StrinovaAgentSelectScreen extends StrinovaScaledScreen {
 
     // ---- 配色（对齐 HUD 顶部比分面板与真实 UI） ----
     /** 我方（进攻方）红色。 */
@@ -229,6 +229,8 @@ public class StrinovaAgentSelectScreen extends Screen {
     /** 初始化：读取当前选角/已锁定角色，计算自适应布局并添加「锁定角色」按钮。 */
     @Override
     protected void init() {
+        // 统一设计分辨率：先记录真实 GUI 尺寸，再把 width/height 换成设计坐标
+        this.beginDesignSpace();
         this.clearWidgets();
         StrinovaHudConfig config = StrinovaHudConfig.get();
         // 当前选中：优先读取配置中的已锁定角色，无效/为空时回退到默认角色
@@ -548,6 +550,9 @@ public class StrinovaAgentSelectScreen extends Screen {
         if (super.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
+        // 控件已由基类按设计坐标处理；下面自己的命中判定也换算成设计坐标
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         if (button != 0) {
             return false;
         }
@@ -679,6 +684,9 @@ public class StrinovaAgentSelectScreen extends Screen {
     /** 渲染整页：背景 → 顶部阶段条 → 三栏主区域 → 底部头像网格 → 锁定按钮 → 限制提示 → 悬停提示。 */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         this.renderBackground(graphics);
         StrinovaAgentSelectUi ui = ui();
         // 背景额外压暗（0~0.8）
@@ -716,6 +724,7 @@ public class StrinovaAgentSelectScreen extends Screen {
 
         // 悬停提示：头像格 → 队友卡 → 技能卡 → 主武器
         this.renderHoverTips(graphics, hoveredCell, mouseX, mouseY);
+        this.popDesignSpace(graphics);
     }
 
     /** 底部阵营限制提示（对齐真实 UI 的底部居中小字）。 */
