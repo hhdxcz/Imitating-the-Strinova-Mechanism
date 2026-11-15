@@ -242,5 +242,11 @@
   "config.strinova.growth.stat.speed": "移速",
   "config.strinova.growth.upgraded": "已升级",
   "config.strinova.ui.customize": "自定义",
-  "config.strinova.hud.match_header_editor.entry": "顶部面板…"
+  "config.strinova.hud.match_header_editor.entry": "顶部面板…",
+  "hud.strinova.match.phase.select": "选角阶段",
+  "hud.strinova.match.phase.prep": "预备阶段",
+  "hud.strinova.match.round_wins": "回合胜利",
+  "hud.strinova.match.victory.ally": "我方胜利",
+  "hud.strinova.match.victory.enemy": "对方胜利",
+  "key.strinova.change_agent": "更换角色（下回合生效）"
 }

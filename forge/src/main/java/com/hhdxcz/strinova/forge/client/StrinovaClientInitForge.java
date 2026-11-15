@@ -336,6 +336,8 @@ public final class StrinovaClientInitForge {
     private static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
             StrinovaClientProfileSync.tick();
+            // 对局流程：选角阶段自动弹出选角界面、换角色下回合生效
+            com.hhdxcz.strinova.client.StrinovaMatchClientFlow.tick(Minecraft.getInstance());
         }
     }
 }

@@ -53,6 +53,8 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
         StrinovaKeyBindings.register();
         // 客户端 tick：进世界首帧 / 选角或成长变化后上报 C2S_PROFILE（角色 + 成长等级）
         ClientTickEvents.END_CLIENT_TICK.register(client -> StrinovaClientProfileSync.tick());
+        // 对局流程：选角阶段自动弹出选角界面、换角色下回合生效
+        ClientTickEvents.END_CLIENT_TICK.register(com.hhdxcz.strinova.client.StrinovaMatchClientFlow::tick);
         // H4：客户端加入服务器时把本地完整碰撞配置上报给服务端
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             if (client.player != null) {

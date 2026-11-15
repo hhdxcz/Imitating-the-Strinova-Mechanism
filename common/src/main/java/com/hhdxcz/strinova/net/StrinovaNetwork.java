@@ -582,6 +582,11 @@ public final class StrinovaNetwork {
             int enemiesScore = buf.readInt();
             String alliesTeamKey = buf.readUtf(128);
             String enemiesTeamKey = buf.readUtf(128);
+            // 阶段（选角/预备/战斗/休整/结束）、攻防方、目标回合数、胜者
+            int phaseOrdinal = buf.readVarInt();
+            boolean alliesAttacking = buf.readBoolean();
+            int targetWins = buf.readInt();
+            int winner = buf.readVarInt();
 
             // 回合记录（左侧竖栏「我方/敌方」那几行）
             int resultCount = Math.min(32, Math.max(0, buf.readVarInt()));
@@ -666,12 +671,15 @@ public final class StrinovaNetwork {
             context.queue(() -> {
                 StrinovaMatchState.setActive(true);
                 StrinovaMatchState.setModeKey(modeKey);
+                StrinovaMatchState.setPhase(StrinovaMatchState.Phase.byOrdinal(phaseOrdinal));
                 StrinovaMatchState.setRound(round);
                 StrinovaMatchState.setRoundSecondsLeft(secondsLeft);
                 StrinovaMatchState.setScores(alliesScore, enemiesScore);
                 StrinovaMatchState.setAlliesTeamKey(alliesTeamKey);
                 StrinovaMatchState.setEnemiesTeamKey(enemiesTeamKey);
-                StrinovaMatchState.setAlliesAttacking(true);
+                StrinovaMatchState.setAlliesAttacking(alliesAttacking);
+                StrinovaMatchState.setTargetWins(targetWins);
+                StrinovaMatchState.setWinner(winner);
                 StrinovaMatchState.setRoundResults(roundResults);
                 StrinovaScoreboardState.setEntries(entries);
                 StrinovaHudState.setServerMatchActive(true);
@@ -1047,6 +1055,11 @@ public final class StrinovaNetwork {
         buf.writeInt(StrinovaMatchManager.enemiesScore());
         buf.writeUtf(StrinovaMatchManager.alliesTeamKey(), 128);
         buf.writeUtf(StrinovaMatchManager.enemiesTeamKey(), 128);
+        // 阶段（选角/预备/战斗/休整/结束）、攻防方、目标回合数、胜者
+        buf.writeVarInt(StrinovaMatchManager.phase().ordinal());
+        buf.writeBoolean(StrinovaMatchManager.alliesAttacking());
+        buf.writeInt(StrinovaMatchManager.targetWins());
+        buf.writeVarInt(StrinovaMatchManager.winner());
 
         // 回合记录：哪方赢下 + 赢法（炸弹爆炸/拆除/灭队/时间耗尽）
         List<StrinovaMatchManager.RoundResult> results = StrinovaMatchManager.roundResults();

@@ -15,10 +15,16 @@ import java.util.Locale;
  */
 public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
 
-    private static final int WIDTH = 560;
-    private static final int HEIGHT = 60;
+    /** 顶部面板设计尺寸（选角界面复用同一套布局）。 */
+    public static final int DESIGN_WIDTH = 560;
+    public static final int DESIGN_HEIGHT = 60;
+    private static final int WIDTH = DESIGN_WIDTH;
+    private static final int HEIGHT = DESIGN_HEIGHT;
     private static final int PORTRAIT = 24;
     private static final int PORTRAIT_STEP = 24;
+    /** 进攻方（红）/ 防守方（蓝）文字颜色：选角界面把头像换成阵营文字时使用。 */
+    private static final int COLOR_ATTACK = 0xFFD24A55;
+    private static final int COLOR_DEFEND = 0xFF5B87EC;
 
     private static final ResourceLocation TEX_SCORE_BLUE =
             new ResourceLocation("strinova", "textures/gui/topbar/score_blue.png");
@@ -113,12 +119,11 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         int centerX = x + WIDTH / 2;
         int alliesScore = active ? StrinovaMatchState.getAlliesScore() : 3;
         int enemiesScore = active ? StrinovaMatchState.getEnemiesScore() : 2;
-        int round = active ? StrinovaMatchState.getRound() : 9;
         int seconds = active ? StrinovaMatchState.getRoundSecondsLeft() : 18;
         if (seconds < 0) {
             seconds = 0;
         }
-        String roundText = Component.translatable("hud.strinova.match.target_round", round).getString();
+        String roundText = targetText(active);
         String time = String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60);
 
         int portraitY = y + (HEIGHT - PORTRAIT) / 2;
@@ -201,10 +206,95 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
     }
 
     private static void drawTargetText(StrinovaHudPainter painter, Layer layer, boolean active) {
-        int round = active ? StrinovaMatchState.getRound() : 9;
-        String text = Component.translatable("hud.strinova.match.target_round", round).getString();
+        String text = targetText(active);
         float scale = Math.max(0.4F, layer.h() / 9.0F);
         float width = painter.textWidth(text) * scale;
+        painter.textScaled(text, layer.x() + (layer.w() - width) / 2.0F, layer.y(),
+                scale, COLOR_TEXT_DIM, true);
+    }
+
+    /** 顶部中央文字：对局中显示「目标 9 回合」，对局结束显示胜负，未开局显示目标 9。 */
+    private static String targetText(boolean active) {
+        if (active && StrinovaMatchState.getPhase() == StrinovaMatchState.Phase.MATCH_END) {
+            boolean enemyWon = StrinovaMatchState.getWinner() == 2;
+            return Component.translatable(enemyWon
+                    ? "hud.strinova.match.victory.enemy"
+                    : "hud.strinova.match.victory.ally").getString();
+        }
+        int target = active ? StrinovaMatchState.getTargetWins() : 9;
+        return Component.translatable("hud.strinova.match.target_round", target).getString();
+    }
+
+    /**
+     * 选角界面版顶部面板（同战斗顶部面板）：左右头像行换成阵营文字
+     * 「我方 · 防守（蓝）/ 敌方 · 进攻（红）」，中央显示「选择角色 + 倒计时」，
+     * 不显示下方的回合计数与比分。
+     */
+    public void renderAgentSelect(StrinovaHudPainter painter, int x, int y) {
+        List<Layer> sorted = new ArrayList<>(layers(painter, x, y));
+        sorted.sort(Comparator.comparingInt(Layer::order));
+        boolean alliesAttack = StrinovaMatchState.areAlliesAttacking();
+        for (Layer layer : sorted) {
+            if (!layer.visible()) {
+                continue;
+            }
+            boolean transformed = layer.rotation() != 0.0F || layer.mirrorX() || layer.mirrorY();
+            if (transformed) {
+                painter.pushTransform(layer.x() + layer.w() / 2.0F, layer.y() + layer.h() / 2.0F,
+                        layer.rotation(), layer.mirrorX(), layer.mirrorY());
+            }
+            StrinovaHudPainter draw = layer.opacity() < 0.999F
+                    ? new StrinovaAlphaPainter(painter, layer.opacity()) : painter;
+            switch (layer.key()) {
+                case "leftTop" -> draw.textureRegion(TEX_TOP_BLUE, layer.x(), layer.y(),
+                        layer.w(), layer.h(), 0, 0, 587, 42, 587, 42, 0xFFFFFFFF, 1.0F);
+                case "rightTop" -> draw.textureRegion(TEX_TOP_RED, layer.x(), layer.y(),
+                        layer.w(), layer.h(), 0, 0, 588, 42, 588, 42, 0xFFFFFFFF, 1.0F);
+                case "extra206" -> draw.textureRegion(TEX_EXTRA_206, layer.x(), layer.y(),
+                        layer.w(), layer.h(), 0, 0, 256, 77, 256, 77, 0xFFFFFFFF, 1.0F);
+                case "separator" -> drawSeparator(draw, layer);
+                case "timer" -> drawTimer(draw, layer, StrinovaMatchState.isActive());
+                case "portraitsLeft" -> drawSideText(draw, layer,
+                        Component.translatable("hud.strinova.match.allies").getString(),
+                        alliesAttack ? "hud.strinova.match.attack" : "hud.strinova.match.defense",
+                        alliesAttack ? COLOR_ATTACK : COLOR_DEFEND);
+                case "portraitsRight" -> drawSideText(draw, layer,
+                        Component.translatable("hud.strinova.match.enemies").getString(),
+                        alliesAttack ? "hud.strinova.match.defense" : "hud.strinova.match.attack",
+                        alliesAttack ? COLOR_DEFEND : COLOR_ATTACK);
+                case "target" -> drawSelectingText(draw, layer);
+                default -> {
+                }
+            }
+            if (transformed) {
+                painter.popTransform();
+            }
+        }
+    }
+
+    /** 选角界面的左右阵营文字（把头像行换成「我方 · 防守 / 敌方 · 进攻」）。 */
+    private static void drawSideText(StrinovaHudPainter painter, Layer layer,
+                                     String team, String roleKey, int color) {
+        String text = team + " · " + Component.translatable(roleKey).getString();
+        float scale = Math.max(0.4F, layer.h() / 14.0F);
+        float width = painter.textWidth(text) * scale;
+        if (width > layer.w() - 2) {
+            scale = Math.max(0.3F, scale * (layer.w() - 2) / width);
+            width = painter.textWidth(text) * scale;
+        }
+        float textY = layer.y() + (layer.h() - 9.0F * scale) / 2.0F;
+        painter.textScaled(text, layer.x() + (layer.w() - width) / 2.0F, textY, scale, color, true);
+    }
+
+    /** 选角界面中央「选择角色」（替代战斗面板的目标回合文字，不显示回合计数）。 */
+    private static void drawSelectingText(StrinovaHudPainter painter, Layer layer) {
+        String text = Component.translatable("config.strinova.agent.selecting").getString();
+        float scale = Math.max(0.4F, layer.h() / 9.0F);
+        float width = painter.textWidth(text) * scale;
+        if (width > layer.w() - 2) {
+            scale = Math.max(0.3F, scale * (layer.w() - 2) / width);
+            width = painter.textWidth(text) * scale;
+        }
         painter.textScaled(text, layer.x() + (layer.w() - width) / 2.0F, layer.y(),
                 scale, COLOR_TEXT_DIM, true);
     }

@@ -242,5 +242,11 @@
   "config.strinova.growth.stat.speed": "Speed",
   "config.strinova.growth.upgraded": "Upgraded",
   "config.strinova.ui.customize": "Customize",
-  "config.strinova.hud.match_header_editor.entry": "Top panel…"
+  "config.strinova.hud.match_header_editor.entry": "Top panel…",
+  "hud.strinova.match.phase.select": "Agent Select",
+  "hud.strinova.match.phase.prep": "Preparation",
+  "hud.strinova.match.round_wins": "Round Wins",
+  "hud.strinova.match.victory.ally": "Your team wins",
+  "hud.strinova.match.victory.enemy": "Enemy team wins",
+  "key.strinova.change_agent": "Change Agent (next round)"
 }

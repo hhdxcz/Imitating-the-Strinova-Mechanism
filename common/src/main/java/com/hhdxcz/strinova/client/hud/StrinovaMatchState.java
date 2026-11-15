@@ -4,19 +4,28 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 对局状态数据契约（客户端侧）：模式、阶段、回合、倒计时、双方比分、回合记录。
- * 当前由模拟数据填充；未来由服务端对局系统 S2C 同步。
+ * 对局状态数据契约（客户端侧）：模式、阶段、回合、阶段倒计时、双方比分、回合记录。
+ * 当前由服务端 S2C 对局包填充（{@code /strinova match start} 开始对局）。
  */
 public final class StrinovaMatchState {
 
-    /** 一条回合记录：哪一方赢下该回合（我方 true / 敌方 false）+ 赢法（炸弹爆炸/拆除/灭队/时间到）。 */
+    /** 一条回合记录：哪一方赢下该回合（我方 true / 敌方 false），赢法（炸弹爆炸/拆除/灭队/时间到）。 */
     public record RoundResult(boolean allyWon, String reasonKey) {
     }
 
+    /**
+     * 对局阶段（与服务端 {@code StrinovaMatchManager.Phase} 顺序一致，网络层按 ordinal 传输）。
+     */
     public enum Phase {
-        WARMUP("hud.strinova.match.warmup"),
-        ROUND(""),
-        ROUND_END("hud.strinova.match.round_end"),
+        /** 选角阶段（开局 / 中场）：客户端自动弹出选角界面，倒计时结束进入预备。 */
+        SELECT("hud.strinova.match.phase.select"),
+        /** 预备阶段：倒计时结束后开始战斗。 */
+        PREP("hud.strinova.match.phase.prep"),
+        /** 战斗阶段。 */
+        COMBAT(""),
+        /** 休整阶段：回合结算。 */
+        BREAK("hud.strinova.match.round_end"),
+        /** 对局结束：宣判胜负。 */
         MATCH_END("");
 
         private final String labelKey;
@@ -28,20 +37,38 @@ public final class StrinovaMatchState {
         public String labelKey() {
             return labelKey;
         }
+
+        /** 按 ordinal 取阶段（越界回退到 COMBAT）。 */
+        public static Phase byOrdinal(int ordinal) {
+            Phase[] values = values();
+            if (ordinal < 0 || ordinal >= values.length) {
+                return COMBAT;
+            }
+            return values[ordinal];
+        }
     }
 
     private static volatile boolean active;
     private static volatile String modeKey = "hud.strinova.match.mode.demolition";
-    private static volatile Phase phase = Phase.WARMUP;
+    private static volatile Phase phase = Phase.SELECT;
     private static volatile int round = 1;
+    /** 当前阶段剩余秒数（选角 20 / 预备 30 / 战斗 120 / 休整 8）。 */
     private static volatile int roundSecondsLeft = 0;
     private static volatile int alliesScore = 0;
     private static volatile int enemiesScore = 0;
     private static volatile boolean alliesAttacking = true;
     private static volatile String alliesTeamKey = "";
     private static volatile String enemiesTeamKey = "";
-    /** 已结束回合的记录（左侧竖栏「我方/敌方」那几行）。 */
+    /** 获胜所需回合数（顶部面板「目标 9 回合」）。 */
+    private static volatile int targetWins = 9;
+    /** 胜者：0 = 未决出，1 = 我方，2 = 敌方。 */
+    private static volatile int winner = 0;
+    /** 已结束回合的记录（左侧竖栏「我方/敌方」那几行、中场选角的回合胜利计数）。 */
     private static volatile List<RoundResult> roundResults = List.of();
+    /**
+     * 对局中按 H 换角色时的待生效角色 id：锁定后不立即改配置，下一回合预备阶段才应用。
+     */
+    private static volatile String pendingAgentId = "";
 
     private StrinovaMatchState() {
     }
@@ -67,7 +94,17 @@ public final class StrinovaMatchState {
     }
 
     public static void setPhase(Phase value) {
-        phase = value == null ? Phase.WARMUP : value;
+        phase = value == null ? Phase.SELECT : value;
+    }
+
+    /** 是否处于选角阶段（开局选角 / 中场换边选角）。 */
+    public static boolean isSelectPhase() {
+        return active && phase == Phase.SELECT;
+    }
+
+    /** 是否处于对局进行中（除选角/结束外的战斗流程阶段）。 */
+    public static boolean isInRoundFlow() {
+        return active && (phase == Phase.PREP || phase == Phase.COMBAT || phase == Phase.BREAK);
     }
 
     public static int getRound() {
@@ -107,7 +144,7 @@ public final class StrinovaMatchState {
         alliesAttacking = value;
     }
 
-    /** 队伍名 lang key（真实界面显示剪刀手/欧泊等阵营名），空字符串时回退为「我方/对方」。 */
+    /** 队伍名 lang key（真实界面显示剪刀手/欧泊等阵营名），空字符串时回退到「我方/对方」。 */
     public static String getAlliesTeamKey() {
         return alliesTeamKey;
     }
@@ -132,7 +169,31 @@ public final class StrinovaMatchState {
         roundResults = results == null ? List.of() : List.copyOf(results);
     }
 
-    /** 回合倒计时格式化为 mm:ss。 */
+    public static int getTargetWins() {
+        return targetWins;
+    }
+
+    public static void setTargetWins(int value) {
+        targetWins = Math.max(1, value);
+    }
+
+    public static int getWinner() {
+        return winner;
+    }
+
+    public static void setWinner(int value) {
+        winner = Math.max(0, Math.min(2, value));
+    }
+
+    public static String getPendingAgentId() {
+        return pendingAgentId;
+    }
+
+    public static void setPendingAgentId(String agentId) {
+        pendingAgentId = agentId == null ? "" : agentId;
+    }
+
+    /** 回合阶段倒计时格式化为 mm:ss。 */
     public static String formattedTime() {
         int total = Math.max(0, roundSecondsLeft);
         return String.format(Locale.ROOT, "%02d:%02d", total / 60, total % 60);
@@ -141,7 +202,7 @@ public final class StrinovaMatchState {
     public static void clear() {
         active = false;
         modeKey = "hud.strinova.match.mode.demolition";
-        phase = Phase.WARMUP;
+        phase = Phase.SELECT;
         round = 1;
         roundSecondsLeft = 0;
         alliesScore = 0;
@@ -149,6 +210,9 @@ public final class StrinovaMatchState {
         alliesAttacking = true;
         alliesTeamKey = "";
         enemiesTeamKey = "";
+        targetWins = 9;
+        winner = 0;
         roundResults = List.of();
+        pendingAgentId = "";
     }
 }

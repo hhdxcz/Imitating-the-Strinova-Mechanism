@@ -101,7 +101,7 @@ public final class StrinovaHudMockData {
     private static void fillMatch(float seconds) {
         StrinovaMatchState.setActive(true);
         StrinovaMatchState.setModeKey("hud.strinova.match.mode.demolition");
-        StrinovaMatchState.setPhase(StrinovaMatchState.Phase.ROUND);
+        StrinovaMatchState.setPhase(StrinovaMatchState.Phase.COMBAT);
         StrinovaMatchState.setScores(3, 2);
         StrinovaMatchState.setRound(1);
         int remaining = (int) (95.0F - (seconds % 96.0F));

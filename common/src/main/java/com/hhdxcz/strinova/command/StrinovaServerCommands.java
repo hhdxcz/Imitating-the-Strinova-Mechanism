@@ -704,7 +704,7 @@ public final class StrinovaServerCommands {
                             var server = ctx.getSource().getServer();
                             StrinovaMatchManager.start(server);
                             StrinovaNetwork.forceBroadcastMatchState(server);
-                            ctx.getSource().sendSuccess(() -> Component.literal("对局已开始：在线玩家已分配到我方/敌方，比分 0:0"), true);
+                            ctx.getSource().sendSuccess(() -> Component.literal("对局已开始：选角阶段 20 秒（客户端自动弹选角界面）→ 预备 30 秒 → 战斗 2 分钟 → 休整 8 秒，先赢 9 回合获胜，8 回合后中场换边"), true);
                             return 1;
                         }))
                         .then(Commands.literal("stop").executes(ctx -> {
@@ -716,11 +716,21 @@ public final class StrinovaServerCommands {
                         .then(Commands.literal("status").executes(ctx -> {
                             boolean active = StrinovaMatchManager.isActive();
                             String message = active
-                                    ? "对局进行中：第 " + StrinovaMatchManager.round() + " 回合，比分 "
-                                            + StrinovaMatchManager.alliesScore() + ":" + StrinovaMatchManager.enemiesScore()
-                                            + "，剩余 " + StrinovaMatchManager.secondsLeft() + " 秒"
+                                    ? "对局进行中：第 " + StrinovaMatchManager.round() + " 回合（阶段 "
+                                            + StrinovaMatchManager.phase().name().toLowerCase(java.util.Locale.ROOT)
+                                            + "），比分 " + StrinovaMatchManager.alliesScore()
+                                            + ":" + StrinovaMatchManager.enemiesScore()
+                                            + "，当前阶段剩余 " + StrinovaMatchManager.secondsLeft() + " 秒"
+                                            + "，进攻方：" + (StrinovaMatchManager.alliesAttacking() ? "我方" : "敌方")
                                     : "当前没有进行中的对局（/strinova match start 开始）";
                             ctx.getSource().sendSuccess(() -> Component.literal(message), false);
+                            return 1;
+                        }))
+                        .then(Commands.literal("skip").executes(ctx -> {
+                            // 调试：让当前阶段立即结束（下一秒进入下一阶段）
+                            StrinovaMatchManager.skipPhase();
+                            StrinovaNetwork.forceBroadcastMatchState(ctx.getSource().getServer());
+                            ctx.getSource().sendSuccess(() -> Component.literal("已跳过当前阶段"), true);
                             return 1;
                         })))
                 .then(Commands.literal("enable").requires(src -> src.hasPermission(2)).executes(ctx -> {

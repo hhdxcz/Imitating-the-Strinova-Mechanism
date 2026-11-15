@@ -4,6 +4,8 @@ import com.hhdxcz.strinova.client.hud.StrinovaAgentRoster;
 import com.hhdxcz.strinova.client.hud.StrinovaAgentSelectUi;
 import com.hhdxcz.strinova.client.hud.StrinovaHudTextures;
 import com.hhdxcz.strinova.client.hud.StrinovaHudConfig;
+import com.hhdxcz.strinova.client.hud.StrinovaMatchHeaderWidget;
+import com.hhdxcz.strinova.client.hud.StrinovaProgrammaticPainter;
 import com.hhdxcz.strinova.client.hud.StrinovaMatchState;
 import com.hhdxcz.strinova.client.hud.StrinovaScoreboardState;
 import com.hhdxcz.strinova.client.hud.StrinovaWikiData;
@@ -198,10 +200,29 @@ public class StrinovaAgentSelectScreen extends Screen {
     private final int[][] skillIconRects = new int[4][];
     /** 主武器行命中区域（renderWeaponRows 时更新，用于悬停提示）。 */
     private int[] primaryWeaponRect;
+    /** 本次打开是否由对局选角阶段自动弹出（阶段结束后由对局流程自动关闭）。 */
+    private final boolean matchAutoOpened;
+    /** 顶部是否改用战斗界面同款对局面板（对局进行中）。 */
+    private boolean matchTopBar;
+    /** 中场选角时，下方回合胜利计数行的 Y 坐标。 */
+    private int matchCounterTop;
 
     public StrinovaAgentSelectScreen(Screen parent) {
+        this(parent, false);
+    }
+
+    /**
+     * @param matchAutoOpened 是否由对局选角阶段自动弹出（对局阶段结束后自动关闭）
+     */
+    public StrinovaAgentSelectScreen(Screen parent, boolean matchAutoOpened) {
         super(Component.translatable("config.strinova.agent.title"));
         this.parent = parent;
+        this.matchAutoOpened = matchAutoOpened;
+    }
+
+    /** 是否由对局选角阶段自动弹出。 */
+    public boolean isMatchAutoOpened() {
+        return this.matchAutoOpened;
     }
 
     /** 初始化：读取当前选角/已锁定角色，计算自适应布局并添加「锁定角色」按钮。 */
@@ -227,11 +248,13 @@ public class StrinovaAgentSelectScreen extends Screen {
                     .bounds(this.lockX, this.lockY, this.lockW, this.lockH)
                     .build());
         }
-        // 右上角「自定义」按钮：打开选角界面可视化编辑器
-        this.addRenderableWidget(Button.builder(Component.translatable("config.strinova.ui.customize"),
-                        button -> Minecraft.getInstance().setScreen(new StrinovaAgentSelectEditScreen(this)))
-                .bounds(this.customizeX, this.customizeY, this.customizeW, this.customizeH)
-                .build());
+        // 右上角「自定义」按钮：打开选角界面可视化编辑器（对局中隐藏，避免遮挡顶部面板）
+        if (!StrinovaMatchState.isActive()) {
+            this.addRenderableWidget(Button.builder(Component.translatable("config.strinova.ui.customize"),
+                            button -> Minecraft.getInstance().setScreen(new StrinovaAgentSelectEditScreen(this)))
+                    .bounds(this.customizeX, this.customizeY, this.customizeW, this.customizeH)
+                    .build());
+        }
     }
 
     /**
@@ -258,7 +281,13 @@ public class StrinovaAgentSelectScreen extends Screen {
 
         this.margin = clamp(4, 8, this.width / 80);
         this.gap = this.margin >= 6 ? 8 : 6;
-        this.barH = this.showTopBar ? clamp(18, 30, Math.round(this.height * 0.075F)) : 0;
+        // 对局进行中：顶部换成战斗界面同款面板（60 高，窄窗口等比压缩）
+        this.matchTopBar = this.showTopBar && StrinovaMatchState.isActive();
+        this.barH = !this.showTopBar ? 0
+                : this.matchTopBar
+                ? Math.min(StrinovaMatchHeaderWidget.DESIGN_HEIGHT,
+                Math.max(24, Math.round(this.height * 0.16F)))
+                : clamp(18, 30, Math.round(this.height * 0.075F));
         this.barX = this.margin;
         this.barY = this.margin;
         this.barW = this.width - 2 * this.margin;
@@ -270,8 +299,10 @@ public class StrinovaAgentSelectScreen extends Screen {
         this.customizeY = this.showTopBar
                 ? this.barY + Math.max(0, (this.barH - this.customizeH) / 2)
                 : this.margin;
+        this.matchCounterTop = this.barY + this.barH + 2;
+        int matchCounterH = this.showMatchRoundWins() ? 12 : 0;
         this.mainTop = this.showTopBar
-                ? this.barY + this.barH + this.gap
+                ? this.barY + this.barH + this.gap + matchCounterH
                 : this.margin + this.customizeH + this.gap;
 
         int contentWidth = this.width - 2 * this.margin;
@@ -573,18 +604,34 @@ public class StrinovaAgentSelectScreen extends Screen {
         return -1;
     }
 
-    /** 锁定角色：把当前选中角色 id 写入客户端配置并落盘，然后返回父界面。 */
+    /** 锁定角色：写入客户端配置并落盘；对局中按 H 换角色时改为「下一回合生效」。 */
     private void lockSelection() {
         StrinovaAgentRoster.Agent agent = this.selectedAgent();
-        if (agent != null) {
-            StrinovaHudConfig config = StrinovaHudConfig.get();
-            config.selectedAgentId = agent.id();
-            config.save();
-            this.lockedAgentId = agent.id();
-            // 选角锁定后立即上报服务端（C2S_PROFILE），TAB 计分板/头像才能拿到角色名
-            StrinovaClientProfileSync.markDirty();
+        if (agent == null) {
+            this.backToParent();
+            return;
         }
-        this.backToParent();
+        this.lockedAgentId = agent.id();
+        // 对局进行中（非选角阶段）：锁定后先挂着，下一回合预备阶段才真正应用
+        if (StrinovaMatchState.isActive()
+                && StrinovaMatchState.getPhase() != StrinovaMatchState.Phase.SELECT) {
+            StrinovaMatchState.setPendingAgentId(agent.id());
+            if (this.minecraft != null && this.minecraft.player != null) {
+                this.minecraft.player.displayClientMessage(Component.literal(
+                        "已申请更换角色：" + agent.name() + "（下回合生效）"), false);
+            }
+            this.backToParent();
+            return;
+        }
+        StrinovaHudConfig config = StrinovaHudConfig.get();
+        config.selectedAgentId = agent.id();
+        config.save();
+        // 选角锁定后立即上报服务端（C2S_PROFILE），TAB 计分板/头像才能拿到角色名
+        StrinovaClientProfileSync.markDirty();
+        // 选角阶段由对局流程控制：锁定后留在界面里等倒计时结束，开局后再跳出
+        if (!StrinovaMatchState.isSelectPhase()) {
+            this.backToParent();
+        }
     }
 
     /** 返回父界面（ESC/返回不保存选角）。 */
@@ -758,6 +805,10 @@ public class StrinovaAgentSelectScreen extends Screen {
 
     /** 顶部阶段条：左右红/蓝斜切底条 + 中央「选择角色 + 大号倒计时」。 */
     private void renderTopBar(GuiGraphics graphics) {
+        if (this.matchTopBar) {
+            this.renderMatchTopBar(graphics);
+            return;
+        }
         int sideW = clamp(70, 150, Math.round(this.barW * 0.26F));
         int slant = clamp(4, 12, this.barH / 2);
         int sideH = Math.max(12, this.barH - 4);
@@ -813,6 +864,79 @@ public class StrinovaAgentSelectScreen extends Screen {
                 this.barY + (this.barH - 9 * timeScale) / 2.0F, timeScale, COLOR_TEXT, true);
         startX += timeW + 10;
         this.drawText(graphics, enemyScore, startX, textY, 0xFF8FAEFF);
+    }
+
+    /**
+     * 对局中的顶部面板：直接复用战斗界面的顶部面板（左右阵营文字替代玩家头像、
+     * 中央「选择角色 + 倒计时」、不显示下方回合计数）；中场选角时额外显示回合胜利计数。
+     */
+    private void renderMatchTopBar(GuiGraphics graphics) {
+        float scale = Math.min(1.0F, Math.min(
+                this.barW / (float) StrinovaMatchHeaderWidget.DESIGN_WIDTH,
+                this.barH / (float) StrinovaMatchHeaderWidget.DESIGN_HEIGHT));
+        int drawW = Math.round(StrinovaMatchHeaderWidget.DESIGN_WIDTH * scale);
+        float drawX = this.barX + (this.barW - drawW) / 2.0F;
+        graphics.pose().pushPose();
+        graphics.pose().translate(drawX, this.barY, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        StrinovaProgrammaticPainter painter = new StrinovaProgrammaticPainter(graphics);
+        StrinovaMatchHeaderWidget header = new StrinovaMatchHeaderWidget();
+        boolean selectPhase = StrinovaMatchState.getPhase() == StrinovaMatchState.Phase.SELECT;
+        if (selectPhase) {
+            header.renderAgentSelect(painter, 0, 0);
+        } else {
+            header.render(painter, 0, 0);
+        }
+        graphics.pose().popPose();
+        if (selectPhase && this.showMatchRoundWins()) {
+            this.renderMatchRoundWins(graphics, this.matchCounterTop);
+        }
+    }
+
+    /** 是否显示「回合胜利计数」（仅中场选角：已打满半场后的第二次选角）。 */
+    private boolean showMatchRoundWins() {
+        return this.matchTopBar
+                && StrinovaMatchState.getPhase() == StrinovaMatchState.Phase.SELECT
+                && StrinovaMatchState.getRound() > 1;
+    }
+
+    /** 中场选角下方的回合胜利计数：我方/敌方比分 + 每回合胜负圆点。 */
+    private void renderMatchRoundWins(GuiGraphics graphics, int y) {
+        int centerX = this.width / 2;
+        String label = Component.translatable("hud.strinova.match.round_wins").getString() + "  ";
+        String allyPart = Component.translatable("hud.strinova.match.allies").getString()
+                + " " + StrinovaMatchState.getAlliesScore();
+        String colon = " : ";
+        String enemyPart = StrinovaMatchState.getEnemiesScore() + " "
+                + Component.translatable("hud.strinova.match.enemies").getString();
+        java.util.List<StrinovaMatchState.RoundResult> results = StrinovaMatchState.roundResults();
+        int dotSize = 5;
+        int dotStep = 7;
+        int dotsW = results.isEmpty() ? 0 : 6 + results.size() * dotStep;
+        int textW = this.font.width(label) + this.font.width(allyPart)
+                + this.font.width(colon) + this.font.width(enemyPart);
+        int totalW = textW + dotsW;
+        if (totalW > this.barW) {
+            label = "";
+            totalW = textW - this.font.width(label) + dotsW;
+        }
+        int x = Math.max(this.barX + 2, centerX - totalW / 2);
+        if (!label.isEmpty()) {
+            this.drawText(graphics, label, x, y, COLOR_DIM);
+            x += this.font.width(label);
+        }
+        this.drawText(graphics, allyPart, x, y, COLOR_ALLY);
+        x += this.font.width(allyPart);
+        this.drawText(graphics, colon, x, y, COLOR_TEXT);
+        x += this.font.width(colon);
+        this.drawText(graphics, enemyPart, x, y, COLOR_ENEMY);
+        x += this.font.width(enemyPart);
+        x += 6;
+        for (StrinovaMatchState.RoundResult result : results) {
+            int color = result.allyWon() ? COLOR_ALLY : COLOR_ENEMY;
+            graphics.fill(x, y + 2, x + dotSize, y + 2 + dotSize, color);
+            x += dotStep;
+        }
     }
 
     /** 绘制左/右斜切阵营底条：渐变矩形主体 + 内侧斜切三角 + 顶部高亮线。 */

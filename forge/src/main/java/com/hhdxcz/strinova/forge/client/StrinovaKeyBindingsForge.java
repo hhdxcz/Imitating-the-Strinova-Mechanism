@@ -34,6 +34,7 @@ public final class StrinovaKeyBindingsForge {
     private static KeyMapping wallKey;
     private static KeyMapping growthKey;
     private static KeyMapping growthAltKey;
+    private static KeyMapping changeAgentKey;
     private static String wallKeyName = "key.keyboard.r";
     private static boolean lastCtrlDown;
     private static boolean lastJumpDown;
@@ -72,10 +73,17 @@ public final class StrinovaKeyBindingsForge {
                 GLFW.GLFW_KEY_J,
                 "key.categories.strinova"
         );
+        // H 键：对局中更换角色（锁定后下一回合生效）
+        changeAgentKey = new KeyMapping(
+                "key.strinova.change_agent",
+                GLFW.GLFW_KEY_H,
+                "key.categories.strinova"
+        );
         event.register(stringifyKey);
         event.register(wallKey);
         event.register(growthKey);
         event.register(growthAltKey);
+        event.register(changeAgentKey);
     }
 
     public static boolean rebindWallKey(String rawKey) {
@@ -133,6 +141,12 @@ public final class StrinovaKeyBindingsForge {
                 if (client.screen == null) {
                     client.setScreen(new StrinovaGrowthScreen(client.screen));
                 }
+            }
+        }
+        // H 键：对局中更换角色（下回合生效）
+        if (changeAgentKey != null) {
+            while (changeAgentKey.consumeClick()) {
+                com.hhdxcz.strinova.client.StrinovaMatchClientFlow.tryOpenChangeAgent(client);
             }
         }
 
