@@ -704,7 +704,7 @@ public final class StrinovaServerCommands {
                             var server = ctx.getSource().getServer();
                             StrinovaMatchManager.start(server);
                             StrinovaNetwork.forceBroadcastMatchState(server);
-                            ctx.getSource().sendSuccess(() -> Component.literal("对局已开始：选角阶段 20 秒（客户端自动弹选角界面）→ 预备 30 秒 → 战斗 2 分钟 → 休整 8 秒，先赢 9 回合获胜，8 回合后中场换边"), true);
+                            ctx.getSource().sendSuccess(() -> Component.literal("对局已开始：选角阶段 40 秒（客户端自动弹选角界面）→ 预备 30 秒 → 战斗 2 分钟 → 休整 8 秒，先赢 9 回合获胜，8 回合后中场换边"), true);
                             return 1;
                         }))
                         .then(Commands.literal("stop").executes(ctx -> {

@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <p>完整流程（对齐真实界面）：</p>
  * <ol>
- *   <li>对局开始 → 选角阶段 20 秒（客户端自动弹出选角界面）；</li>
+ *   <li>对局开始 → 选角阶段 40 秒（客户端自动弹出选角界面）；</li>
  *   <li>预备阶段 30 秒 → 战斗阶段 120 秒 → 休整阶段 8 秒；</li>
  *   <li>每回合结束记一分，先赢 {@link #TARGET_WINS} 回合的一方获胜；</li>
  *   <li>打满 {@link #ROUNDS_PER_HALF} 回合进入中场：攻防互换 + 再弹一次选角界面（20 秒）。</li>
@@ -29,7 +29,7 @@ public final class StrinovaMatchManager {
     /** 半场回合数：打满 8 回合进入中场换边。 */
     public static final int ROUNDS_PER_HALF = 8;
     /** 选角阶段时长（秒）。 */
-    public static final int SELECT_SECONDS = 20;
+    public static final int SELECT_SECONDS = 40;
     /** 预备阶段时长（秒）。 */
     public static final int PREP_SECONDS = 30;
     /** 战斗阶段时长（秒）。 */
