@@ -571,8 +571,8 @@ public class StrinovaGrowthScreen extends Screen {
         }
     }
 
-    /** 立绘整体缩放（相对 cover 铺满）：1.0 = 直接铺满立绘区。 */
-    private static final float PORTRAIT_SCALE = 1.0F;
+    /** 立绘整体缩放（相对 cover 铺满）：0.9 = 铺满后再缩到 90%。 */
+    private static final float PORTRAIT_SCALE = 0.9F;
 
     /**
      * 绘制角色立绘：以 cover 铺满为基准再乘 {@link #PORTRAIT_SCALE}（0.6），
