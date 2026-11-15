@@ -145,6 +145,10 @@ public final class StrinovaHudRenderer {
                 LAST_BOUNDS.remove(widget.element());
                 continue;
             }
+            if (isHiddenByMode(widget.element())) {
+                LAST_BOUNDS.remove(widget.element());
+                continue;
+            }
             int width = Math.max(0, widget.measureWidth(painter));
             int height = Math.max(0, widget.measureHeight(painter));
             if (width <= 0 || height <= 0) {
@@ -155,6 +159,22 @@ public final class StrinovaHudRenderer {
             LAST_BOUNDS.put(widget.element(), new int[]{position[0], position[1], width, height});
             widget.render(painter, position[0], position[1]);
         }
+    }
+
+    /**
+     * 对局内 HUD 显隐规则：
+     * <ul>
+     *   <li>左下血甲条、中下技能面板：隐藏（进入对局也不显示）；</li>
+     *   <li>右下武器面板：只在对局开始后显示（未开局 / 大厅不显示）。</li>
+     * </ul>
+     * 布局编辑器预览走 {@link #renderEditorPreview}，不受这里影响，仍可编辑全部元素。
+     */
+    private static boolean isHiddenByMode(StrinovaHudLayout.Element element) {
+        return switch (element) {
+            case HEALTH_ARMOR, SKILLS -> true;
+            case AMMO -> !StrinovaMatchState.isActive() && !StrinovaHudMockData.isEnabled();
+            default -> false;
+        };
     }
 
     /** 布局编辑器：绘制所有元素的预览 + 选中/悬停高亮框。 */
