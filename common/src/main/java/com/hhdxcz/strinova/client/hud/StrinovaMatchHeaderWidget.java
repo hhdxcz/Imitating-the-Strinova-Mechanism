@@ -25,6 +25,8 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
     /** 进攻方（红）/ 防守方（蓝）文字颜色：选角界面把头像换成阵营文字时使用。 */
     private static final int COLOR_ATTACK = 0xFFD24A55;
     private static final int COLOR_DEFEND = 0xFF5B87EC;
+    /** 长条上阵营文字颜色（白）。 */
+    private static final int COLOR_WHITE = 0xFFFFFFFF;
 
     private static final ResourceLocation TEX_SCORE_BLUE =
             new ResourceLocation("strinova", "textures/gui/topbar/score_blue.png");
@@ -226,43 +228,75 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
     }
 
     /**
-     * 选角界面版顶部面板（同战斗顶部面板）：左右头像行换成阵营文字
-     * 「我方 · 防守（蓝）/ 敌方 · 进攻（红）」，中央显示「选择角色 + 倒计时」，
-     * 不显示下方的回合计数与比分。
+     * 选角界面版顶部面板：完全复用战斗顶部面板的图层布局（含玩家自定义的偏移/缩放），
+     * 左右长条上显示阵营文字（我方在左、敌方在右；进攻红、防守蓝），
+     * 中央「选择角色 + 大号倒计时」，保留比分牌；头像行不显示。
      */
     public void renderAgentSelect(StrinovaHudPainter painter, int x, int y) {
         List<Layer> sorted = new ArrayList<>(layers(painter, x, y));
         sorted.sort(Comparator.comparingInt(Layer::order));
+        boolean active = StrinovaMatchState.isActive();
         boolean alliesAttack = StrinovaMatchState.areAlliesAttacking();
+        // 默认贴图是左蓝右红；我方进攻时左右整体换色（换贴图 + 镜像，斜切方向不变）
+        boolean flip = active && alliesAttack;
+        String allyLabel = Component.translatable("hud.strinova.match.allies").getString()
+                + Component.translatable(alliesAttack
+                ? "hud.strinova.match.attack" : "hud.strinova.match.defense").getString();
+        String enemyLabel = Component.translatable("hud.strinova.match.enemies").getString()
+                + Component.translatable(alliesAttack
+                ? "hud.strinova.match.defense" : "hud.strinova.match.attack").getString();
+        String allyScore = twoDigits(active ? StrinovaMatchState.getAlliesScore() : 0);
+        String enemyScore = twoDigits(active ? StrinovaMatchState.getEnemiesScore() : 0);
         for (Layer layer : sorted) {
             if (!layer.visible()) {
                 continue;
             }
-            boolean transformed = layer.rotation() != 0.0F || layer.mirrorX() || layer.mirrorY();
+            boolean sideLayer = switch (layer.key()) {
+                case "leftTop", "leftBottom", "rightTop", "rightBottom" -> true;
+                default -> false;
+            };
+            boolean mirrorX = layer.mirrorX() ^ (flip && sideLayer);
+            boolean transformed = layer.rotation() != 0.0F || mirrorX || layer.mirrorY();
             if (transformed) {
                 painter.pushTransform(layer.x() + layer.w() / 2.0F, layer.y() + layer.h() / 2.0F,
-                        layer.rotation(), layer.mirrorX(), layer.mirrorY());
+                        layer.rotation(), mirrorX, layer.mirrorY());
             }
             StrinovaHudPainter draw = layer.opacity() < 0.999F
                     ? new StrinovaAlphaPainter(painter, layer.opacity()) : painter;
             switch (layer.key()) {
-                case "leftTop" -> draw.textureRegion(TEX_TOP_BLUE, layer.x(), layer.y(),
-                        layer.w(), layer.h(), 0, 0, 587, 42, 587, 42, 0xFFFFFFFF, 1.0F);
-                case "rightTop" -> draw.textureRegion(TEX_TOP_RED, layer.x(), layer.y(),
-                        layer.w(), layer.h(), 0, 0, 588, 42, 588, 42, 0xFFFFFFFF, 1.0F);
+                case "leftTop" -> {
+                    if (flip) {
+                        draw.textureRegion(TEX_TOP_RED, layer.x(), layer.y(),
+                                layer.w(), layer.h(), 0, 0, 588, 42, 588, 42, 0xFFFFFFFF, 1.0F);
+                    } else {
+                        draw.textureRegion(TEX_TOP_BLUE, layer.x(), layer.y(),
+                                layer.w(), layer.h(), 0, 0, 587, 42, 587, 42, 0xFFFFFFFF, 1.0F);
+                    }
+                    drawBarLabel(draw, layer, allyLabel, COLOR_WHITE);
+                }
+                case "rightTop" -> {
+                    if (flip) {
+                        draw.textureRegion(TEX_TOP_BLUE, layer.x(), layer.y(),
+                                layer.w(), layer.h(), 0, 0, 587, 42, 587, 42, 0xFFFFFFFF, 1.0F);
+                    } else {
+                        draw.textureRegion(TEX_TOP_RED, layer.x(), layer.y(),
+                                layer.w(), layer.h(), 0, 0, 588, 42, 588, 42, 0xFFFFFFFF, 1.0F);
+                    }
+                    drawBarLabel(draw, layer, enemyLabel, COLOR_WHITE);
+                }
+                case "leftBottom" -> draw.textureRegion(flip ? TEX_SCORE_RED : TEX_SCORE_BLUE,
+                        layer.x(), layer.y(), layer.w(), layer.h(),
+                        0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
+                case "rightBottom" -> draw.textureRegion(flip ? TEX_SCORE_BLUE : TEX_SCORE_RED,
+                        layer.x(), layer.y(), layer.w(), layer.h(),
+                        0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
                 case "extra206" -> draw.textureRegion(TEX_EXTRA_206, layer.x(), layer.y(),
                         layer.w(), layer.h(), 0, 0, 256, 77, 256, 77, 0xFFFFFFFF, 1.0F);
                 case "separator" -> drawSeparator(draw, layer);
-                case "timer" -> drawTimer(draw, layer, StrinovaMatchState.isActive());
-                case "portraitsLeft" -> drawSideText(draw, layer,
-                        Component.translatable("hud.strinova.match.allies").getString(),
-                        alliesAttack ? "hud.strinova.match.attack" : "hud.strinova.match.defense",
-                        alliesAttack ? COLOR_ATTACK : COLOR_DEFEND);
-                case "portraitsRight" -> drawSideText(draw, layer,
-                        Component.translatable("hud.strinova.match.enemies").getString(),
-                        alliesAttack ? "hud.strinova.match.defense" : "hud.strinova.match.attack",
-                        alliesAttack ? COLOR_DEFEND : COLOR_ATTACK);
+                case "timer" -> drawTimer(draw, layer, active);
                 case "target" -> drawSelectingText(draw, layer);
+                case "leftScore" -> drawScoreText(draw, layer, allyScore);
+                case "rightScore" -> drawScoreText(draw, layer, enemyScore);
                 default -> {
                 }
             }
@@ -270,6 +304,21 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
                 painter.popTransform();
             }
         }
+    }
+
+    /** 长条上的阵营文字（我方进攻 / 敌方防守），白色、居中、按条高缩放。 */
+    private static void drawBarLabel(StrinovaHudPainter painter, Layer layer, String text, int color) {
+        if (text.isEmpty()) {
+            return;
+        }
+        float scale = Math.max(1.0F, Math.min(2.0F, layer.h() / 14.0F));
+        float width = painter.textWidth(text) * scale;
+        if (width > layer.w() - 8) {
+            scale = Math.max(0.4F, scale * (layer.w() - 8) / width);
+            width = painter.textWidth(text) * scale;
+        }
+        float textY = layer.y() + (layer.h() - 9.0F * scale) / 2.0F;
+        painter.textScaled(text, layer.x() + (layer.w() - width) / 2.0F, textY, scale, color, true);
     }
 
     /** 选角界面的左右阵营文字（把头像行换成「我方 · 防守 / 敌方 · 进攻」）。 */

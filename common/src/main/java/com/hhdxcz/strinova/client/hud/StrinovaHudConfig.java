@@ -69,12 +69,98 @@ public final class StrinovaHudConfig {
         public int order = 0;
     }
 
-    /** 取/建顶部面板图层样式。 */
+    /**
+     * 顶部面板默认布局（实机调好的一套）：左右长条加宽加高、头像行放大、计时器缩小、
+     * 灰色底板缩小、比分条/比分数字外移。新环境或重置后直接用这套。
+     */
+    private static HeaderLayerStyle defaultHeaderLayer(String key) {
+        HeaderLayerStyle style = new HeaderLayerStyle();
+        switch (key) {
+            case "leftTop" -> {
+                style.offsetX = -84;
+                style.offsetY = 5;
+                style.scaleX = 2.875F;
+                style.scaleY = 1.75F;
+                style.order = 0;
+            }
+            case "rightTop" -> {
+                style.offsetX = 87;
+                style.offsetY = 6;
+                style.scaleX = 2.8854167F;
+                style.scaleY = 1.75F;
+                style.order = 1;
+            }
+            case "portraitsLeft" -> {
+                style.offsetX = 19;
+                style.offsetY = -16;
+                style.scaleX = 1.275F;
+                style.scaleY = 1.275F;
+                style.order = 2;
+            }
+            case "portraitsRight" -> {
+                style.offsetX = -27;
+                style.offsetY = -14;
+                style.scaleX = 1.275F;
+                style.scaleY = 1.275F;
+                style.order = 3;
+            }
+            case "target" -> {
+                style.offsetX = -2;
+                style.offsetY = 9;
+                style.order = 4;
+            }
+            case "separator" -> {
+                style.offsetX = -1;
+                style.offsetY = 7;
+                style.order = 5;
+            }
+            case "timer" -> {
+                style.offsetY = 3;
+                style.scaleX = 0.5416667F;
+                style.scaleY = 0.5416667F;
+                style.order = 6;
+            }
+            case "leftBottom" -> {
+                style.offsetX = 46;
+                style.offsetY = 6;
+                style.scaleY = 0.77272725F;
+                style.order = 7;
+            }
+            case "rightBottom" -> {
+                style.offsetX = -43;
+                style.offsetY = 7;
+                style.scaleY = 0.77272725F;
+                style.order = 8;
+            }
+            case "leftScore" -> {
+                style.offsetX = 45;
+                style.offsetY = 6;
+                style.order = 9;
+            }
+            case "rightScore" -> {
+                style.offsetX = -47;
+                style.offsetY = 9;
+                style.order = 10;
+            }
+            case "extra206" -> {
+                style.offsetX = 2;
+                style.offsetY = -5;
+                style.scaleX = 0.57575756F;
+                style.scaleY = 0.57575756F;
+                style.order = 0;
+            }
+            default -> {
+            }
+        }
+        return style;
+    }
+
+    /** 取/建顶部面板图层样式（缺失时用调好的默认布局）。 */
     public HeaderLayerStyle matchHeaderLayer(String key) {
         if (matchHeaderLayers == null) {
             matchHeaderLayers = new java.util.LinkedHashMap<>();
         }
-        return matchHeaderLayers.computeIfAbsent(key, k -> new HeaderLayerStyle());
+        return matchHeaderLayers.computeIfAbsent(key, StrinovaHudConfig::defaultHeaderLayer);
     }
     public boolean scoreboardEnabled = true;
     /** HUD/计分板是否使用微软雅黑（关闭则用原版像素字体）。 */

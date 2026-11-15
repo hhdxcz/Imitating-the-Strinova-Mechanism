@@ -899,15 +899,9 @@ public class StrinovaAgentSelectScreen extends StrinovaScaledScreen {
      * 中央「选择角色 + 倒计时」、不显示下方回合计数）；中场选角时额外显示回合胜利计数。
      */
     private void renderMatchTopBar(GuiGraphics graphics) {
-        if (StrinovaMatchState.getPhase() == StrinovaMatchState.Phase.SELECT) {
-            this.renderSelectPhaseBar(graphics);
-            if (this.showMatchRoundWins()) {
-                this.renderMatchRoundWins(graphics, this.matchCounterTop);
-            }
-            return;
-        }
+        boolean selectPhase = StrinovaMatchState.getPhase() == StrinovaMatchState.Phase.SELECT;
         float scale = Math.min(1.0F, Math.min(
-                this.barW / (float) StrinovaMatchHeaderWidget.DESIGN_WIDTH,
+                (this.barW - 8) / (float) StrinovaMatchHeaderWidget.DESIGN_WIDTH,
                 this.barH / (float) StrinovaMatchHeaderWidget.DESIGN_HEIGHT));
         int drawW = Math.round(StrinovaMatchHeaderWidget.DESIGN_WIDTH * scale);
         float drawX = this.barX + (this.barW - drawW) / 2.0F;
@@ -915,105 +909,15 @@ public class StrinovaAgentSelectScreen extends StrinovaScaledScreen {
         graphics.pose().translate(drawX, this.barY, 0.0F);
         graphics.pose().scale(scale, scale, 1.0F);
         StrinovaProgrammaticPainter painter = new StrinovaProgrammaticPainter(graphics);
-        new StrinovaMatchHeaderWidget().render(painter, 0, 0);
-        graphics.pose().popPose();
-    }
-
-    /**
-     * 选角阶段顶部面板（对齐真实截图）：左右斜切阵营条「我方进攻 / 敌方防守」，
-     * 中央梯形底板「选择角色 + 大号倒计时」，下方两侧各一枚阵营色比分小牌。
-     */
-    private void renderSelectPhaseBar(GuiGraphics graphics) {
-        int cx = this.width / 2;
-        boolean alliesAttack = StrinovaMatchState.areAlliesAttacking();
-        int allyColor = alliesAttack ? COLOR_ALLY : COLOR_ENEMY;
-        int enemyColor = alliesAttack ? COLOR_ENEMY : COLOR_ALLY;
-
-        int slabH = Math.max(14, Math.round(this.barH * 0.50F));
-        int slabY = this.barY + Math.max(2, Math.round(this.barH * 0.10F));
-        int centerW = Math.max(70, Math.round(this.barW * 0.23F));
-        int centerH = Math.min(this.barH, slabH + Math.max(10, Math.round(this.barH * 0.32F)));
-        int centerTop = slabY - Math.max(2, Math.round(this.barH * 0.05F));
-        int slant = Math.max(4, Math.min(10, slabH / 2));
-        int sideW = Math.max(56, Math.round(this.barW * 0.30F));
-        int sideGap = Math.max(3, Math.round(this.barW * 0.008F));
-        int leftX = cx - centerW / 2 - sideGap - sideW;
-        int rightX = cx + centerW / 2 + sideGap;
-
-        // 左右斜切阵营条
-        this.renderPhaseSlab(graphics, leftX, slabY, sideW, slabH, slant, allyColor, true);
-        this.renderPhaseSlab(graphics, rightX, slabY, sideW, slabH, slant, enemyColor, false);
-        String allyLabel = Component.translatable("hud.strinova.match.allies").getString()
-                + Component.translatable(alliesAttack
-                ? "hud.strinova.match.attack" : "hud.strinova.match.defense").getString();
-        String enemyLabel = Component.translatable("hud.strinova.match.enemies").getString()
-                + Component.translatable(alliesAttack
-                ? "hud.strinova.match.defense" : "hud.strinova.match.attack").getString();
-        float labelScale = Math.max(1.0F, Math.min(2.0F, slabH / 13.0F));
-        this.drawScaledCenteredText(graphics, this.truncate(allyLabel, (int) ((sideW - 10) / labelScale)),
-                leftX + sideW / 2 + slant / 2, slabY + (slabH - 9 * labelScale) / 2.0F,
-                labelScale, COLOR_TEXT, true);
-        this.drawScaledCenteredText(graphics, this.truncate(enemyLabel, (int) ((sideW - 10) / labelScale)),
-                rightX + sideW / 2 - slant / 2, slabY + (slabH - 9 * labelScale) / 2.0F,
-                labelScale, COLOR_TEXT, true);
-
-        // 中央梯形底板：选择角色 + 分隔线 + 大号倒计时
-        int plateX = cx - centerW / 2;
-        this.drawTrapezoidPlate(graphics, plateX, centerTop, centerW, centerH,
-                Math.max(3, centerH / 6), this.withOpacity(COLOR_PANEL_DARK),
-                this.withOpacity(COLOR_BORDER));
-        String selecting = Component.translatable("config.strinova.agent.selecting").getString();
-        int labelY = centerTop + Math.max(2, centerH / 14);
-        this.drawCenteredText(graphics, this.truncate(selecting, centerW - 14),
-                cx, labelY, COLOR_TEXT, true);
-        int lineY = labelY + 12;
-        int linePad = Math.max(6, centerW / 12);
-        graphics.fill(plateX + linePad, lineY, plateX + centerW - linePad, lineY + 1, 0x99FFFFFF);
-        String time = StrinovaMatchState.formattedTime();
-        float digitH = Math.max(10.0F, Math.min(24.0F, centerH * 0.40F));
-        StrinovaProgrammaticPainter painter = new StrinovaProgrammaticPainter(graphics);
-        float timeW = StrinovaHudDigits.textWidth(time, digitH);
-        int timeY = Math.max(lineY + 1, lineY + Math.round(centerH * 0.05F));
-        StrinovaHudDigits.draw(painter, time, Math.round(cx - timeW / 2.0F), timeY,
-                digitH, 0xFFFFFFFF, 1.0F);
-
-        // 下方两侧比分小牌
-        int chipH = Math.max(9, Math.round(this.barH * 0.24F));
-        int chipW = Math.max(24, Math.round(this.barW * 0.08F));
-        int chipY = slabY + slabH - Math.max(1, chipH / 4);
-        int chipX2 = cx - centerW / 2 - sideGap - chipW;
-        int chipX3 = cx + centerW / 2 + sideGap;
-        this.drawTrapezoidPlate(graphics, chipX2, chipY, chipW, chipH,
-                Math.max(3, chipH / 3), withAlpha(allyColor, 0xB4), withAlpha(allyColor, 0xF0));
-        this.drawTrapezoidPlate(graphics, chipX3, chipY, chipW, chipH,
-                Math.max(3, chipH / 3), withAlpha(enemyColor, 0xB4), withAlpha(enemyColor, 0xF0));
-        String allyScore = String.format(java.util.Locale.ROOT, "%02d", StrinovaMatchState.getAlliesScore());
-        String enemyScore = String.format(java.util.Locale.ROOT, "%02d", StrinovaMatchState.getEnemiesScore());
-        this.drawCenteredText(graphics, allyScore,
-                chipX2 + chipW / 2, chipY + (chipH - 9) / 2, COLOR_TEXT, true);
-        this.drawCenteredText(graphics, enemyScore,
-                chipX3 + chipW / 2, chipY + (chipH - 9) / 2, COLOR_TEXT, true);
-    }
-
-    /** 斜切角梯形底板（上下边短、左右斜角），用于选角面板中央底板与比分小牌。 */
-    private void drawTrapezoidPlate(GuiGraphics graphics, int x, int y, int w, int h, int slant,
-                                    int fill, int border) {
-        int rows = Math.max(1, h);
-        int corner = Math.max(0, Math.min(slant, rows / 2));
-        for (int row = 0; row < rows; row++) {
-            int inset = row < corner ? corner - row
-                    : (row >= rows - corner ? row - (rows - corner) + 1 : 0);
-            graphics.fill(x + inset, y + row, x + w - inset, y + row + 1, fill);
+        StrinovaMatchHeaderWidget header = new StrinovaMatchHeaderWidget();
+        if (selectPhase) {
+            header.renderAgentSelect(painter, 0, 0);
+        } else {
+            header.render(painter, 0, 0);
         }
-        graphics.fill(x + corner, y, x + w - corner, y + 1, border);
-        graphics.fill(x + corner, y + rows - 1, x + w - corner, y + rows, border);
-        for (int i = 0; i < corner; i++) {
-            int rowTop = y + i;
-            int rowBottom = y + rows - 1 - i;
-            graphics.fill(x + corner - 1 - i, rowTop, x + corner - i, rowTop + 1, border);
-            graphics.fill(x + w - corner + i, rowTop, x + w - corner + i + 1, rowTop + 1, border);
-            graphics.fill(x + corner - 1 - i, rowBottom, x + corner - i, rowBottom + 1, border);
-            graphics.fill(x + w - corner + i, rowBottom, x + w - corner + i + 1, rowBottom + 1, border);
+        graphics.pose().popPose();
+        if (selectPhase && this.showMatchRoundWins()) {
+            this.renderMatchRoundWins(graphics, this.matchCounterTop);
         }
     }
 
