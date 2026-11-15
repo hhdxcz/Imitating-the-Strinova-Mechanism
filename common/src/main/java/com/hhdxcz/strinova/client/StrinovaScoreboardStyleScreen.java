@@ -17,7 +17,7 @@ import java.util.List;
  * 选中某个部件后，可以单独设置它的 可见性 / 字号倍率 / 文字颜色 / 背景颜色，全部实时预览。
  * <p>打开方式：/strinova_client scoreboard style，或在计分板布局编辑器里点「样式…」。</p>
  */
-public class StrinovaScoreboardStyleScreen extends Screen {
+public class StrinovaScoreboardStyleScreen extends StrinovaScaledScreen {
 
     /** 色板颜色；0 表示“默认/透明”。 */
     private static final int[] PALETTE = {
@@ -50,11 +50,16 @@ public class StrinovaScoreboardStyleScreen extends Screen {
 
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         com.hhdxcz.strinova.client.hud.StrinovaHudMockData.ensureScoreboardPreview();
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         graphics.fill(0, 0, this.width, this.height, 0xC8000000);
         StrinovaScoreboardOverlay.renderPreview(graphics, new StrinovaProgrammaticPainter(graphics));
         drawSelectionHighlight(graphics);
@@ -63,6 +68,7 @@ public class StrinovaScoreboardStyleScreen extends Screen {
         drawTopBar(graphics);
         drawPropertyPanel(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);
+        this.popDesignSpace(graphics);
     }
 
     // ==================== 顶部：部件选择 ====================
@@ -331,13 +337,17 @@ public class StrinovaScoreboardStyleScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
         for (Hit hit : hits) {
             if (hit.contains(mouseX, mouseY)) {
                 apply(hit);
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(rawMouseX, rawMouseY, button);
     }
 
     private void apply(Hit hit) {

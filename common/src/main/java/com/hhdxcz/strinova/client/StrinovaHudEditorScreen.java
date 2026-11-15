@@ -16,7 +16,7 @@ import java.util.Map;
  * 在全屏预览画面上直接拖动 HUD 元素调整位置：按下命中元素开始拖拽，
  * 拖动过程中实时修改布局偏移，松开鼠标、重置布局或关闭界面时保存到客户端配置。
  */
-public class StrinovaHudEditorScreen extends Screen {
+public class StrinovaHudEditorScreen extends StrinovaScaledScreen {
 
     /** 拖拽只响应鼠标左键。 */
     private static final int DRAG_BUTTON = 0;
@@ -43,6 +43,8 @@ public class StrinovaHudEditorScreen extends Screen {
     /** 初始化界面：记录各元素初始偏移并添加“重置布局/完成”按钮。 */
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         this.clearWidgets();
         this.dragging = null;
         this.hovered = null;
@@ -72,6 +74,9 @@ public class StrinovaHudEditorScreen extends Screen {
     /** 渲染界面：半透明黑底 → HUD 预览（含拖拽/悬停高亮）→ 顶部提示 → 底部按钮。 */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         // 半透明黑底：压暗游戏画面，突出 HUD 布局预览
         graphics.fill(0, 0, this.width, this.height, 0x99000000);
         this.updateHovered(mouseX, mouseY);
@@ -80,6 +85,7 @@ public class StrinovaHudEditorScreen extends Screen {
         graphics.drawCenteredString(this.font,
                 Component.translatable("config.strinova.hud.editor.tip"), this.width / 2, 24, 0xA8D8E8);
         super.render(graphics, mouseX, mouseY, partialTick);
+        this.popDesignSpace(graphics);
     }
 
     /** 每帧更新鼠标悬停的 HUD 元素（拖拽中始终保持拖拽元素高亮）。 */
@@ -111,6 +117,10 @@ public class StrinovaHudEditorScreen extends Screen {
     /** 按下鼠标：优先交给按钮控件，未命中按钮时再判断是否命中 HUD 元素并开始拖拽。 */
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
         if (super.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
@@ -142,13 +152,17 @@ public class StrinovaHudEditorScreen extends Screen {
     /** 拖拽中：把鼠标位移增量叠加到拖拽元素的布局偏移上，实现实时跟随。 */
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
         if (this.dragging != null && button == DRAG_BUTTON) {
             int offsetX = this.dragInitialOffsetX + (int) Math.round(mouseX - this.dragStartMouseX);
             int offsetY = this.dragInitialOffsetY + (int) Math.round(mouseY - this.dragStartMouseY);
             StrinovaHudConfig.get().layout().setOffset(this.dragging, offsetX, offsetY);
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(rawMouseX, rawMouseY, button, dragX, dragY);
     }
 
     /** 松开鼠标：结束拖拽并保存布局。 */

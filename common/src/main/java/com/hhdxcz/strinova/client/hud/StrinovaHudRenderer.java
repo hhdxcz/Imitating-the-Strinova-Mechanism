@@ -1,5 +1,6 @@
 package com.hhdxcz.strinova.client.hud;
 
+import com.hhdxcz.strinova.client.StrinovaUiScale;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.EnumMap;
@@ -78,26 +79,37 @@ public final class StrinovaHudRenderer {
             }
         }
         StrinovaHudConfig config = StrinovaHudConfig.get();
-        // TAB 计分板优先：即使 HUD 总开关关闭，按住 TAB 也要能显示计分板
-        if (StrinovaScoreboardOverlay.isActive(minecraft)) {
-            StrinovaScoreboardOverlay.render(graphics, new StrinovaProgrammaticPainter(graphics));
-            return;
+        // 统一设计分辨率：整个 HUD 按 960×540 设计坐标绘制后再缩放到玩家 GUI 空间
+        boolean outer = !StrinovaUiScale.isDesignSpaceActive();
+        if (outer) {
+            StrinovaUiScale.push(graphics, StrinovaUiScale.scale());
         }
-        if (!config.hudEnabled) {
-            return;
+        try {
+            // TAB 计分板优先：即使 HUD 总开关关闭，按住 TAB 也要能显示计分板
+            if (StrinovaScoreboardOverlay.isActive(minecraft)) {
+                StrinovaScoreboardOverlay.render(graphics, new StrinovaProgrammaticPainter(graphics));
+                return;
+            }
+            if (!config.hudEnabled) {
+                return;
+            }
+            // 服务端对局数据优先：3 秒内收到过对局同步则不再用模拟数据/MC 血量覆盖
+            boolean serverMatch = StrinovaHudState.isServerMatchActive()
+                    && (StrinovaHudState.now() - StrinovaHudState.lastServerSyncMs() < 3000L);
+            if (!serverMatch) {
+                StrinovaHudMockData.tick();
+            }
+            if (!com.hhdxcz.strinova.StrinovaMod.isEnabled()
+                    && !StrinovaHudMockData.isEnabled() && !serverMatch) {
+                return;
+            }
+            syncFromPlayer(minecraft, serverMatch);
+            renderAll(graphics, config);
+        } finally {
+            if (outer) {
+                StrinovaUiScale.pop(graphics);
+            }
         }
-        // 服务端对局数据优先：3 秒内收到过对局同步则不再用模拟数据/MC 血量覆盖
-        boolean serverMatch = StrinovaHudState.isServerMatchActive()
-                && (StrinovaHudState.now() - StrinovaHudState.lastServerSyncMs() < 3000L);
-        if (!serverMatch) {
-            StrinovaHudMockData.tick();
-        }
-        if (!com.hhdxcz.strinova.StrinovaMod.isEnabled()
-                && !StrinovaHudMockData.isEnabled() && !serverMatch) {
-            return;
-        }
-        syncFromPlayer(minecraft, serverMatch);
-        renderAll(graphics, config);
     }
 
     /** 战斗系统落地前：生命值取 MC 真实血量映射；服务端对局激活时以同步包为准，不再覆盖。 */
@@ -138,8 +150,8 @@ public final class StrinovaHudRenderer {
 
     private static void renderAll(GuiGraphics graphics, StrinovaHudConfig config) {
         StrinovaHudPainter painter = new StrinovaProgrammaticPainter(graphics);
-        int screenWidth = graphics.guiWidth();
-        int screenHeight = graphics.guiHeight();
+        int screenWidth = StrinovaUiScale.width();
+        int screenHeight = StrinovaUiScale.height();
         for (StrinovaHudWidget widget : WIDGETS) {
             if (!config.isElementEnabled(widget.element())) {
                 LAST_BOUNDS.remove(widget.element());
@@ -181,8 +193,12 @@ public final class StrinovaHudRenderer {
     public static void renderEditorPreview(GuiGraphics graphics, StrinovaHudLayout.Element dragging,
                                            StrinovaHudLayout.Element hovered) {
         StrinovaHudConfig config = StrinovaHudConfig.get();
-        int screenWidth = graphics.guiWidth();
-        int screenHeight = graphics.guiHeight();
+        boolean outer = !StrinovaUiScale.isDesignSpaceActive();
+        if (outer) {
+            StrinovaUiScale.push(graphics, StrinovaUiScale.scale());
+        }
+        int screenWidth = StrinovaUiScale.width();
+        int screenHeight = StrinovaUiScale.height();
         editorRendering = true;
         try {
             StrinovaHudPainter painter = new StrinovaProgrammaticPainter(graphics);
@@ -207,6 +223,9 @@ public final class StrinovaHudRenderer {
             }
         } finally {
             editorRendering = false;
+            if (outer) {
+                StrinovaUiScale.pop(graphics);
+            }
         }
     }
 

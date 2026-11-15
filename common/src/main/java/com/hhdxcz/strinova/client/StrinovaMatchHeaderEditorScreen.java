@@ -26,7 +26,7 @@ import java.util.Set;
  * 单击选中，Ctrl 单击多选，拖动移动；8 控制点缩放（Shift 等比）；
  * 支持旋转、透明度、镜像、层级顺序。
  */
-public class StrinovaMatchHeaderEditorScreen extends Screen {
+public class StrinovaMatchHeaderEditorScreen extends StrinovaScaledScreen {
 
     private static final int WIDTH = 560;
     private static final int HEIGHT = 60;
@@ -58,6 +58,8 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
 
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         StrinovaHudMockData.ensureScoreboardPreview();
         this.previewX = Math.max(4, (this.width - WIDTH) / 2);
         this.previewY = 94;
@@ -114,6 +116,9 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         this.renderBackground(graphics);
         StrinovaProgrammaticPainter painter = new StrinovaProgrammaticPainter(graphics);
         new StrinovaMatchHeaderWidget().render(painter, this.previewX, this.previewY);
@@ -157,6 +162,7 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
             graphics.drawCenteredString(this.font, Component.literal(detail), this.width / 2, 64, 0xFFFFFFFF);
         }
         super.render(graphics, mouseX, mouseY, partialTick);
+        this.popDesignSpace(graphics);
     }
 
     private static void drawHandles(StrinovaHudPainter painter, StrinovaMatchHeaderWidget.Layer layer) {
@@ -175,6 +181,10 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
         if (super.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
@@ -251,8 +261,12 @@ public class StrinovaMatchHeaderEditorScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
         if (this.dragMode == null || this.activeLayer == null || button != 0) {
-            return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+            return super.mouseDragged(rawMouseX, rawMouseY, button, dragX, dragY);
         }
         StrinovaHudConfig config = StrinovaHudConfig.get();
         int dx = (int) Math.round(mouseX - this.dragStartX);

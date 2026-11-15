@@ -13,8 +13,8 @@ import net.minecraft.network.chat.Component;
  */
 public abstract class StrinovaScaledScreen extends Screen {
 
-    /** 设计分辨率高度（960×540）。 */
-    public static final int DESIGN_HEIGHT = 540;
+    /** 设计分辨率高度（960×540，与 HUD 共用）。 */
+    public static final int DESIGN_HEIGHT = StrinovaUiScale.DESIGN_HEIGHT;
 
     private float uiScale = 1.0F;
     private int designWidth;
@@ -43,12 +43,11 @@ public abstract class StrinovaScaledScreen extends Screen {
 
     /** 渲染前压入设计坐标缩放（结束记得 popDesignSpace）。 */
     protected final void pushDesignSpace(GuiGraphics graphics) {
-        graphics.pose().pushPose();
-        graphics.pose().scale(this.uiScale, this.uiScale, 1.0F);
+        StrinovaUiScale.push(graphics, this.uiScale);
     }
 
     protected final void popDesignSpace(GuiGraphics graphics) {
-        graphics.pose().popPose();
+        StrinovaUiScale.pop(graphics);
     }
 
     /** 真实鼠标坐标 → 设计坐标。 */

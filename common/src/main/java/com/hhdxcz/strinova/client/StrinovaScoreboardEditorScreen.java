@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
  * </ul>
  * 打开方式：/strinova_client scoreboard
  */
-public class StrinovaScoreboardEditorScreen extends Screen {
+public class StrinovaScoreboardEditorScreen extends StrinovaScaledScreen {
 
     private final Screen parent;
     private boolean saved;
@@ -59,6 +59,8 @@ public class StrinovaScoreboardEditorScreen extends Screen {
 
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         captureOriginals();
         // 编辑器里没有真实对局数据时，用模拟计分板数据做预览
         com.hhdxcz.strinova.client.hud.StrinovaHudMockData.ensureScoreboardPreview();
@@ -166,6 +168,9 @@ public class StrinovaScoreboardEditorScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         // 背景压暗
         graphics.fill(0, 0, this.width, this.height, 0xC8000000);
 
@@ -188,6 +193,7 @@ public class StrinovaScoreboardEditorScreen extends Screen {
         graphics.drawString(this.font, hint, (this.width - this.font.width(hint)) / 2, 30, 0xFF9BAEBF, false);
 
         super.render(graphics, mouseX, mouseY, partialTick);
+        this.popDesignSpace(graphics);
     }
 
     /** 绘制列/行边界参考线：平时淡显，鼠标靠近时变青色高亮，表头处加拖动把手。 */
@@ -237,6 +243,10 @@ public class StrinovaScoreboardEditorScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
         if (button == 0) {
             StrinovaHudConfig config = StrinovaHudConfig.get();
             StrinovaScoreboardOverlay.Layout layout =
@@ -313,6 +323,10 @@ public class StrinovaScoreboardEditorScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
         StrinovaHudConfig config = StrinovaHudConfig.get();
         if (resizingSidebar && button == 0) {
             float deltaRatio = (float) ((mouseX - resizeStartX) / Math.max(1, resizePanelWidth));
@@ -346,7 +360,7 @@ public class StrinovaScoreboardEditorScreen extends Screen {
             config.scoreboardOffsetY = clampf((float) (dragStartOffsetY + mouseY - dragStartMouseY), -400.0F, 400.0F);
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(rawMouseX, rawMouseY, button, dragX, dragY);
     }
 
     @Override
