@@ -156,6 +156,15 @@ public class StrinovaGrowthScreen extends Screen {
     private java.util.List<StrinovaWeaponCatalog.Entry> weaponPopupEntries = List.of();
     /** 弹窗中鼠标悬停的候选下标（-1 = 无）。 */
     private int hoveredWeaponPopup = -1;
+    /** 弹窗滚动条偏移（候选多于可见行时用滚轮翻页）。 */
+    private int weaponPopupScroll;
+    /** 弹窗当前可见行数（渲染时写入，滚轮翻页用）。 */
+    private int weaponPopupVisibleRows = 1;
+    /** 弹窗面板位置/尺寸（渲染时写入，点击判定用）。 */
+    private int weaponPopupX;
+    private int weaponPopupY;
+    private int weaponPopupW;
+    private int weaponPopupH;
 
     public StrinovaGrowthScreen(Screen parent) {
         super(Component.translatable("config.strinova.growth.title"));
@@ -858,6 +867,7 @@ public class StrinovaGrowthScreen extends Screen {
         this.weaponPopupEntries = StrinovaWeaponCatalog.entriesForSlot(slot);
         this.weaponPopupRects.clear();
         this.hoveredWeaponPopup = -1;
+        this.weaponPopupScroll = 0;
     }
 
     /** 关闭武器更换面板。 */
@@ -865,6 +875,7 @@ public class StrinovaGrowthScreen extends Screen {
         this.weaponPopupSlot = -1;
         this.weaponPopupRects.clear();
         this.hoveredWeaponPopup = -1;
+        this.weaponPopupScroll = 0;
     }
 
     /** 选择候选武器：写入武器配置并关闭面板。 */
@@ -877,8 +888,9 @@ public class StrinovaGrowthScreen extends Screen {
     }
 
     /**
-     * 武器更换面板：按槽位分类列出候选武器（剪影 + 名称），当前装配的用金色标记，
-     * 点击任意候选即装配到该槽位；点击面板外或按 ESC 关闭。
+     * 武器更换面板（对齐游戏的弹出样式）：紧贴右侧武器栏左侧竖直排列候选卡片，
+     * 每行 = 名称 + 剪影，当前装配的用金色「当前装配」标记；内容超长时滚轮翻页，
+     * 点击面板外或按 ESC 关闭。
      */
     private void renderWeaponPopup(GuiGraphics graphics, int mouseX, int mouseY) {
         int slot = this.weaponPopupSlot;
@@ -890,42 +902,28 @@ public class StrinovaGrowthScreen extends Screen {
             this.weaponPopupEntries = StrinovaWeaponCatalog.entriesForSlot(slot);
         }
         List<StrinovaWeaponCatalog.Entry> entries = this.weaponPopupEntries;
+        int[] cardRect = this.weaponCardRects[slot];
+        int cardWidth = cardRect == null ? 60 : cardRect[2];
 
-        // 半透明遮罩，突出面板
-        graphics.fill(0, 0, this.width, this.height, 0x99000000);
-
-        String slotLabel = Component.translatable(WEAPON_SLOT_KEYS[slot]).getString();
-        String title = (slot + 1) + " " + slotLabel;
-        String hint = "点击选择 · 点空白处关闭";
-
-        int pad = 10;
-        int titleH = 20;
-        int gap = 4;
-        int availableH = Math.max(80, this.height - 16);
-        // 先定列数：默认 4 列，行数太多时加到 5~6 列，避免小窗口溢出
-        int columns = 4;
-        while (columns < 6 && (entries.size() + columns - 1) / columns > 6) {
-            columns++;
-        }
-        int rows = Math.max(1, (entries.size() + columns - 1) / columns);
-        int maxPanelW = Math.max(150, Math.min(this.width - 16, 440));
-        int cellW = Math.max(28, (maxPanelW - pad * 2 - gap * (columns - 1)) / columns);
-        int panelW = cellW * columns + gap * (columns - 1) + pad * 2;
-        int cellHBudget = availableH - titleH - pad * 2 - (rows - 1) * gap;
-        int cellH = clamp(cellHBudget / rows, 26, 54);
-        int iconSize = clamp(cellH - 20, 8, 24);
-        int panelH = titleH + pad + rows * cellH + (rows - 1) * gap + pad;
-        int px = (this.width - panelW) / 2;
-        int py = Math.max(4, (this.height - panelH) / 2);
-
-        // 面板
-        graphics.fill(px - 1, py - 1, px + panelW + 1, py + panelH + 1, 0xFF2A3542);
-        graphics.fill(px, py, px + panelW, py + panelH, 0xF00C121A);
-        graphics.fill(px, py, px + panelW, py + titleH, 0x66203548);
-        graphics.fill(px, py + titleH - 1, px + panelW, py + titleH, COLOR_CYAN);
-        graphics.drawString(this.font, title, px + pad, py + 6, COLOR_CYAN, false);
-        graphics.drawString(this.font, hint, px + panelW - pad - this.font.width(hint),
-                py + 6, COLOR_TEXT_DISABLED, false);
+        // 面板宽度约等于武器卡的 0.72 倍（最小 84，保证名字和剪影都放得下），
+        // 行高按比例；上边对齐被点击的武器卡
+        int panelW = Math.max(84, Math.min(170, Math.round(cardWidth * 0.72F)));
+        int rowH = Math.max(18, Math.min(42, Math.round(panelW * 0.34F)));
+        int gap = 2;
+        int top = cardRect == null ? this.contentTop : cardRect[1];
+        int bottomLimit = Math.max(top + rowH, this.contentBottom);
+        int maxRows = Math.max(1, (bottomLimit - top + gap) / (rowH + gap));
+        int rows = Math.min(entries.size(), maxRows);
+        this.weaponPopupVisibleRows = rows;
+        int maxScroll = Math.max(0, entries.size() - rows);
+        this.weaponPopupScroll = Math.max(0, Math.min(maxScroll, this.weaponPopupScroll));
+        int panelH = rows * rowH + Math.max(0, rows - 1) * gap;
+        int panelX = Math.max(this.innerLeft + 2, this.weaponsX - 6 - panelW);
+        int panelY = Math.min(top, Math.max(this.contentTop, bottomLimit - panelH));
+        this.weaponPopupX = panelX;
+        this.weaponPopupY = panelY;
+        this.weaponPopupW = panelW;
+        this.weaponPopupH = panelH;
 
         // 同一分类的所有槽位都算「当前装配」（如 4/5 都是战术道具）
         StrinovaWeaponCatalog.Category category = StrinovaWeaponCatalog.categoryForSlot(slot);
@@ -938,48 +936,62 @@ public class StrinovaGrowthScreen extends Screen {
 
         this.weaponPopupRects.clear();
         this.hoveredWeaponPopup = -1;
-        int gridTop = py + titleH + pad;
-        for (int i = 0; i < entries.size(); i++) {
-            int column = i % columns;
-            int row = i / columns;
-            int cx = px + pad + column * (cellW + gap);
-            int cy = gridTop + row * (cellH + gap);
-            int[] cell = new int[]{cx, cy, cellW, cellH};
+        for (int row = 0; row < rows; row++) {
+            int index = this.weaponPopupScroll + row;
+            if (index >= entries.size()) {
+                break;
+            }
+            int rx = panelX;
+            int ry = panelY + row * (rowH + gap);
+            int[] cell = new int[]{rx, ry, panelW, rowH};
             this.weaponPopupRects.add(cell);
             boolean hovered = insideRect(mouseX, mouseY, cell);
             if (hovered) {
-                this.hoveredWeaponPopup = i;
+                this.hoveredWeaponPopup = index;
             }
-            StrinovaWeaponCatalog.Entry entry = entries.get(i);
+            StrinovaWeaponCatalog.Entry entry = entries.get(index);
             boolean isEquipped = equipped.contains(entry.name());
-            graphics.fill(cx, cy, cx + cellW, cy + cellH,
-                    hovered ? 0xFF24303E : (isEquipped ? 0x3320C9D8 : 0xCC101823));
+            graphics.fill(rx, ry, rx + panelW, ry + rowH,
+                    hovered ? 0xFF24303E : (isEquipped ? 0xCC1B2E3A : 0xCC101823));
             int border = hovered ? COLOR_CYAN : (isEquipped ? 0x8835D6E8 : 0x33445566);
-            graphics.fill(cx, cy, cx + cellW, cy + 1, border);
-            graphics.fill(cx, cy + cellH - 1, cx + cellW, cy + cellH, border);
-            graphics.fill(cx, cy, cx + 1, cy + cellH, border);
-            graphics.fill(cx + cellW - 1, cy, cx + cellW, cy + cellH, border);
+            graphics.fill(rx, ry, rx + panelW, ry + 1, border);
+            graphics.fill(rx, ry + rowH - 1, rx + panelW, ry + rowH, border);
+            graphics.fill(rx, ry, rx + 1, ry + rowH, border);
+            graphics.fill(rx + panelW - 1, ry, rx + panelW, ry + rowH, border);
 
-            drawWeaponCardIcon(graphics, StrinovaWeaponCatalog.iconName(slot, entry.name()), slot,
-                    cx + (cellW - iconSize) / 2, cy + 3, iconSize, iconSize);
-
-            String label = this.truncate(entry.name(), Math.max(6, cellW - 4));
-            int labelY = cy + cellH - 11;
-            graphics.drawString(this.font, label,
-                    cx + Math.max(2, (cellW - this.font.width(label)) / 2), labelY,
+            // 名称（左上）+ 剪影（下方居中）+ 当前装配（右下，金色）
+            String label = this.truncate(entry.name(), Math.max(8, panelW - 8));
+            graphics.drawString(this.font, label, rx + 4, ry + 2,
                     isEquipped ? COLOR_GOLD : COLOR_TEXT, false);
-            if (isEquipped) {
-                if (cellH >= 44) {
-                    String mark = "当前装配";
-                    String markText = this.truncate(mark, Math.max(6, cellW - 4));
-                    graphics.drawString(this.font, markText,
-                            cx + Math.max(2, (cellW - this.font.width(markText)) / 2),
-                            labelY - 10, COLOR_GOLD, false);
-                } else {
-                    // 小格放不下两行字：左上角用金色小标记
-                    graphics.fill(cx + 1, cy + 1, cx + 8, cy + 3, COLOR_GOLD);
-                }
+            int iconH = Math.max(6, rowH - 14);
+            int iconW = Math.max(8, panelW - 10);
+            drawWeaponCardIcon(graphics, StrinovaWeaponCatalog.iconName(slot, entry.name()), slot,
+                    rx + 5, ry + rowH - iconH - 3, iconW, iconH);
+            if (isEquipped && rowH >= 20) {
+                String mark = "当前装配";
+                int markW = this.font.width(mark);
+                int markX = rx + panelW - 4 - markW;
+                int markY = ry + rowH - 11;
+                graphics.fill(markX - 2, markY - 1, markX + markW + 2, markY + 9, 0xAA0C121A);
+                graphics.drawString(this.font, mark, markX, markY, COLOR_GOLD, false);
             }
+        }
+
+        // 滚动条（内容超出时）
+        if (maxScroll > 0) {
+            int barX = panelX + panelW - 3;
+            int barH = Math.max(6, Math.round(panelH * rows / (float) entries.size()));
+            int barY = panelY + Math.round((panelH - barH)
+                    * (this.weaponPopupScroll / (float) maxScroll));
+            graphics.fill(barX, panelY, barX + 2, panelY + panelH, 0x33000000);
+            graphics.fill(barX, barY, barX + 2, barY + barH, 0xAA35D6E8);
+        }
+        // 还有更多内容时，上下边缘压暗一点
+        if (this.weaponPopupScroll > 0) {
+            graphics.fill(panelX, panelY, panelX + panelW, panelY + 3, 0xAA0C121A);
+        }
+        if (this.weaponPopupScroll < maxScroll) {
+            graphics.fill(panelX, panelY + panelH - 3, panelX + panelW, panelY + panelH, 0xAA0C121A);
         }
     }
 
@@ -1421,18 +1433,26 @@ public class StrinovaGrowthScreen extends Screen {
     /** 鼠标点击：武器更换面板 → 按钮控件 → 武器卡（打开更换面板）→ 其它控件/成长项。 */
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // 0) 武器更换面板打开时优先处理：点候选=装配，点空白/按钮=关闭
+        // 0) 武器更换面板打开时优先处理：点候选=装配，点面板外=关闭（面板内空白不关闭）
         if (this.weaponPopupSlot >= 0) {
             if (button == 0) {
-                for (int i = 0; i < this.weaponPopupRects.size()
-                        && i < this.weaponPopupEntries.size(); i++) {
+                for (int i = 0; i < this.weaponPopupRects.size(); i++) {
                     if (insideRect(mouseX, mouseY, this.weaponPopupRects.get(i))) {
-                        this.selectWeapon(this.weaponPopupEntries.get(i));
+                        int index = this.weaponPopupScroll + i;
+                        if (index >= 0 && index < this.weaponPopupEntries.size()) {
+                            this.selectWeapon(this.weaponPopupEntries.get(index));
+                        }
                         return true;
                     }
                 }
+                boolean insidePanel = mouseX >= this.weaponPopupX
+                        && mouseX < this.weaponPopupX + this.weaponPopupW
+                        && mouseY >= this.weaponPopupY
+                        && mouseY < this.weaponPopupY + this.weaponPopupH;
+                if (!insidePanel) {
+                    this.closeWeaponPopup();
+                }
             }
-            this.closeWeaponPopup();
             return true;
         }
         if (super.mouseClicked(mouseX, mouseY, button)) {
@@ -1497,6 +1517,19 @@ public class StrinovaGrowthScreen extends Screen {
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    /** 滚轮：武器更换面板打开时翻页，否则交给父类。 */
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (this.weaponPopupSlot >= 0) {
+            int rows = Math.max(1, this.weaponPopupVisibleRows);
+            int maxScroll = Math.max(0, this.weaponPopupEntries.size() - rows);
+            this.weaponPopupScroll = Math.max(0,
+                    Math.min(maxScroll, this.weaponPopupScroll - (int) Math.signum(delta)));
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, delta);
     }
 
     /** 分类刷新图标 Rectangle：{x, y, width, height}（尚未渲染/不可用时返回 null）。 */
