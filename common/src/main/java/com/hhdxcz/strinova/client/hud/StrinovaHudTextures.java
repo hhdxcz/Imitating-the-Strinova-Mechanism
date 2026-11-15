@@ -1,6 +1,9 @@
 package com.hhdxcz.strinova.client.hud;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
+import org.lwjgl.opengl.GL11;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +20,8 @@ import java.util.Set;
  *   <li>{@code avatars/<agentId>.png}：顶部面板/计分板头像（T_Dynamic_RoleScoreboard_* 56×32）</li>
  *   <li>{@code rolehud/<agentId>.png}：选角界面左侧头像（T_Dynamic_RoleHUD_*，统一 256×256）</li>
  *   <li>{@code select/<agentId>.png}：选角界面底部可选角色头像（T_Dynamic_SelectTalent_* 98×78）</li>
+ *   <li>{@code growth/<agentId>.png}：增幅网络左侧基础立绘（T_Dynamic_RoleGrowth_*，
+ *       裁透明边后统一放在 700×725 画布上，顶部对齐、水平居中）</li>
  * </ul>
  */
 public final class StrinovaHudTextures {
@@ -29,6 +34,10 @@ public final class StrinovaHudTextures {
 
     /** 选角界面左侧默认头像（T_Dynamic_RoleHUD_HalfEnterEmpty）。 */
     public static final ResourceLocation ROLE_HUD_EMPTY = hud("rolehud/empty");
+
+    /** 增幅网络立绘画布尺寸（所有角色统一，方便 cover 裁切）。 */
+    public static final int GROWTH_PORTRAIT_W = 700;
+    public static final int GROWTH_PORTRAIT_H = 725;
 
     /** 角色 id → skowt 数字 ID（三套头像共用；部分角色缺某个资源）。 */
     private static final Map<String, String> NUM_BY_AGENT = Map.ofEntries(
@@ -68,6 +77,9 @@ public final class StrinovaHudTextures {
     /** TAB 计分板头像（RoleHUDMobile，100×100 方图）。 */
     private static final Map<String, ResourceLocation> MOBILE_BY_NAME = new HashMap<>();
 
+    /** 增幅网络左侧基础立绘（RoleGrowth，统一 700×725 画布）。 */
+    private static final Map<String, ResourceLocation> GROWTH_BY_NAME = new HashMap<>();
+
     static {
         for (StrinovaAgentRoster.Agent agent : StrinovaAgentRoster.agents()) {
             if (agent.id() == null || agent.name() == null) {
@@ -85,6 +97,7 @@ public final class StrinovaHudTextures {
             if (MOBILE_IDS.contains(agent.id())) {
                 MOBILE_BY_NAME.put(agent.name(), hud("avatars_mobile/" + agent.id()));
             }
+            GROWTH_BY_NAME.put(agent.name(), hud("growth/" + agent.id()));
         }
     }
 
@@ -122,6 +135,32 @@ public final class StrinovaHudTextures {
     /** 按图鉴展示名取选角界面底部可选角色头像（SelectTalent）；未收录返回 null。 */
     public static ResourceLocation selectTalentByAgentName(String agentName) {
         return agentName == null ? null : SELECT_BY_NAME.get(agentName);
+    }
+
+    /** 按图鉴展示名取增幅网络左侧基础立绘（RoleGrowth）；未收录返回 null。 */
+    public static ResourceLocation growthPortraitByAgentName(String agentName) {
+        return agentName == null ? null : GROWTH_BY_NAME.get(agentName);
+    }
+
+    /**
+     * 绘制贴图的一块区域（带 Alpha 混合）。
+     *
+     * <p>增幅网络里 GUI 环境的混合状态不一定开着，直接 {@code graphics.blit} 会把立绘的
+     * 半透明边缘截成硬边，所以这里统一开混合再画。</p>
+     */
+    public static void blit(GuiGraphics graphics, ResourceLocation texture,
+                            int x, int y, int width, int height,
+                            float u, float v, int uWidth, int vHeight,
+                            int textureWidth, int textureHeight) {
+        boolean blendWasEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        graphics.blit(texture, x, y, width, height, u, v, uWidth, vHeight,
+                textureWidth, textureHeight);
+        if (!blendWasEnabled) {
+            RenderSystem.disableBlend();
+        }
     }
 
     private static ResourceLocation hud(String path) {

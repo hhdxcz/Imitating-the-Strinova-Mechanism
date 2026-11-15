@@ -515,15 +515,32 @@ public class StrinovaGrowthScreen extends Screen {
         graphics.fill(this.portraitX, this.portraitY,
                 this.portraitX + 1, this.portraitY + this.portraitHeight, 0x60FFFFFF);
 
-        // 名字首字放大绘制（PoseStack 缩放，避免依赖贴图）
+        // 左侧基础立绘（官方 RoleGrowth 素材，cover 裁切铺满立绘区）；没有素材时回退名字首字
+        net.minecraft.resources.ResourceLocation portraitTexture = this.agent == null ? null
+                : com.hhdxcz.strinova.client.hud.StrinovaHudTextures
+                .growthPortraitByAgentName(this.agent.name());
+        boolean hasPortrait = portraitTexture != null
+                && this.portraitWidth >= 24 && this.portraitHeight >= 24;
+        if (hasPortrait) {
+            drawCoverPortrait(graphics, portraitTexture, this.portraitX, this.portraitY,
+                    this.portraitWidth, this.portraitHeight);
+            // 底部压暗，保证名字/定位/数值在立绘上清晰可读
+            int scrimTop = this.portraitY + Math.max(0, this.portraitHeight - 96);
+            graphics.fillGradient(this.portraitX, scrimTop,
+                    this.portraitX + this.portraitWidth, this.portraitY + this.portraitHeight,
+                    0x000A1018, 0xF00A1018);
+        } else {
+            // 名字首字放大绘制（PoseStack 缩放，避免依赖贴图）
+            int centerX = this.portraitX + this.portraitWidth / 2;
+            int charCenterY = this.portraitY + this.portraitHeight / 2 - 12;
+            int scale = clamp(this.portraitWidth / 22, 2, 9);
+            graphics.pose().pushPose();
+            graphics.pose().scale(scale, scale, 1.0F);
+            graphics.drawCenteredString(this.font, initialOf(this.agent),
+                    centerX / scale, charCenterY / scale, accent & 0x80FFFFFF);
+            graphics.pose().popPose();
+        }
         int centerX = this.portraitX + this.portraitWidth / 2;
-        int charCenterY = this.portraitY + this.portraitHeight / 2 - 12;
-        int scale = clamp(this.portraitWidth / 22, 2, 9);
-        graphics.pose().pushPose();
-        graphics.pose().scale(scale, scale, 1.0F);
-        graphics.drawCenteredString(this.font, initialOf(this.agent),
-                centerX / scale, charCenterY / scale, accent & 0x80FFFFFF);
-        graphics.pose().popPose();
 
         // 底部：角色名 + 定位标签（立绘太窄时只画名字，避免文字越界）
         int nameY = Math.max(this.portraitY + 14, this.portraitY + this.portraitHeight - 40);
@@ -562,6 +579,31 @@ public class StrinovaGrowthScreen extends Screen {
                         centerX, nameY - 14, COLOR_TEXT_DIM);
             }
         }
+    }
+
+    /**
+     * 以 cover 方式绘制角色立绘：等比放大到铺满立绘区域，水平居中裁切、顶部对齐，
+     * 不变形也不留空隙（立绘比区域矮时按实际高度画）。
+     */
+    private static void drawCoverPortrait(GuiGraphics graphics,
+                                          net.minecraft.resources.ResourceLocation texture,
+                                          int x, int y, int width, int height) {
+        int texW = com.hhdxcz.strinova.client.hud.StrinovaHudTextures.GROWTH_PORTRAIT_W;
+        int texH = com.hhdxcz.strinova.client.hud.StrinovaHudTextures.GROWTH_PORTRAIT_H;
+        if (width <= 0 || height <= 0 || texW <= 0 || texH <= 0) {
+            return;
+        }
+        float scale = Math.max(width / (float) texW, height / (float) texH);
+        float topGap = Math.min(6.0F, height * 0.03F);
+        float offsetX = (texW * scale - width) / 2.0F;
+        float u = Math.max(0.0F, offsetX / scale);
+        float v = Math.max(0.0F, topGap / scale);
+        int uWidth = Math.max(1, Math.min(texW - Math.round(u), Math.round(width / scale)));
+        int vHeight = Math.max(1, Math.min(texH - Math.round(v),
+                Math.round(height / scale) + 1));
+        int drawH = Math.min(height, Math.max(1, Math.round(vHeight * scale)));
+        com.hhdxcz.strinova.client.hud.StrinovaHudTextures.blit(graphics, texture, x, y,
+                width, drawH, u, v, uWidth, vHeight, texW, texH);
     }
 
     /** 当前角色的 wiki 数据（缺数据时为 null）。 */
