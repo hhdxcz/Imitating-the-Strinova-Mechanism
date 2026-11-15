@@ -581,9 +581,12 @@ public class StrinovaGrowthScreen extends Screen {
         }
     }
 
+    /** 立绘整体缩放（相对 cover 铺满）：0.6 = 缩小到 60%。 */
+    private static final float PORTRAIT_SCALE = 0.6F;
+
     /**
-     * 以 cover 方式绘制角色立绘：等比放大到铺满立绘区域，水平居中裁切、顶部对齐，
-     * 不变形也不留空隙（立绘比区域矮时按实际高度画）。
+     * 绘制角色立绘：以 cover 铺满为基准再乘 {@link #PORTRAIT_SCALE}（0.6），
+     * 水平居中、顶部对齐；贴图比区域大时按区域裁切，小时留出空白，不变形。
      */
     private static void drawCoverPortrait(GuiGraphics graphics,
                                           net.minecraft.resources.ResourceLocation texture,
@@ -593,17 +596,30 @@ public class StrinovaGrowthScreen extends Screen {
         if (width <= 0 || height <= 0 || texW <= 0 || texH <= 0) {
             return;
         }
-        float scale = Math.max(width / (float) texW, height / (float) texH);
+        float cover = Math.max(width / (float) texW, height / (float) texH);
+        float scale = cover * PORTRAIT_SCALE;
+        int drawW = Math.max(1, Math.round(texW * scale));
+        int drawH = Math.max(1, Math.round(texH * scale));
         float topGap = Math.min(6.0F, height * 0.03F);
-        float offsetX = (texW * scale - width) / 2.0F;
-        float u = Math.max(0.0F, offsetX / scale);
-        float v = Math.max(0.0F, topGap / scale);
-        int uWidth = Math.max(1, Math.min(texW - Math.round(u), Math.round(width / scale)));
-        int vHeight = Math.max(1, Math.min(texH - Math.round(v),
-                Math.round(height / scale) + 1));
-        int drawH = Math.min(height, Math.max(1, Math.round(vHeight * scale)));
-        com.hhdxcz.strinova.client.hud.StrinovaHudTextures.blit(graphics, texture, x, y,
-                width, drawH, u, v, uWidth, vHeight, texW, texH);
+        int drawX = x + (width - drawW) / 2;
+        int drawY = y + Math.round(topGap);
+
+        // 只画立绘图与立绘区相交的部分（区域比图小时是裁切，图比区域小时是居中留白）
+        int sx = Math.max(x, drawX);
+        int sy = Math.max(y, drawY);
+        int ex = Math.min(x + width, drawX + drawW);
+        int ey = Math.min(y + height, drawY + drawH);
+        if (ex <= sx || ey <= sy) {
+            return;
+        }
+        int visW = ex - sx;
+        int visH = ey - sy;
+        float u = (sx - drawX) * texW / (float) drawW;
+        float v = (sy - drawY) * texH / (float) drawH;
+        int uWidth = Math.max(1, Math.min(texW, Math.round(visW * texW / (float) drawW)));
+        int vHeight = Math.max(1, Math.min(texH, Math.round(visH * texH / (float) drawH)));
+        com.hhdxcz.strinova.client.hud.StrinovaHudTextures.blit(graphics, texture, sx, sy,
+                visW, visH, u, v, uWidth, vHeight, texW, texH);
     }
 
     /** 当前角色的 wiki 数据（缺数据时为 null）。 */
