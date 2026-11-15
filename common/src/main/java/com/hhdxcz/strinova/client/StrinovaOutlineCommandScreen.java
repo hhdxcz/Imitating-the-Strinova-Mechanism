@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
  * 描边命令配置界面。
  * 支持设置描边颜色、目标选择器，以及应用/清除/关闭描边效果。
  */
-public class StrinovaOutlineCommandScreen extends Screen {
+public class StrinovaOutlineCommandScreen extends StrinovaScaledScreen {
     private final Screen parent;
     private EditBox colorInput;
     private EditBox targetsInput;
@@ -24,6 +24,8 @@ public class StrinovaOutlineCommandScreen extends Screen {
     /** 初始化界面：颜色输入框、目标输入框和操作按钮。 */
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         int centerX = this.width / 2;
         int top = this.height / 2 - 54;
         this.colorInput = new EditBox(this.font, centerX - 140, top + 28, 132, 20, Component.translatable("config.strinova.command.outline.color"));
@@ -86,6 +88,9 @@ public class StrinovaOutlineCommandScreen extends Screen {
     /** 渲染界面：面板、标题、提示和状态信息。 */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         renderBackground(graphics);
         int left = this.width / 2 - 180;
         int top = this.height / 2 - 72;
@@ -96,6 +101,7 @@ public class StrinovaOutlineCommandScreen extends Screen {
         graphics.drawString(this.font, Component.translatable("config.strinova.command.outline.tip"), this.width / 2 - 140, top + 16, 0xB0B0B0, false);
         graphics.drawString(this.font, Component.literal(this.status), this.width / 2 - 140, top + 86, 0xA0E0A0, false);
         super.render(graphics, mouseX, mouseY, partialTick);
+        this.popDesignSpace(graphics);
     }
 
     /** 关闭界面返回父界面。 */

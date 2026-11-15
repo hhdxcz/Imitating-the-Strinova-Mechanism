@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
  * 碰撞箱功能菜单界面，提供碰撞箱编辑、黑名单管理、快捷键绑定、命令功能、
  * 战斗 HUD 设置与超弦体选角的入口。
  */
-public class StrinovaCollisionMenuScreen extends Screen {
+public class StrinovaCollisionMenuScreen extends StrinovaScaledScreen {
     /** 功能入口按钮宽度。 */
     private static final int ENTRY_WIDTH = 160;
     /** 功能入口按钮高度。 */
@@ -32,6 +32,8 @@ public class StrinovaCollisionMenuScreen extends Screen {
     /** 初始化菜单按钮：碰撞箱编辑、黑名单、快捷键、纸跳命令、描边命令、战斗 HUD 设置、超弦体选角。 */
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540）：先换算 width/height，鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         int centerX = this.width / 2;
         int firstY = this.entryFirstY();
         addRenderableWidget(Button.builder(Component.translatable("config.strinova.collision_preview.entry"), b -> {
@@ -100,6 +102,9 @@ public class StrinovaCollisionMenuScreen extends Screen {
     /** 渲染界面：背景和半透明面板。 */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         renderBackground(graphics);
         int centerX = this.width / 2;
         int firstY = this.entryFirstY();
@@ -110,6 +115,7 @@ public class StrinovaCollisionMenuScreen extends Screen {
         int bottom = lastY + ENTRY_HEIGHT + 10;
         graphics.fill(left, top, right, bottom, 0xA0101010);
         super.render(graphics, mouseX, mouseY, partialTick);
+        this.popDesignSpace(graphics);
     }
 
     /** 关闭界面返回父界面。 */

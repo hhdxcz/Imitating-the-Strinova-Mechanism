@@ -41,7 +41,7 @@ import java.util.Locale;
  * <p>保存写入 {@code config/strinova-client.json}；ESC / 返回放弃修改（用打开界面时的 JSON 快照还原）。
  * 编辑过程中所有改动都直接作用于 {@link StrinovaHudConfig#agentSelectUi}，因此示意图与真实界面共用同一份配置。</p>
  */
-public class StrinovaAgentSelectEditScreen extends Screen {
+public class StrinovaAgentSelectEditScreen extends StrinovaScaledScreen {
 
     // ==================== 配色（与选角界面保持一致） ====================
     private static final int COLOR_TEXT = 0xFFEAF6FF;
@@ -298,6 +298,8 @@ public class StrinovaAgentSelectEditScreen extends Screen {
     /** 初始化：记录配置快照、计算底部按钮与示意图区域，并创建显隐 / 动作 / 颜色三组按钮。 */
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540）：先换算 width/height，鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         this.clearWidgets();
         this.toggleButtons.clear();
         this.colorButtons.clear();
@@ -572,6 +574,9 @@ public class StrinovaAgentSelectEditScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         // 半透明压暗背景
         graphics.fill(0, 0, this.width, this.height, 0xC8000000);
         this.layoutPreview();
@@ -620,6 +625,7 @@ public class StrinovaAgentSelectEditScreen extends Screen {
         // 显隐 / 颜色按钮的完整名称提示（窄窗口按钮文字被缩短时尤其有用）
         this.drawToggleTip(graphics, mouseX, mouseY);
         this.drawColorTip(graphics, mouseX, mouseY);
+        this.popDesignSpace(graphics);
     }
 
     /** 在每个颜色按钮底部画一条实际颜色条（默认色画灰色），直观显示当前配色。 */
@@ -1268,7 +1274,11 @@ public class StrinovaAgentSelectEditScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (super.mouseClicked(mouseX, mouseY, button)) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
+        if (super.mouseClicked(rawMouseX, rawMouseY, button)) {
             return true;
         }
         if (button != 0) {
@@ -1298,8 +1308,16 @@ public class StrinovaAgentSelectEditScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        double rawDragX = dragX;
+        double rawDragY = dragY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
+        dragX = rawDragX / this.uiScale();
+        dragY = rawDragY / this.uiScale();
         if (this.dragMode == 0 || button != 0) {
-            return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+            return super.mouseDragged(rawMouseX, rawMouseY, button, rawDragX, rawDragY);
         }
         StrinovaAgentSelectUi ui = ui();
         this.layoutPreview();
@@ -1320,10 +1338,14 @@ public class StrinovaAgentSelectEditScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
         if (button == 0) {
             this.dragMode = 0;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(rawMouseX, rawMouseY, button);
     }
 
     /** 悬停显隐按钮时在按钮上方显示完整名称与状态。 */

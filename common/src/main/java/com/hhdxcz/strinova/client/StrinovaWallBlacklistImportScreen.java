@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
 /**
  * 黑名单导入界面，通过粘贴分享码来导入方块黑名单。
  */
-public class StrinovaWallBlacklistImportScreen extends Screen {
+public class StrinovaWallBlacklistImportScreen extends StrinovaScaledScreen {
     private final Screen parent;
     private EditBox codeBox;
     private String error = "";
@@ -23,6 +23,8 @@ public class StrinovaWallBlacklistImportScreen extends Screen {
     /** 初始化界面：分享码输入框、确认和取消按钮。 */
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         int boxWidth = 300;
         int boxX = this.width / 2 - boxWidth / 2;
         int boxY = this.height / 2 - 20;
@@ -56,6 +58,9 @@ public class StrinovaWallBlacklistImportScreen extends Screen {
     /** 渲染界面：标题、提示文字和错误信息。 */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         renderBackground(graphics);
         graphics.drawCenteredString(this.font, this.title, this.width / 2, 40, 0xFFFFFF);
         graphics.drawString(this.font, Component.translatable("config.strinova.wall_blacklist.import_hint"),
@@ -65,6 +70,7 @@ public class StrinovaWallBlacklistImportScreen extends Screen {
                     this.width / 2 - 150, this.height / 2 + 56, 0xFF5555, false);
         }
         super.render(graphics, mouseX, mouseY, partialTick);
+        this.popDesignSpace(graphics);
     }
 
     /** 关闭界面返回父界面。 */

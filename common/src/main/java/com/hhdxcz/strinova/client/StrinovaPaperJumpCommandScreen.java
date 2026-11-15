@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
  * 纸化减伤和跳跃分段命令配置界面。
  * 支持设置纸化减伤值、跳跃分段数和目标选择器。
  */
-public class StrinovaPaperJumpCommandScreen extends Screen {
+public class StrinovaPaperJumpCommandScreen extends StrinovaScaledScreen {
     private final Screen parent;
     private EditBox damageInput;
     private EditBox segmentsInput;
@@ -25,6 +25,8 @@ public class StrinovaPaperJumpCommandScreen extends Screen {
     /** 初始化界面：纸化减伤输入区和跳跃分段输入区。 */
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         int centerX = this.width / 2;
         int top = 36;
         this.damageInput = new EditBox(this.font, centerX - 140, top + 34, 120, 20, Component.translatable("config.strinova.command.paper.value"));
@@ -103,6 +105,9 @@ public class StrinovaPaperJumpCommandScreen extends Screen {
     /** 渲染界面：面板、标题、提示和状态信息。 */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         renderBackground(graphics);
         int centerX = this.width / 2;
         int left = centerX - 170;
@@ -115,6 +120,7 @@ public class StrinovaPaperJumpCommandScreen extends Screen {
         graphics.drawString(this.font, Component.translatable("config.strinova.command.jump.tip"), centerX - 140, top + 70, 0xB0B0B0, false);
         graphics.drawString(this.font, Component.literal(this.status), centerX - 140, top + 140, 0xA0E0A0, false);
         super.render(graphics, mouseX, mouseY, partialTick);
+        this.popDesignSpace(graphics);
     }
 
     /** 关闭界面返回父界面。 */

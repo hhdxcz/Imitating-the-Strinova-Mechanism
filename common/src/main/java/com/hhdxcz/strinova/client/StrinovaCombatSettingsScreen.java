@@ -21,7 +21,7 @@ import java.util.function.IntSupplier;
  * 与准星参数（颜色/间隙/长度/粗细/动态）调节，并在底部提供 HUD 布局编辑器入口。
  * 所有修改实时写回 {@link StrinovaHudConfig}，关闭界面或进入编辑器前统一落盘。
  */
-public class StrinovaCombatSettingsScreen extends Screen {
+public class StrinovaCombatSettingsScreen extends StrinovaScaledScreen {
 
     /** 单行按钮高度。 */
     private static final int ROW_HEIGHT = 20;
@@ -79,6 +79,8 @@ public class StrinovaCombatSettingsScreen extends Screen {
     /** 初始化界面：上方 5 行显示开关（HUD 总开关 + 8 个元素 + 计分板）、下方 3 行准星调节，底部为布局编辑与返回。 */
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         this.clearWidgets();
         this.elementToggles.clear();
         this.crosshairButtons.clear();
@@ -270,6 +272,9 @@ public class StrinovaCombatSettingsScreen extends Screen {
     /** 渲染界面：背景、面板、分组分隔线、数值标签，最后绘制控件与准星颜色预览块。 */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         this.renderBackground(graphics);
         graphics.fill(this.panelLeft, this.panelTop, this.panelRight, this.panelBottom, 0xA0101010);
         graphics.drawCenteredString(this.font, this.title, this.width / 2, this.panelTop + 8, 0xFFFFFF);
@@ -297,6 +302,7 @@ public class StrinovaCombatSettingsScreen extends Screen {
 
         super.render(graphics, mouseX, mouseY, partialTick);
         this.renderCrosshairColorSwatch(graphics);
+        this.popDesignSpace(graphics);
     }
 
     /** 在“准星颜色”按钮右侧绘制当前颜色小方块，避免为每种颜色单独新增语言键。 */

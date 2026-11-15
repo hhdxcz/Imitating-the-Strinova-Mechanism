@@ -31,7 +31,7 @@ import java.util.UUID;
  * 提供玩家的 3D 模型预览、碰撞箱渲染、鼠标旋转/缩放等通用功能，
  * 支持同步模式（SYNC）和飞行模式（FLY）两种预览模式。
  */
-public class StrinovaCollisionPreviewScreen extends Screen {
+public class StrinovaCollisionPreviewScreen extends StrinovaScaledScreen {
     private static final int PANEL_PADDING = 24;
     private static final int PANEL_TOP = 44;
 
@@ -83,6 +83,8 @@ public class StrinovaCollisionPreviewScreen extends Screen {
     /** 初始化界面：计算预览区域大小、设置渲染状态、添加按钮。 */
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         this.previewLeft = PANEL_PADDING;
         this.previewTop = PANEL_TOP;
         this.previewWidth = Math.max(160, this.width - (PANEL_PADDING * 2));
@@ -363,39 +365,59 @@ public class StrinovaCollisionPreviewScreen extends Screen {
     /** 点击预览区域时开始拖拽旋转。 */
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
         if (button == 0 && isInPreview(mouseX, mouseY)) {
             dragging = true;
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(rawMouseX, rawMouseY, button);
     }
 
     /** 拖拽时旋转预览视角。 */
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        double rawDragX = dragX;
+        double rawDragY = dragY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
+        dragX = rawDragX / this.uiScale();
+        dragY = rawDragY / this.uiScale();
         if (dragging) {
             rotY += (float) dragX * 0.5F;
             rotX = Math.max(-80.0F, Math.min(80.0F, rotX + (float) dragY * 0.5F));
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(rawMouseX, rawMouseY, button, rawDragX, rawDragY);
     }
 
     /** 释放鼠标结束拖拽。 */
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
         dragging = false;
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(rawMouseX, rawMouseY, button);
     }
 
     /** 滚轮在预览区域内时缩放视角。 */
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
         if (isInPreview(mouseX, mouseY)) {
             zoom = Math.max(0.5F, Math.min(2.5F, zoom + (float) delta * 0.1F));
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(rawMouseX, rawMouseY, delta);
     }
 
     /** 判断鼠标坐标是否在预览区域内。 */
@@ -538,4 +560,11 @@ public class StrinovaCollisionPreviewScreen extends Screen {
     public void onClose() {
         minecraft.setScreen(parent);
     }
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        super.render(graphics, this.uiMouseX(mouseX), this.uiMouseY(mouseY), partialTick);
+        this.popDesignSpace(graphics);
+    }
+
 }

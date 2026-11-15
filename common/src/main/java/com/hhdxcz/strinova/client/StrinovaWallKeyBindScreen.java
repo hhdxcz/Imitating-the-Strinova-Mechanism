@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
  * 穿墙快捷键绑定界面。
  * 支持自定义快捷键、使用默认预设和重置操作。
  */
-public class StrinovaWallKeyBindScreen extends Screen {
+public class StrinovaWallKeyBindScreen extends StrinovaScaledScreen {
     private final Screen parent;
     private EditBox keyInput;
     private String status = "";
@@ -23,6 +23,8 @@ public class StrinovaWallKeyBindScreen extends Screen {
     /** 初始化界面：快捷键输入框和操作按钮。 */
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         int centerX = this.width / 2;
         int top = this.height / 2 - 46;
         this.keyInput = new EditBox(this.font, centerX - 140, top + 28, 280, 20, Component.translatable("config.strinova.wall_key.input"));
@@ -97,6 +99,9 @@ public class StrinovaWallKeyBindScreen extends Screen {
     /** 渲染界面：面板、标题、提示和状态信息。 */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         renderBackground(graphics);
         int left = this.width / 2 - 170;
         int top = this.height / 2 - 66;
@@ -107,6 +112,7 @@ public class StrinovaWallKeyBindScreen extends Screen {
         graphics.drawString(this.font, Component.translatable("config.strinova.wall_key.tip"), this.width / 2 - 140, top + 16, 0xB0B0B0, false);
         graphics.drawString(this.font, Component.literal(this.status), this.width / 2 - 140, top + 84, 0xA0E0A0, false);
         super.render(graphics, mouseX, mouseY, partialTick);
+        this.popDesignSpace(graphics);
     }
 
     /** 关闭界面返回父界面。 */

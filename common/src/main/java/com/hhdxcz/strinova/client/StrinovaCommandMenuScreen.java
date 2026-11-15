@@ -8,7 +8,7 @@ import net.minecraft.network.chat.Component;
 /**
  * 命令菜单界面，提供纸跳和描边命令的快捷入口。
  */
-public class StrinovaCommandMenuScreen extends Screen {
+public class StrinovaCommandMenuScreen extends StrinovaScaledScreen {
     private final Screen parent;
 
     public StrinovaCommandMenuScreen(Screen parent) {
@@ -19,6 +19,8 @@ public class StrinovaCommandMenuScreen extends Screen {
     /** 初始化菜单按钮：纸跳命令和描边命令。 */
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         int centerX = this.width / 2;
         int centerY = this.height / 2;
         addRenderableWidget(Button.builder(Component.translatable("config.strinova.command_menu.paper_jump"), b -> {
@@ -43,6 +45,9 @@ public class StrinovaCommandMenuScreen extends Screen {
     /** 渲染界面：背景和半透明面板。 */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         renderBackground(graphics);
         int left = this.width / 2 - 120;
         int top = this.height / 2 - 52;
@@ -51,6 +56,7 @@ public class StrinovaCommandMenuScreen extends Screen {
         graphics.fill(left, top, right, bottom, 0xA0101010);
         graphics.drawCenteredString(this.font, this.title, this.width / 2, top + 10, 0xFFFFFF);
         super.render(graphics, mouseX, mouseY, partialTick);
+        this.popDesignSpace(graphics);
     }
 
     /** 关闭界面返回父界面。 */

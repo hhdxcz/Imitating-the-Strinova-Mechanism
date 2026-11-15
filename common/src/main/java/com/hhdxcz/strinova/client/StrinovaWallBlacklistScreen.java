@@ -22,7 +22,7 @@ import java.util.Set;
  * 穿墙方块黑名单管理界面。
  * 支持搜索方块、切换视图（全部/仅黑名单）、切换黑名单状态、分享导入等功能。
  */
-public class StrinovaWallBlacklistScreen extends Screen {
+public class StrinovaWallBlacklistScreen extends StrinovaScaledScreen {
     private static final int PANEL_TOP = 20;
     private static final int SEARCH_TOP = 44;
     private static final int SEARCH_HEIGHT = 20;
@@ -55,6 +55,8 @@ public class StrinovaWallBlacklistScreen extends Screen {
     /** 初始化界面组件：搜索框、功能按钮、构建方块列表并刷新显示。 */
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         this.panelLeft = this.width / 2 - 180;
         this.panelRight = this.width / 2 + 180;
         this.listBottom = this.height - 86;
@@ -221,6 +223,10 @@ public class StrinovaWallBlacklistScreen extends Screen {
     /** 鼠标点击在列表区域内时，切换对应方块的黑名单状态。 */
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
         if (button == 0 && isInList(mouseX, mouseY)) {
             int index = (int) ((mouseY - LIST_TOP) / ENTRY_HEIGHT);
             int real = scrollOffset + index;
@@ -229,12 +235,16 @@ public class StrinovaWallBlacklistScreen extends Screen {
             }
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(rawMouseX, rawMouseY, button);
     }
 
     /** 鼠标滚轮在列表区域内时，滚动列表。 */
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
         if (isInList(mouseX, mouseY)) {
             int maxRows = Math.max(1, (listBottom - LIST_TOP) / ENTRY_HEIGHT);
             int maxOffset = Math.max(0, displayed.size() - maxRows);
@@ -244,7 +254,7 @@ public class StrinovaWallBlacklistScreen extends Screen {
             }
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(rawMouseX, rawMouseY, delta);
     }
 
     /** 判断鼠标坐标是否在列表区域内。 */
@@ -256,6 +266,9 @@ public class StrinovaWallBlacklistScreen extends Screen {
     /** 渲染界面：面板背景、标题、方块列表及底部状态信息。 */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         renderBackground(graphics);
 
         graphics.fill(panelLeft, PANEL_TOP, panelRight, this.height - 40, 0xA0101010);
@@ -279,6 +292,7 @@ public class StrinovaWallBlacklistScreen extends Screen {
                 contentX, this.height - 54, 0x909090, false);
 
         super.render(graphics, mouseX, mouseY, partialTick);
+        this.popDesignSpace(graphics);
     }
 
     /** 渲染方块列表，每行显示方块图标、名称和注册 ID，黑名单方块带有绿色边框高亮。 */

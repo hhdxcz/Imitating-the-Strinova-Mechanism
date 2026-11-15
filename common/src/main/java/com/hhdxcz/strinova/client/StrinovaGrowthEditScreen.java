@@ -40,7 +40,7 @@ import java.util.Locale;
  * <p>常规窗口下按钮自适应排成两行（11+11），窄窗口自动换 3~5 行；示意图等比缩放并隐藏次要文字，
  * 320×240 不崩溃。</p>
  */
-public class StrinovaGrowthEditScreen extends Screen {
+public class StrinovaGrowthEditScreen extends StrinovaScaledScreen {
 
     // ==================== 配色（与增幅网络界面一致） ====================
     private static final int COLOR_TITLE = 0xFFEAF2FA;
@@ -156,6 +156,8 @@ public class StrinovaGrowthEditScreen extends Screen {
 
     @Override
     protected void init() {
+        // 统一设计分辨率（960×540）：先换算 width/height，鼠标事件会换算回设计坐标
+        this.beginDesignSpace();
         if (!this.snapshotCaptured) {
             // 打开时记录快照：ESC / 返回时整体还原（与计分板编辑器「放弃修改」一致）
             this.snapshotJson = StrinovaHudConfig.get().growthExportJson();
@@ -414,6 +416,9 @@ public class StrinovaGrowthEditScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.pushDesignSpace(graphics);
+        mouseX = this.uiMouseX(mouseX);
+        mouseY = this.uiMouseY(mouseY);
         StrinovaGrowthUi ui = StrinovaHudConfig.get().growthUi;
         // 半透明压暗背景（与计分板编辑器一致）
         graphics.fill(0, 0, this.width, this.height, 0xC8000000);
@@ -426,6 +431,7 @@ public class StrinovaGrowthEditScreen extends Screen {
         this.drawPreview(graphics, ui);
         this.drawEditorText(graphics, ui);
         super.render(graphics, mouseX, mouseY, partialTick);
+        this.popDesignSpace(graphics);
     }
 
     /** 顶部标题 / 两行参数（含分割线比例、行权重、能量点）/ 拖动提示 / 操作反馈或已隐藏汇总。 */
@@ -1225,7 +1231,11 @@ public class StrinovaGrowthEditScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (super.mouseClicked(mouseX, mouseY, button)) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
+        if (super.mouseClicked(rawMouseX, rawMouseY, button)) {
             return true;
         }
         if (button != 0) {
@@ -1263,6 +1273,14 @@ public class StrinovaGrowthEditScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        double rawDragX = dragX;
+        double rawDragY = dragY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
+        dragX = rawDragX / this.uiScale();
+        dragY = rawDragY / this.uiScale();
         if (this.dragging != DRAG_NONE && button == 0) {
             StrinovaGrowthUi ui = StrinovaHudConfig.get().growthUi;
             double scale = Math.max(1.0E-4D, this.previewScale);
@@ -1312,15 +1330,19 @@ public class StrinovaGrowthEditScreen extends Screen {
             ui.sanitize();
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(rawMouseX, rawMouseY, button, rawDragX, rawDragY);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        double rawMouseX = mouseX;
+        double rawMouseY = mouseY;
+        mouseX = this.uiMouseX(rawMouseX);
+        mouseY = this.uiMouseY(rawMouseY);
         if (button == 0) {
             this.dragging = DRAG_NONE;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(rawMouseX, rawMouseY, button);
     }
 
     @Override
