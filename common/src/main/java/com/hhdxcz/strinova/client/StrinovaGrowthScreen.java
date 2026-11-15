@@ -968,12 +968,17 @@ public class StrinovaGrowthScreen extends Screen {
             graphics.drawString(this.font, label,
                     cx + Math.max(2, (cellW - this.font.width(label)) / 2), labelY,
                     isEquipped ? COLOR_GOLD : COLOR_TEXT, false);
-            if (isEquipped && cellH >= 34) {
-                String mark = "当前装配";
-                String markText = this.truncate(mark, Math.max(6, cellW - 4));
-                graphics.drawString(this.font, markText,
-                        cx + Math.max(2, (cellW - this.font.width(markText)) / 2),
-                        labelY + (cellH >= 44 ? -10 : -9), COLOR_GOLD, false);
+            if (isEquipped) {
+                if (cellH >= 44) {
+                    String mark = "当前装配";
+                    String markText = this.truncate(mark, Math.max(6, cellW - 4));
+                    graphics.drawString(this.font, markText,
+                            cx + Math.max(2, (cellW - this.font.width(markText)) / 2),
+                            labelY - 10, COLOR_GOLD, false);
+                } else {
+                    // 小格放不下两行字：左上角用金色小标记
+                    graphics.fill(cx + 1, cy + 1, cx + 8, cy + 3, COLOR_GOLD);
+                }
             }
         }
     }
