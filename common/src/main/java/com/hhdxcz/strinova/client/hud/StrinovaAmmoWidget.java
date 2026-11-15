@@ -78,10 +78,19 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
             names[0] = agentWeapon;
         }
 
+        // 增幅网络里配置过的武器直接覆盖显示（换过武器后 HUD 同步变化）
+        for (int i = 0; i < 5; i++) {
+            String configured = StrinovaHudConfig.get().weaponLoadoutName(i);
+            if (!configured.isEmpty()) {
+                names[i] = configured;
+            }
+        }
+
         // 贴图名：没有可用武器名时按槽位用默认官方图标
         String[] iconNames = names.clone();
         String[] defaultIcons = {"警探", "雪鸮", "忍锋", "手雷", "闪光弹"};
         for (int i = 0; i < 5; i++) {
+            iconNames[i] = StrinovaWeaponCatalog.iconName(i, iconNames[i]);
             if (StrinovaWeaponIcons.textureFor(iconNames[i]) == null) {
                 iconNames[i] = defaultIcons[i];
             }

@@ -7,6 +7,7 @@ import com.hhdxcz.strinova.client.hud.StrinovaHudConfig;
 import com.hhdxcz.strinova.client.hud.StrinovaHudState;
 import com.hhdxcz.strinova.client.hud.StrinovaMatchState;
 import com.hhdxcz.strinova.client.hud.StrinovaWikiData;
+import com.hhdxcz.strinova.client.hud.StrinovaWeaponCatalog;
 import com.hhdxcz.strinova.client.hud.StrinovaWeaponIcons;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -144,6 +145,18 @@ public class StrinovaGrowthScreen extends Screen {
     private final int[] refreshIconX = new int[CATEGORY_ROWS * 2];
     private final int[] refreshIconY = new int[CATEGORY_ROWS * 2];
 
+    // ==================== 武器更换弹窗 ====================
+    /** 5 张武器卡的命中区 {x, y, w, h}（renderWeaponCard 时写入）。 */
+    private final int[][] weaponCardRects = new int[WEAPON_SLOT_COUNT][];
+    /** 当前打开的武器选择弹窗槽位（-1 = 关闭）。 */
+    private int weaponPopupSlot = -1;
+    /** 弹窗内候选武器的命中区（渲染时写入，与 weaponPopupEntries 对应）。 */
+    private final java.util.List<int[]> weaponPopupRects = new java.util.ArrayList<>();
+    /** 弹窗内候选武器列表（打开弹窗时写入）。 */
+    private java.util.List<StrinovaWeaponCatalog.Entry> weaponPopupEntries = List.of();
+    /** 弹窗中鼠标悬停的候选下标（-1 = 无）。 */
+    private int hoveredWeaponPopup = -1;
+
     public StrinovaGrowthScreen(Screen parent) {
         super(Component.translatable("config.strinova.growth.title"));
         this.parent = parent;
@@ -162,6 +175,9 @@ public class StrinovaGrowthScreen extends Screen {
         this.hoveredRefresh = -1;
         java.util.Arrays.fill(this.refreshIconX, -1);
         java.util.Arrays.fill(this.refreshIconY, -1);
+        // 窗口尺寸变化会重建控件：武器卡命中区与更换面板状态一并复位
+        this.closeWeaponPopup();
+        java.util.Arrays.fill(this.weaponCardRects, null);
         this.closeButton = this.addRenderableWidget(Button.builder(Component.empty(), button -> this.onClose())
                 .bounds(this.closeButtonX(), this.closeButtonY(), this.closeButtonSize, this.closeButtonSize)
                 .build());
@@ -401,7 +417,12 @@ public class StrinovaGrowthScreen extends Screen {
         }
         super.render(graphics, mouseX, mouseY, partialTick);
         this.renderCloseGlyph(graphics, mouseX, mouseY);
-        this.renderHoverTooltips(graphics, mouseX, mouseY);
+        if (this.weaponPopupSlot >= 0) {
+            // 武器更换弹窗覆盖在最上层，打开时不再显示其它悬停提示
+            this.renderWeaponPopup(graphics, mouseX, mouseY);
+        } else {
+            this.renderHoverTooltips(graphics, mouseX, mouseY);
+        }
     }
 
     // ==================== 顶部栏 ====================
@@ -731,18 +752,13 @@ public class StrinovaGrowthScreen extends Screen {
         this.renderWeaponCard(graphics, 4, cardLeft + halfWidth + slotGap, rowY, halfWidth, lastHeight, slots);
     }
 
-    /** 单张武器卡：序号 + 槽位类型、居中几何图标、底部名称/战术提示、右下角黄色切换图标。 */
+    /** 单张武器卡：序号 + 槽位类型、居中剪影、底部名称、右下角黄色切换图标（点击打开更换面板）。 */
     private void renderWeaponCard(GuiGraphics graphics, int index, int x, int y, int width, int height,
                                   List<StrinovaHudState.WeaponSlot> slots) {
         StrinovaHudState.WeaponSlot slot = index < slots.size() ? slots.get(index) : null;
         boolean selected = slot != null && slot.selected();
-        String name = slot == null || slot.name() == null ? "" : slot.name();
-        if (name.isEmpty() && index == 0) {
-            StrinovaWikiData.Agent wiki = this.wikiAgent();
-            if (wiki != null && wiki.weapon() != null) {
-                name = wiki.weapon().name();
-            }
-        }
+        this.weaponCardRects[index] = new int[]{x, y, width, height};
+        String name = this.weaponSlotName(index, slot);
         int right = x + width;
         graphics.fill(x, y, right, y + height, selected ? 0x66203548 : 0x2A0B121A);
         graphics.fill(x, y, right, y + 1, selected ? COLOR_CYAN : 0x22FFFFFF);
@@ -770,8 +786,8 @@ public class StrinovaGrowthScreen extends Screen {
         if (iconBoxW >= 10 && iconBoxH >= 6) {
             int iconX = x;
             int iconY = y + 11;
-            String iconName = name;
-            if (StrinovaWeaponIcons.textureFor(iconName) == null && index > 0) {
+            String iconName = StrinovaWeaponCatalog.iconName(index, name);
+            if (StrinovaWeaponIcons.textureFor(iconName) == null && name.isEmpty()) {
                 iconName = switch (index) {
                     case 1 -> "雪鸮";
                     case 2 -> "忍锋";
@@ -796,8 +812,30 @@ public class StrinovaGrowthScreen extends Screen {
                         x + 4, bottomY, COLOR_TEXT_DISABLED, false);
             }
         }
-        // 右下角黄色「切换 / 更换」双向箭头（装饰，无功能）
+        // 右下角黄色「切换 / 更换」双向箭头：点击整张卡可打开该槽位的武器更换面板
         drawWeaponSwitchIcon(graphics, right - 4, y + height - 4);
+    }
+
+    /**
+     * 槽位武器名：优先用武器配置（增幅网络里换的），其次 HUD mock 槽位数据，
+     * 最后主武器槽回退当前角色的 wiki 武器。
+     */
+    private String weaponSlotName(int index, StrinovaHudState.WeaponSlot slot) {
+        String configured = StrinovaHudConfig.get().weaponLoadoutName(index);
+        if (!configured.isEmpty()) {
+            return configured;
+        }
+        String mockName = slot == null || slot.name() == null ? "" : slot.name();
+        if (!mockName.isEmpty()) {
+            return mockName;
+        }
+        if (index == 0) {
+            StrinovaWikiData.Agent wiki = this.wikiAgent();
+            if (wiki != null && wiki.weapon() != null && wiki.weapon().name() != null) {
+                return wiki.weapon().name();
+            }
+        }
+        return "";
     }
 
     /** 武器槽类型 lang key（与选角界面共用）。 */
@@ -808,6 +846,137 @@ public class StrinovaGrowthScreen extends Screen {
             "config.strinova.agent.weapon_gadget",
             "config.strinova.agent.weapon_gadget"
     };
+
+    // ==================== 武器更换弹窗 ====================
+
+    /** 打开某槽位的武器更换面板。 */
+    private void openWeaponPopup(int slot) {
+        if (slot < 0 || slot >= WEAPON_SLOT_COUNT) {
+            return;
+        }
+        this.weaponPopupSlot = slot;
+        this.weaponPopupEntries = StrinovaWeaponCatalog.entriesForSlot(slot);
+        this.weaponPopupRects.clear();
+        this.hoveredWeaponPopup = -1;
+    }
+
+    /** 关闭武器更换面板。 */
+    private void closeWeaponPopup() {
+        this.weaponPopupSlot = -1;
+        this.weaponPopupRects.clear();
+        this.hoveredWeaponPopup = -1;
+    }
+
+    /** 选择候选武器：写入武器配置并关闭面板。 */
+    private void selectWeapon(StrinovaWeaponCatalog.Entry entry) {
+        if (entry == null || this.weaponPopupSlot < 0) {
+            return;
+        }
+        StrinovaHudConfig.get().setWeaponLoadout(this.weaponPopupSlot, entry.name());
+        this.closeWeaponPopup();
+    }
+
+    /**
+     * 武器更换面板：按槽位分类列出候选武器（剪影 + 名称），当前装配的用金色标记，
+     * 点击任意候选即装配到该槽位；点击面板外或按 ESC 关闭。
+     */
+    private void renderWeaponPopup(GuiGraphics graphics, int mouseX, int mouseY) {
+        int slot = this.weaponPopupSlot;
+        if (slot < 0 || slot >= WEAPON_SLOT_COUNT) {
+            this.closeWeaponPopup();
+            return;
+        }
+        if (this.weaponPopupEntries.isEmpty()) {
+            this.weaponPopupEntries = StrinovaWeaponCatalog.entriesForSlot(slot);
+        }
+        List<StrinovaWeaponCatalog.Entry> entries = this.weaponPopupEntries;
+
+        // 半透明遮罩，突出面板
+        graphics.fill(0, 0, this.width, this.height, 0x99000000);
+
+        String slotLabel = Component.translatable(WEAPON_SLOT_KEYS[slot]).getString();
+        String title = (slot + 1) + " " + slotLabel;
+        String hint = "点击选择 · 点空白处关闭";
+
+        int pad = 10;
+        int titleH = 20;
+        int gap = 4;
+        int availableH = Math.max(80, this.height - 16);
+        // 先定列数：默认 4 列，行数太多时加到 5~6 列，避免小窗口溢出
+        int columns = 4;
+        while (columns < 6 && (entries.size() + columns - 1) / columns > 6) {
+            columns++;
+        }
+        int rows = Math.max(1, (entries.size() + columns - 1) / columns);
+        int maxPanelW = Math.max(150, Math.min(this.width - 16, 440));
+        int cellW = Math.max(28, (maxPanelW - pad * 2 - gap * (columns - 1)) / columns);
+        int panelW = cellW * columns + gap * (columns - 1) + pad * 2;
+        int cellHBudget = availableH - titleH - pad * 2 - (rows - 1) * gap;
+        int cellH = clamp(cellHBudget / rows, 26, 54);
+        int iconSize = clamp(cellH - 20, 8, 24);
+        int panelH = titleH + pad + rows * cellH + (rows - 1) * gap + pad;
+        int px = (this.width - panelW) / 2;
+        int py = Math.max(4, (this.height - panelH) / 2);
+
+        // 面板
+        graphics.fill(px - 1, py - 1, px + panelW + 1, py + panelH + 1, 0xFF2A3542);
+        graphics.fill(px, py, px + panelW, py + panelH, 0xF00C121A);
+        graphics.fill(px, py, px + panelW, py + titleH, 0x66203548);
+        graphics.fill(px, py + titleH - 1, px + panelW, py + titleH, COLOR_CYAN);
+        graphics.drawString(this.font, title, px + pad, py + 6, COLOR_CYAN, false);
+        graphics.drawString(this.font, hint, px + panelW - pad - this.font.width(hint),
+                py + 6, COLOR_TEXT_DISABLED, false);
+
+        // 同一分类的所有槽位都算「当前装配」（如 4/5 都是战术道具）
+        StrinovaWeaponCatalog.Category category = StrinovaWeaponCatalog.categoryForSlot(slot);
+        java.util.Set<String> equipped = new java.util.HashSet<>();
+        for (int i = 0; i < WEAPON_SLOT_COUNT; i++) {
+            if (StrinovaWeaponCatalog.categoryForSlot(i) == category) {
+                equipped.add(this.weaponSlotName(i, null));
+            }
+        }
+
+        this.weaponPopupRects.clear();
+        this.hoveredWeaponPopup = -1;
+        int gridTop = py + titleH + pad;
+        for (int i = 0; i < entries.size(); i++) {
+            int column = i % columns;
+            int row = i / columns;
+            int cx = px + pad + column * (cellW + gap);
+            int cy = gridTop + row * (cellH + gap);
+            int[] cell = new int[]{cx, cy, cellW, cellH};
+            this.weaponPopupRects.add(cell);
+            boolean hovered = insideRect(mouseX, mouseY, cell);
+            if (hovered) {
+                this.hoveredWeaponPopup = i;
+            }
+            StrinovaWeaponCatalog.Entry entry = entries.get(i);
+            boolean isEquipped = equipped.contains(entry.name());
+            graphics.fill(cx, cy, cx + cellW, cy + cellH,
+                    hovered ? 0xFF24303E : (isEquipped ? 0x3320C9D8 : 0xCC101823));
+            int border = hovered ? COLOR_CYAN : (isEquipped ? 0x8835D6E8 : 0x33445566);
+            graphics.fill(cx, cy, cx + cellW, cy + 1, border);
+            graphics.fill(cx, cy + cellH - 1, cx + cellW, cy + cellH, border);
+            graphics.fill(cx, cy, cx + 1, cy + cellH, border);
+            graphics.fill(cx + cellW - 1, cy, cx + cellW, cy + cellH, border);
+
+            drawWeaponCardIcon(graphics, StrinovaWeaponCatalog.iconName(slot, entry.name()), slot,
+                    cx + (cellW - iconSize) / 2, cy + 3, iconSize, iconSize);
+
+            String label = this.truncate(entry.name(), Math.max(6, cellW - 4));
+            int labelY = cy + cellH - 11;
+            graphics.drawString(this.font, label,
+                    cx + Math.max(2, (cellW - this.font.width(label)) / 2), labelY,
+                    isEquipped ? COLOR_GOLD : COLOR_TEXT, false);
+            if (isEquipped && cellH >= 34) {
+                String mark = "当前装配";
+                String markText = this.truncate(mark, Math.max(6, cellW - 4));
+                graphics.drawString(this.font, markText,
+                        cx + Math.max(2, (cellW - this.font.width(markText)) / 2),
+                        labelY + (cellH >= 44 ? -10 : -9), COLOR_GOLD, false);
+            }
+        }
+    }
 
     /** 优先用武器/道具真实剪影贴图，没有贴图时回退程序化仿制剪影。 */
     private static void drawWeaponCardIcon(GuiGraphics graphics, String name, int index,
@@ -1244,14 +1413,38 @@ public class StrinovaGrowthScreen extends Screen {
 
     // ==================== 交互 ====================
 
-    /** 鼠标点击：先交给按钮控件；再命中「切换激活」/分类刷新图标，最后命中成长项时尝试购买。 */
+    /** 鼠标点击：武器更换面板 → 按钮控件 → 武器卡（打开更换面板）→ 其它控件/成长项。 */
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // 0) 武器更换面板打开时优先处理：点候选=装配，点空白/按钮=关闭
+        if (this.weaponPopupSlot >= 0) {
+            if (button == 0) {
+                for (int i = 0; i < this.weaponPopupRects.size()
+                        && i < this.weaponPopupEntries.size(); i++) {
+                    if (insideRect(mouseX, mouseY, this.weaponPopupRects.get(i))) {
+                        this.selectWeapon(this.weaponPopupEntries.get(i));
+                        return true;
+                    }
+                }
+            }
+            this.closeWeaponPopup();
+            return true;
+        }
         if (super.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
         if (button != 0) {
             return false;
+        }
+        // 0.5) 武器卡：点击任意位置打开该槽位的武器更换面板
+        if (this.showWeapons) {
+            for (int i = 0; i < WEAPON_SLOT_COUNT; i++) {
+                int[] rect = this.weaponCardRects[i];
+                if (rect != null && insideRect(mouseX, mouseY, rect)) {
+                    this.openWeaponPopup(i);
+                    return true;
+                }
+            }
         }
         List<StrinovaGrowthState.Category> categories = StrinovaGrowthState.categories();
         // 0) 觉醒 2/3「切换激活」：仅当二觉与三觉需求都满足时可用
@@ -1289,6 +1482,16 @@ public class StrinovaGrowthScreen extends Screen {
             }
         }
         return false;
+    }
+
+    /** ESC：优先关闭武器更换面板，其次退出界面。 */
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (this.weaponPopupSlot >= 0 && keyCode == 256) {
+            this.closeWeaponPopup();
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     /** 分类刷新图标 Rectangle：{x, y, width, height}（尚未渲染/不可用时返回 null）。 */
@@ -1378,13 +1581,35 @@ public class StrinovaGrowthScreen extends Screen {
             this.renderAgentTooltip(graphics, mouseX, mouseY);
             return;
         }
-        if (this.showWeapons && mouseX >= this.weaponsX - 4 && mouseX < this.innerRight
-                && mouseY >= this.weaponsY && mouseY < this.weaponsBottom) {
-            StrinovaWikiData.Agent wiki = this.wikiAgent();
-            if (wiki != null && wiki.weapon() != null && !isBlank(wiki.weapon().name())) {
-                this.renderWeaponTooltip(graphics, wiki.weapon(), mouseX, mouseY);
+        if (this.showWeapons) {
+            for (int i = 0; i < WEAPON_SLOT_COUNT; i++) {
+                int[] rect = this.weaponCardRects[i];
+                if (rect != null && insideRect(mouseX, mouseY, rect)) {
+                    this.renderWeaponCardTooltip(graphics, i, mouseX, mouseY);
+                    return;
+                }
             }
         }
+    }
+
+    /** 武器卡提示：槽位类型 + 当前武器名 + 「点击更换」。 */
+    private void renderWeaponCardTooltip(GuiGraphics graphics, int index, int mouseX, int mouseY) {
+        String slotLabel = Component.translatable(WEAPON_SLOT_KEYS[index]).getString();
+        String title = (index + 1) + " " + slotLabel;
+        String name = this.weaponSlotName(index, null);
+        if (name.isEmpty()) {
+            name = Component.translatable("hud.strinova.weapon.none").getString();
+        }
+        String hint = "点击更换武器";
+        int width = Math.max(this.font.width(title), Math.max(this.font.width(name), this.font.width(hint))) + 14;
+        int height = LINE_STEP * 3 + 8;
+        int x = clamp(mouseX + 10, 4, Math.max(4, this.width - width - 4));
+        int y = clamp(mouseY + 10, 4, Math.max(4, this.height - height - 4));
+        graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF2A3542);
+        graphics.fill(x, y, x + width, y + height, 0xF00C121A);
+        graphics.drawString(this.font, title, x + 7, y + 4, COLOR_CYAN, false);
+        graphics.drawString(this.font, name, x + 7, y + 4 + LINE_STEP, COLOR_TEXT, false);
+        graphics.drawString(this.font, hint, x + 7, y + 4 + LINE_STEP * 2, 0xFFB4C0CC, false);
     }
 
     /** 「刷新」图标提示：返还点数，重新选择。 */
@@ -1544,32 +1769,6 @@ public class StrinovaGrowthScreen extends Screen {
         }
         for (FormattedCharSequence line : quote) {
             graphics.drawString(this.font, line, x + 7, lineY, COLOR_TEXT_DIM, false);
-            lineY += LINE_STEP;
-        }
-    }
-
-    /** 武器栏提示框：主武器名称 · 类型 + 自动换行介绍。 */
-    private void renderWeaponTooltip(GuiGraphics graphics, StrinovaWikiData.Weapon weapon,
-                                     int mouseX, int mouseY) {
-        Component title = Component.literal(isBlank(weapon.name()) ? "" : weapon.name())
-                .append(Component.literal(isBlank(weapon.type()) ? "" : " · " + weapon.type()));
-        List<FormattedCharSequence> lines = isBlank(weapon.desc())
-                ? List.of()
-                : this.font.split(Component.literal(weapon.desc()), 200);
-        int width = this.font.width(title);
-        for (FormattedCharSequence line : lines) {
-            width = Math.max(width, this.font.width(line));
-        }
-        width += 14;
-        int height = LINE_STEP * (1 + lines.size()) + 8;
-        int x = clamp(mouseX + 10, 4, Math.max(4, this.width - width - 4));
-        int y = clamp(mouseY + 10, 4, Math.max(4, this.height - height - 4));
-        graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF2A3542);
-        graphics.fill(x, y, x + width, y + height, 0xF00C121A);
-        graphics.drawString(this.font, title, x + 7, y + 4, COLOR_TEXT, false);
-        int lineY = y + 4 + LINE_STEP;
-        for (FormattedCharSequence line : lines) {
-            graphics.drawString(this.font, line, x + 7, lineY, 0xFFB4C0CC, false);
             lineY += LINE_STEP;
         }
     }

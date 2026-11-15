@@ -85,6 +85,12 @@ public final class StrinovaHudConfig {
     public String selectedAgentId = "";
     public StrinovaHudLayout layout = new StrinovaHudLayout();
 
+    /**
+     * 武器配置（增幅网络右侧武器栏）：槽位序号 "0"~"4" → 武器显示名。
+     * 主武器槽留空时跟随当前角色（wiki 数据里的主武器）。
+     */
+    public java.util.LinkedHashMap<String, String> weaponLoadout;
+
     // ==================== 选角界面 / 增幅网络（可视化自定义） ====================
     /** 「弦能增幅网络」初始能量点（/strinova_client growth points <数值> 修改，重置购买时恢复到该值）。 */
     public int growthEnergyPoints = 330;
@@ -308,9 +314,49 @@ public final class StrinovaHudConfig {
         }
     }
 
+    /** 读取某槽位配置的武器名（空串 = 未配置；主武器槽则由角色决定）。 */
+    public String weaponLoadoutName(int slot) {
+        if (weaponLoadout == null) {
+            return "";
+        }
+        String value = weaponLoadout.get(String.valueOf(slot));
+        return value == null ? "" : value;
+    }
+
+    /** 设置某槽位的武器并立即写盘。 */
+    public void setWeaponLoadout(int slot, String name) {
+        if (slot < 0 || slot > 4) {
+            return;
+        }
+        if (weaponLoadout == null) {
+            weaponLoadout = new java.util.LinkedHashMap<>();
+        }
+        if (name == null || name.isBlank()) {
+            weaponLoadout.remove(String.valueOf(slot));
+        } else {
+            weaponLoadout.put(String.valueOf(slot), name);
+        }
+        save();
+    }
+
     private void sanitize() {
         if (layout == null) {
             layout = new StrinovaHudLayout();
+        }
+        if (weaponLoadout == null) {
+            weaponLoadout = new java.util.LinkedHashMap<>();
+        }
+        // 只保留 0~4 槽位；缺省槽位补官方默认装备（主武器槽留空 = 跟随角色）
+        weaponLoadout.keySet().removeIf(key -> key == null || !key.matches("[0-4]"));
+        for (int slot = 1; slot < 5; slot++) {
+            String key = String.valueOf(slot);
+            String value = weaponLoadout.get(key);
+            if (value == null || value.isBlank()) {
+                String fallback = StrinovaWeaponCatalog.defaultNameForSlot(slot);
+                if (!fallback.isEmpty()) {
+                    weaponLoadout.put(key, fallback);
+                }
+            }
         }
         layout.ensureDefaults();
         matchHeaderPortraitOffsetX = clamp(matchHeaderPortraitOffsetX, -300, 300);
