@@ -564,16 +564,6 @@ public class StrinovaGrowthScreen extends Screen {
         StrinovaWikiData.Agent wiki = this.wikiAgent();
         boolean roomForExtra = this.portraitWidth >= 72 && this.portraitHeight >= 96;
         if (wiki != null && roomForExtra) {
-            if (ui.showStats && wiki.stats() != null && wiki.stats().hp() > 0) {
-                String stats = Component.translatable("config.strinova.growth.stat.hp").getString() + " "
-                        + wiki.stats().hp() + "   "
-                        + Component.translatable("config.strinova.growth.stat.armor").getString() + " "
-                        + wiki.stats().armor() + "   "
-                        + Component.translatable("config.strinova.growth.stat.speed").getString() + " "
-                        + wiki.stats().moveSpeed();
-                graphics.drawCenteredString(this.font, truncate(stats, this.portraitWidth - 8),
-                        centerX, nameY - 26, COLOR_TEXT_DISABLED);
-            }
             if (ui.showIdentity && wiki.identity() != null && !wiki.identity().isEmpty()) {
                 graphics.drawCenteredString(this.font, truncate(wiki.identity(), this.portraitWidth - 10),
                         centerX, nameY - 14, COLOR_TEXT_DIM);
@@ -581,8 +571,8 @@ public class StrinovaGrowthScreen extends Screen {
         }
     }
 
-    /** 立绘整体缩放（相对 cover 铺满）：0.72 = 在 0.6 的基础上放大 1.2 倍。 */
-    private static final float PORTRAIT_SCALE = 0.72F;
+    /** 立绘整体缩放（相对 cover 铺满）：1.0 = 直接铺满立绘区。 */
+    private static final float PORTRAIT_SCALE = 1.0F;
 
     /**
      * 绘制角色立绘：以 cover 铺满为基准再乘 {@link #PORTRAIT_SCALE}（0.6），
