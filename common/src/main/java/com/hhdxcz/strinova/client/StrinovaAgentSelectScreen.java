@@ -646,10 +646,24 @@ public class StrinovaAgentSelectScreen extends Screen {
         }
     }
 
-    /** ESC / 关闭：不保存直接返回父界面。 */
+    /** ESC / 关闭：不保存直接返回父界面；对局选角阶段（自动弹出）不允许关闭。 */
     @Override
     public void onClose() {
+        if (this.isSelectPhaseLocked()) {
+            return;
+        }
         this.backToParent();
+    }
+
+    /** 对局选角阶段自动弹出的界面不允许 ESC 关闭，必须等倒计时结束。 */
+    @Override
+    public boolean shouldCloseOnEsc() {
+        return !this.isSelectPhaseLocked();
+    }
+
+    /** 是否处于「对局选角阶段自动弹出」的锁定状态。 */
+    private boolean isSelectPhaseLocked() {
+        return this.matchAutoOpened && StrinovaMatchState.isSelectPhase();
     }
 
     /** 选角界面不暂停游戏。 */
