@@ -71,6 +71,9 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         String scoreEnemy = twoDigits(enemiesScore);
         List<StrinovaScoreboardState.Entry> allies = StrinovaScoreboardState.allies();
         List<StrinovaScoreboardState.Entry> enemies = StrinovaScoreboardState.enemies();
+        // 阵营色按攻防走：我方恒在左、对方恒在右；进攻=红、防守=蓝。
+        // 默认贴图是「左蓝（防守）右红（进攻）」，我方进攻时左右互换贴图并镜像，保持斜切方向不变。
+        boolean flipSides = active && StrinovaMatchState.areAlliesAttacking();
 
         List<Layer> sorted = new ArrayList<>(layers(painter, x, y));
         sorted.sort(Comparator.comparingInt(Layer::order));
@@ -78,22 +81,43 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
             if (!layer.visible()) {
                 continue;
             }
-            boolean transformed = layer.rotation() != 0.0F || layer.mirrorX() || layer.mirrorY();
+            boolean sideLayer = switch (layer.key()) {
+                case "leftTop", "leftBottom", "rightTop", "rightBottom" -> true;
+                default -> false;
+            };
+            boolean mirrorX = layer.mirrorX() ^ (flipSides && sideLayer);
+            boolean transformed = layer.rotation() != 0.0F || mirrorX || layer.mirrorY();
             if (transformed) {
                 painter.pushTransform(layer.x() + layer.w() / 2.0F, layer.y() + layer.h() / 2.0F,
-                        layer.rotation(), layer.mirrorX(), layer.mirrorY());
+                        layer.rotation(), mirrorX, layer.mirrorY());
             }
             StrinovaHudPainter draw = layer.opacity() < 0.999F
                     ? new StrinovaAlphaPainter(painter, layer.opacity()) : painter;
             switch (layer.key()) {
-                case "leftTop" -> draw.textureRegion(TEX_TOP_BLUE, layer.x(), layer.y(),
-                        layer.w(), layer.h(), 0, 0, 587, 42, 587, 42, 0xFFFFFFFF, 1.0F);
-                case "rightTop" -> draw.textureRegion(TEX_TOP_RED, layer.x(), layer.y(),
-                        layer.w(), layer.h(), 0, 0, 588, 42, 588, 42, 0xFFFFFFFF, 1.0F);
-                case "leftBottom" -> draw.textureRegion(TEX_SCORE_BLUE, layer.x(), layer.y(),
-                        layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
-                case "rightBottom" -> draw.textureRegion(TEX_SCORE_RED, layer.x(), layer.y(),
-                        layer.w(), layer.h(), 0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
+                case "leftTop" -> {
+                    if (flipSides) {
+                        draw.textureRegion(TEX_TOP_RED, layer.x(), layer.y(),
+                                layer.w(), layer.h(), 0, 0, 588, 42, 588, 42, 0xFFFFFFFF, 1.0F);
+                    } else {
+                        draw.textureRegion(TEX_TOP_BLUE, layer.x(), layer.y(),
+                                layer.w(), layer.h(), 0, 0, 587, 42, 587, 42, 0xFFFFFFFF, 1.0F);
+                    }
+                }
+                case "rightTop" -> {
+                    if (flipSides) {
+                        draw.textureRegion(TEX_TOP_BLUE, layer.x(), layer.y(),
+                                layer.w(), layer.h(), 0, 0, 587, 42, 587, 42, 0xFFFFFFFF, 1.0F);
+                    } else {
+                        draw.textureRegion(TEX_TOP_RED, layer.x(), layer.y(),
+                                layer.w(), layer.h(), 0, 0, 588, 42, 588, 42, 0xFFFFFFFF, 1.0F);
+                    }
+                }
+                case "leftBottom" -> draw.textureRegion(flipSides ? TEX_SCORE_RED : TEX_SCORE_BLUE,
+                        layer.x(), layer.y(), layer.w(), layer.h(),
+                        0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
+                case "rightBottom" -> draw.textureRegion(flipSides ? TEX_SCORE_BLUE : TEX_SCORE_RED,
+                        layer.x(), layer.y(), layer.w(), layer.h(),
+                        0, 0, 95, 42, 95, 42, 0xFFFFFFFF, 1.0F);
                 case "extra206" -> draw.textureRegion(TEX_EXTRA_206, layer.x(), layer.y(),
                         layer.w(), layer.h(), 0, 0, 256, 77, 256, 77, 0xFFFFFFFF, 1.0F);
                 case "leftScore" -> drawScoreText(draw, layer, scoreAlly);
