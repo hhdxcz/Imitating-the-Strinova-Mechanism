@@ -98,6 +98,21 @@
 - **素材索引**：`docs/ui-assets/strinova-assets.csv`（全部 7,940 张）与 `strinova-hud-assets.csv`（HUD 相关 2,107 张），含名称/分类/尺寸/字节/相对路径；
 - 界面预览：`tools/ui-preview.mjs` 生成 `docs/ui/growth-real-{zh,en}.png` 与 `select-real-{zh,en}.png`（1600×900，Edge 无头截图）。
 
+### 6. 公告中心（进入世界自动弹出）
+- **入口**：玩家进世界（单人/联机）后后台联网检查，有未读公告约 3 秒后自动弹出 `StrinovaAnnouncementScreen`；
+  左侧页签「全部 / 更新公告 / 游玩说明 / 版本说明 / 活动公告 / 系统公告（支持任意自定义分类）」，右侧可滚轮滚动查看正文；
+- **只弹一次 / 更新再弹**：公告按 `id` 记录已读（`config/strinova-client.json` 的 `announcementSeenIds`，保留最近 500 条）；
+  模组更新或在线公告新增 id 后会再次弹出；关闭界面即记已读，「我已阅读」按钮同效；
+- **内容来源**：在线优先（`announcementUrls` 可覆盖，默认 jsDelivr → GitHub raw 的仓库根 `announcements.json`），
+  拉取失败但设备联网（探测 baidu/bing/mozilla）时回退模组内置 `assets/strinova/announcements.json`；
+  **设备离线时不自动弹出**（手动查看仍可用）；
+- **设置**：`/strinova_client hud` → 战斗HUD设置底部新增「进入世界公告弹窗: 开/关」（默认开启）与「查看公告…」；
+- **命令**：`/strinova_client announcement`（手动打开）、`announcement reset`（清已读，下次进世界重弹）、`announcement fetch`（立即联网刷新）；
+- **实现**：`client/StrinovaAnnouncements`（联网/解析/已读/自动弹出调度，后台线程 + `Minecraft.execute` 回主线程）、
+  `client/StrinovaAnnouncementScreen`（继承 `StrinovaScaledScreen`，960×540 设计分辨率）；
+  Fabric/Forge 分别在 JOIN / LoggingIn、DISCONNECT / LoggingOut、END_CLIENT_TICK 接入；
+  文档 `docs/announcements.md`（JSON 格式、发布方式、自测清单）。
+
 ## 已知 TODO / 下一阶段
 
 1. **炸弹/目标点系统**：回合记录里「炸弹爆炸/拆除」只有数据 key，尚未产生；

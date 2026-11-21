@@ -171,6 +171,14 @@ public final class StrinovaHudConfig {
     public String selectedAgentId = "";
     public StrinovaHudLayout layout = new StrinovaHudLayout();
 
+    // ==================== 公告中心（进入世界自动弹出） ====================
+    /** 进入世界后是否自动弹出公告/更新说明/游玩说明（设置里可关闭，默认开启）。 */
+    public boolean announcementEnabled = true;
+    /** 已阅读过的公告 id（同 id 不再自动弹出；模组或在线公告新增 id 后会再次弹出）。 */
+    public java.util.List<String> announcementSeenIds;
+    /** 在线公告地址（按顺序尝试；留空 = 使用内置 jsDelivr / GitHub raw 地址）。 */
+    public java.util.List<String> announcementUrls;
+
     /**
      * 武器配置（增幅网络右侧武器栏）：槽位序号 "0"~"4" → 武器显示名。
      * 主武器槽留空时跟随当前角色（wiki 数据里的主武器）。
@@ -388,6 +396,52 @@ public final class StrinovaHudConfig {
         instance.sanitize();
     }
 
+    /** 某条公告是否已经读过。 */
+    public boolean isAnnouncementSeen(String id) {
+        if (id == null || id.isBlank()) {
+            return true;
+        }
+        return announcementSeenIds != null && announcementSeenIds.contains(id);
+    }
+
+    /** 记录一批公告为已读并立即写盘（用于公告界面关闭时）。 */
+    public void markAnnouncementsSeen(java.util.Collection<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        if (announcementSeenIds == null) {
+            announcementSeenIds = new java.util.ArrayList<>();
+        }
+        for (String id : ids) {
+            if (id != null && !id.isBlank() && !announcementSeenIds.contains(id)) {
+                announcementSeenIds.add(id);
+            }
+        }
+        save();
+    }
+
+    /** 清除已读记录：下次进入世界会再次自动弹出公告（调试用）。 */
+    public void clearAnnouncementSeen() {
+        if (announcementSeenIds == null) {
+            announcementSeenIds = new java.util.ArrayList<>();
+        }
+        announcementSeenIds.clear();
+        save();
+    }
+
+    /** 过滤后的在线公告地址列表（去掉空项；为空时由 StrinovaAnnouncements 用内置地址）。 */
+    public java.util.List<String> announcementUrlList() {
+        java.util.List<String> result = new java.util.ArrayList<>();
+        if (announcementUrls != null) {
+            for (String url : announcementUrls) {
+                if (url != null && !url.isBlank()) {
+                    result.add(url.trim());
+                }
+            }
+        }
+        return result;
+    }
+
     public void save() {
         sanitize();
         try {
@@ -512,6 +566,22 @@ public final class StrinovaHudConfig {
             agentSelectUi = new StrinovaAgentSelectUi();
         }
         agentSelectUi.sanitize();
+        // 公告中心：已读 id / 远程地址列表可能来自旧配置（字段缺失 = null）
+        if (announcementSeenIds == null) {
+            announcementSeenIds = new java.util.ArrayList<>();
+        }
+        announcementSeenIds.removeIf(id -> id == null || id.isBlank());
+        // 只保留最近 500 条，避免配置无限增长
+        while (announcementSeenIds.size() > 500) {
+            announcementSeenIds.remove(0);
+        }
+        if (announcementUrls == null) {
+            announcementUrls = new java.util.ArrayList<>();
+        }
+        announcementUrls.removeIf(url -> url == null || url.isBlank());
+        while (announcementUrls.size() > 8) {
+            announcementUrls.remove(announcementUrls.size() - 1);
+        }
     }
 
     private static float clampf(float value, float min, float max) {

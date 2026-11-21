@@ -312,7 +312,26 @@ public final class StrinovaClientInitForge {
                                             + " yahei=" + com.hhdxcz.strinova.client.hud.StrinovaSystemFontRenderer.isReady()
                                             + " " + uuidState), false);
                             return 1;
-                        }));
+                        }))
+                .then(Commands.literal("announcement")
+                        .executes(ctx -> {
+                            Minecraft client = Minecraft.getInstance();
+                            client.tell(() -> com.hhdxcz.strinova.client.StrinovaAnnouncements.openScreen(client.screen, false));
+                            return 1;
+                        })
+                        .then(Commands.literal("reset")
+                                .executes(ctx -> {
+                                    com.hhdxcz.strinova.client.StrinovaAnnouncements.clearSeen();
+                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                            "已清除公告已读记录：下次进入世界会重新弹出"), false);
+                                    return 1;
+                                }))
+                        .then(Commands.literal("fetch")
+                                .executes(ctx -> {
+                                    com.hhdxcz.strinova.client.StrinovaAnnouncements.refreshAsync();
+                                    ctx.getSource().sendSuccess(() -> Component.literal("正在联网刷新公告…"), false);
+                                    return 1;
+                                })));
         event.getDispatcher().register(root);
     }
 
@@ -321,6 +340,8 @@ public final class StrinovaClientInitForge {
         if (client.player != null) {
             StrinovaNetwork.sendCollisionConfig(client.player.getUUID());
         }
+        // 进入世界：公告联网检查（首次/新公告才弹）
+        com.hhdxcz.strinova.client.StrinovaAnnouncements.onWorldJoin();
     }
 
     private static void onClientLogout(ClientPlayerNetworkEvent.LoggingOut event) {
@@ -330,6 +351,7 @@ public final class StrinovaClientInitForge {
         StrinovaCompoundCollision.clearAll();
         StrinovaClientProfileSync.reset();
         com.hhdxcz.strinova.client.StrinovaClientNotices.reset();
+        com.hhdxcz.strinova.client.StrinovaAnnouncements.reset();
     }
 
     // 客户端 tick（END 阶段）：档案同步只在每 tick 结束时检查一次，避免同一 tick 重复发包
@@ -338,6 +360,8 @@ public final class StrinovaClientInitForge {
             StrinovaClientProfileSync.tick();
             // 对局流程：选角阶段自动弹出选角界面、换角色下回合生效
             com.hhdxcz.strinova.client.StrinovaMatchClientFlow.tick(Minecraft.getInstance());
+            // 公告中心：进入世界后联网检查，有未读公告时自动弹出
+            com.hhdxcz.strinova.client.StrinovaAnnouncements.tick(Minecraft.getInstance());
         }
     }
 }

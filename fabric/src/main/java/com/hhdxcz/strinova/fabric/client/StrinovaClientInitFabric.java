@@ -55,11 +55,15 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> StrinovaClientProfileSync.tick());
         // 对局流程：选角阶段自动弹出选角界面、换角色下回合生效
         ClientTickEvents.END_CLIENT_TICK.register(com.hhdxcz.strinova.client.StrinovaMatchClientFlow::tick);
+        // 公告中心：进入世界后联网检查，有未读公告时自动弹出
+        ClientTickEvents.END_CLIENT_TICK.register(com.hhdxcz.strinova.client.StrinovaAnnouncements::tick);
         // H4：客户端加入服务器时把本地完整碰撞配置上报给服务端
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             if (client.player != null) {
                 StrinovaNetwork.sendCollisionConfig(client.player.getUUID());
             }
+            // 进入世界：公告联网检查（首次/新公告才弹）
+            com.hhdxcz.strinova.client.StrinovaAnnouncements.onWorldJoin();
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             WaPaperState.clearAll();
@@ -68,6 +72,7 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
             StrinovaCompoundCollision.clearAll();
             StrinovaClientProfileSync.reset();
             com.hhdxcz.strinova.client.StrinovaClientNotices.reset();
+            com.hhdxcz.strinova.client.StrinovaAnnouncements.reset();
         });
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             var root = ClientCommandManager.literal("strinova_client")
@@ -311,7 +316,26 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
                                                 + " yahei=" + com.hhdxcz.strinova.client.hud.StrinovaSystemFontRenderer.isReady()
                                                 + " " + uuidState));
                                 return 1;
-                            }));
+                            }))
+                    .then(ClientCommandManager.literal("announcement")
+                            .executes(ctx -> {
+                                Minecraft client = Minecraft.getInstance();
+                                client.tell(() -> com.hhdxcz.strinova.client.StrinovaAnnouncements.openScreen(client.screen, false));
+                                return 1;
+                            })
+                            .then(ClientCommandManager.literal("reset")
+                                    .executes(ctx -> {
+                                        com.hhdxcz.strinova.client.StrinovaAnnouncements.clearSeen();
+                                        ctx.getSource().sendFeedback(Component.literal(
+                                                "已清除公告已读记录：下次进入世界会重新弹出"));
+                                        return 1;
+                                    }))
+                            .then(ClientCommandManager.literal("fetch")
+                                    .executes(ctx -> {
+                                        com.hhdxcz.strinova.client.StrinovaAnnouncements.refreshAsync();
+                                        ctx.getSource().sendFeedback(Component.literal("正在联网刷新公告…"));
+                                        return 1;
+                                    })));
             dispatcher.register(root);
         });
     }

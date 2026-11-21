@@ -17,8 +17,8 @@ import java.util.function.IntSupplier;
 
 /**
  * 战斗 HUD 设置界面。
- * 提供 HUD 总开关、各元素显示开关（含顶部比分面板）、TAB 计分板开关
- * 与准星参数（颜色/间隙/长度/粗细/动态）调节，并在底部提供 HUD 布局编辑器入口。
+ * 提供 HUD 总开关、各元素显示开关（含顶部比分面板）、TAB 计分板开关、
+ * 准星参数（颜色/间隙/长度/粗细/动态）调节、公告中心开关与手动查看入口，并在底部提供 HUD 布局编辑器入口。
  * 所有修改实时写回 {@link StrinovaHudConfig}，关闭界面或进入编辑器前统一落盘。
  */
 public class StrinovaCombatSettingsScreen extends StrinovaScaledScreen {
@@ -59,6 +59,7 @@ public class StrinovaCombatSettingsScreen extends StrinovaScaledScreen {
 
     private Button hudToggle;
     private Button scoreboardToggle;
+    private Button announcementToggle;
     private Button crosshairColorButton;
     private Button crosshairDynamicButton;
 
@@ -70,6 +71,7 @@ public class StrinovaCombatSettingsScreen extends StrinovaScaledScreen {
     private int column2X;
     private int columnWidth;
     private int rowStartY;
+    private int announcementRowY;
 
     public StrinovaCombatSettingsScreen(Screen parent) {
         super(Component.translatable("config.strinova.hud.title"));
@@ -88,7 +90,8 @@ public class StrinovaCombatSettingsScreen extends StrinovaScaledScreen {
 
         int panelWidth = Math.min(440, this.width - 16);
         int panelHeight = TITLE_HEIGHT + TOGGLE_ROWS * ROW_STEP + GROUP_GAP
-                + (CROSSHAIR_ROWS - 1) * ROW_STEP + ROW_HEIGHT + 8;
+                + (CROSSHAIR_ROWS - 1) * ROW_STEP + ROW_HEIGHT
+                + GROUP_GAP + ROW_HEIGHT + 8;
         this.panelLeft = this.width / 2 - panelWidth / 2;
         this.panelRight = this.panelLeft + panelWidth;
         this.panelTop = 4 + Math.max(0, (this.height - BOTTOM_RESERVED - 4 - panelHeight) / 2);
@@ -145,6 +148,21 @@ public class StrinovaCombatSettingsScreen extends StrinovaScaledScreen {
         this.addNumberRow(this.column1X, this.rowY(7), "config.strinova.hud.crosshair.thickness",
                 () -> StrinovaHudConfig.get().crosshairThickness,
                 value -> StrinovaHudConfig.get().crosshairThickness = value, 1, 4);
+
+        // 第 8 行：公告中心（进入世界自动弹出公告/更新说明） + 手动查看入口
+        this.announcementRowY = this.rowY(TOGGLE_ROWS + CROSSHAIR_ROWS - 1) + ROW_HEIGHT + GROUP_GAP;
+        this.announcementToggle = this.addTextButton(this.column1X, this.announcementRowY,
+                toggleMessage("config.strinova.announcement.settings", StrinovaHudConfig.get().announcementEnabled),
+                () -> {
+                    StrinovaHudConfig config = StrinovaHudConfig.get();
+                    config.announcementEnabled = !config.announcementEnabled;
+                    this.refreshWidgetState();
+                });
+        this.addRenderableWidget(Button.builder(
+                        Component.translatable("config.strinova.announcement.open"),
+                        button -> StrinovaAnnouncements.openScreen(this, false))
+                .bounds(this.column2X, this.announcementRowY, this.columnWidth, ROW_HEIGHT)
+                .build());
 
         // 底部：HUD 布局编辑 + 计分板编辑 + 返回
         int bottomY = this.height - 28;
@@ -234,6 +252,10 @@ public class StrinovaCombatSettingsScreen extends StrinovaScaledScreen {
             this.scoreboardToggle.setMessage(
                     toggleMessage("config.strinova.hud.scoreboard", config.scoreboardEnabled));
         }
+        if (this.announcementToggle != null) {
+            this.announcementToggle.setMessage(
+                    toggleMessage("config.strinova.announcement.settings", config.announcementEnabled));
+        }
         boolean crosshairUsable = config.hudEnabled && config.crosshairEnabled;
         for (Button button : this.crosshairButtons) {
             button.active = crosshairUsable;
@@ -283,6 +305,11 @@ public class StrinovaCombatSettingsScreen extends StrinovaScaledScreen {
         int separatorY = this.rowY(TOGGLE_ROWS) - GROUP_GAP / 2;
         graphics.fill(this.panelLeft + PANEL_PADDING, separatorY,
                 this.panelRight - PANEL_PADDING, separatorY + 1, 0x50FFFFFF);
+
+        // 公告行上方的分隔线
+        int announcementSeparatorY = this.announcementRowY - GROUP_GAP / 2;
+        graphics.fill(this.panelLeft + PANEL_PADDING, announcementSeparatorY,
+                this.panelRight - PANEL_PADDING, announcementSeparatorY + 1, 0x50FFFFFF);
 
         // 数值行：左侧标签（超宽时截断），右侧对齐显示当前值；数值变化时无需重建控件
         for (NumberRow row : this.numberRows) {
