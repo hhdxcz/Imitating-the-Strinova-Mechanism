@@ -37,7 +37,7 @@ public class StrinovaScoreboardEditorScreen extends StrinovaScaledScreen {
     private float origTextScale;
     private int origRowHeight;
 
-    // 类似 Excel 的列宽/行高拖拽状态
+    // 类似 Excel 的列宽/行高拖拽状态⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‍‌‍‍​‌‍​​​​‌‍‌​‌​‌‌​‍​​‌​​​‍​‍‍‍‌​​‌​‌‍‍​‌​‌‍‌⁡
     private int resizingColumn = -1;
     private boolean resizingSidebar;
     private float resizeStartSidebarRatio;

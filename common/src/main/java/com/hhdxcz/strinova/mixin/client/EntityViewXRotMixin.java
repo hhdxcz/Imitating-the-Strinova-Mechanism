@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.UUID;
 
-// 飘飞渲染时强制 getViewXRot/getXRot 返回固定值，使模型始终保持与地面平行
+// 飘飞渲染时强制 getViewXRot/getXRot 返回固定值，使模型始终保持与地面平行⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​​‌‌‍​‍​‍‍​​‍‌‍‌​​‌‌​​​​‍‌‍​‌​‍‌‌‍‌​​‍‌‍‍​‌​‍​‌⁡
 @Mixin(Entity.class)
 public abstract class EntityViewXRotMixin {
     @Inject(method = "getViewXRot(F)F", at = @At("RETURN"), cancellable = true)

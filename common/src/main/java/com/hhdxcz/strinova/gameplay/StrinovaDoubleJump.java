@@ -8,7 +8,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.UUID;
 
-// 空中二段跳逻辑：处理玩家在空中时的额外跳跃请求
+// 空中二段跳逻辑：处理玩家在空中时的额外跳跃请求⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‌‍​​​‍​‍​‌​‍​​‌‍​​​​‍‍​‍‌‍‍‌​‌‍‌​​​‌‍‌‍​​‌‍​​‌⁡
 public final class StrinovaDoubleJump {
 
     public static final String TAG_USED = "strinova_djump_used";

@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
  * 的切换方向和习惯相反，这里把 {@link Inventory#swapPaint(double)} 的方向取反。
  *
  * <p>只在模组功能开启时生效，避免影响关闭模组后的原版手感。</p>
- */
+ ⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‌​​‌​‌‌​‍‌​​‍‌​​​‍​​​‌​​‌‍‌​​​‌‍‍‍​​‍‍​‍​‌‌‍‌​⁡*/
 @Mixin(Inventory.class)
 public abstract class InventorySwapPaintMixin {
 

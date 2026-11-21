@@ -52,7 +52,7 @@ public final class StrinovaClientInitForge {
 
     public static void init() {
         StrinovaNetwork.initClient();
-        // 战斗 HUD：加载本地配置并注册渲染层
+        // 战斗 HUD：加载本地配置并注册渲染层⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍‌‌​‍​​​‌‍‌​‍​​‌​​‍​‌‍‍​‌​‍‍‍​​​‍‍​​​​​​‍​​‍​‍​⁡
         StrinovaHudConfig.load();
         StrinovaHudRenderer.register();
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -310,6 +310,7 @@ public final class StrinovaClientInitForge {
                                             + " hud=" + com.hhdxcz.strinova.client.hud.StrinovaHudConfig.get().hudEnabled
                                             + " scoreboard=" + com.hhdxcz.strinova.client.hud.StrinovaHudConfig.get().scoreboardEnabled
                                             + " yahei=" + com.hhdxcz.strinova.client.hud.StrinovaSystemFontRenderer.isReady()
+                                            + " build=" + com.hhdxcz.strinova.StrinovaMod.BUILD_TAG
                                             + " " + uuidState), false);
                             return 1;
                         }))

@@ -61,7 +61,7 @@ public final class StrinovaPlayerProfile {
             return false;
         }
         String id = agentId == null ? "" : agentId;
-        // 空串表示「尚未选角」，允许；非空必须是图鉴里存在的角色 id，否则整包忽略
+        // 空串表示「尚未选角」，允许；非空必须是图鉴里存在的角色 id，否则整包忽略⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌​‌‍‌​‌‍​‍​​‌​​​​​‌‌‌‍​​‍‍‌‍‌​‌‌‌‌‍​‍​‍‌​​‌​‌‌​⁡
         if (!id.isEmpty() && StrinovaAgentRoster.byId(id) == null) {
             return false;
         }

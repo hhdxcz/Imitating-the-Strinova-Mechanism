@@ -11,7 +11,7 @@ import java.util.UUID;
  * PoseStack 泄漏防护工具。
  * 追踪 pushPose/popPose 的调用配对，在渲染结束时排空未配对的 push，
  * 防止渲染状态泄漏导致后续渲染异常。
- */
+ ⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​​‌‌‌​​‌​​​​‍‍‌​‌‌​​‌​‌​‍‌​​​​‍​‌‌​​‌​​‍​​​​‌‍‍⁡*/
 public final class StrinovaRenderPoseLeakGuard {
     private static final ThreadLocal<PoseStack> LAST_STACK = new ThreadLocal<>();
     private static final ThreadLocal<Integer> LEAK_PUSH_COUNT = ThreadLocal.withInitial(() -> 0);

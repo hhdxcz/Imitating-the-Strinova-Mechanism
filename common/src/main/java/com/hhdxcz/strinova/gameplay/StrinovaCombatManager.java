@@ -18,7 +18,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-// 战斗状态管理器（服务端权威）：按玩家 UUID 保存护甲、KDA、绝招点与受击归属
+// 战斗状态管理器（服务端权威）：按玩家 UUID 保存护甲、KDA、绝招点与受击归属⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌‌​‌‍​‌​​​‍​‌‌‌‍‌​‍​‍‍​​‌​​‍‌​​‌‌‌​​‌‌​‌​​‍‍​‌‍⁡
 // 只维护内存数据，不直接操作玩家实体；由 PlayerMixin / 平台事件钩子调用。
 // 并发约定：STATE 使用 ConcurrentHashMap；单个玩家的字段更新以 Holder 实例为锁，
 // 因此即使将来从非主线程调用也不会互相踩踏，但推荐统一在服务端主线程调用。

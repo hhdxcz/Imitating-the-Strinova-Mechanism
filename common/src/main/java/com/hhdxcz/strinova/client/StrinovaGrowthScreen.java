@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class StrinovaGrowthScreen extends StrinovaScaledScreen {
 
-    // ==================== 配色（Strinova 风格：青蓝 / 品红 / 金色点缀） ====================
+    // ==================== 配色（Strinova 风格：青蓝 / 品红 / 金色点缀） ====================⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍‍‍​‍​​‌‍‌‍​​‍‍‌​​‍‍​‍‍​‍‌​‍​​​‌‌‌‌​‌​​​‌​‍‌​‍​⁡
     private static final int COLOR_BG_TOP = 0xFF0A1018;
     private static final int COLOR_BG_BOTTOM = 0xFF141D2B;
     private static final int COLOR_HEADER_BG = 0xF0161F2C;

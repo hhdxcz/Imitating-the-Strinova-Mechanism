@@ -29,7 +29,7 @@ import java.util.UUID;
 
 @Mod(StrinovaMod.MOD_ID)
 public class StrinovaModForge {
-    // M1：死亡去重标记（必须与 PlayerMixin 中的 Tag 名称保持一致）
+    // M1：死亡去重标记（必须与 PlayerMixin 中的 Tag 名称保持一致）⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍‌​​​‌​​‌​‌​‌‌​​‌‌​​​‍​​‍​‍​‍​​​​‍​‌‌‌​​​‌‍​‍‍​​‌⁡
     private static final String STRINOVA_DEATH_TAG = "strinova$death_recorded";
 
     public StrinovaModForge() {

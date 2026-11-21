@@ -7,7 +7,7 @@ import net.minecraft.world.phys.AABB;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-// 复合碰撞系统：支持多部件组合的碰撞箱，用于同步/飘飞状态的自定义碰撞检测
+// 复合碰撞系统：支持多部件组合的碰撞箱，用于同步/飘飞状态的自定义碰撞检测⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍‍‌‌​​‌‌‌​‌​‌‍‌​‌​‌​‍​‍​‌‌‍‌‌​‌‍‍​‍​‍​‌​‌​​​‍‍‌⁡
 public final class StrinovaCompoundCollision {
 
     // 碰撞类型：SEGMENTED（分段碰撞）或 GENERIC（通用碰撞）

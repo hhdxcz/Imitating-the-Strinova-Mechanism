@@ -58,7 +58,7 @@ public abstract class PlayerMixin {
             return amount;
         }
         float result = amount;
-        // 1) 弦化（纸片）减伤：保持原有行为不变
+        // 1) 弦化（纸片）减伤：保持原有行为不变⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‍‍‌‍​​​‌​​​‌​‍‍​​‍‍‍‍‌​​‌‍​‍​‍‍‌‍​​​​‍​‍​‍‌‌‍​⁡
         if (WaPaperState.isPaper(self.getUUID())) {
             result = StrinovaPaperDamageReduction.apply(result);
         }

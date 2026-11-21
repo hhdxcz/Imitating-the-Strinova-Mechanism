@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-// 实体姿态 Mixin，在预览飞行时强制使用滑翔姿态
+// 实体姿态 Mixin，在预览飞行时强制使用滑翔姿态⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‍​‍‌​‌‌‌‌​​‌‍‍​‍​‌​‌​​​‍‍‌‌‌​‍‍​‍‍​‌‌​‍‍​​‌‍‍​⁡
 @Mixin(Entity.class)
 public abstract class EntityPosePreviewMixin {
     // 在碰撞预览飞行时强制返回滑翔姿态，用于视觉预览

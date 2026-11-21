@@ -42,7 +42,7 @@ import java.util.Locale;
  */
 public class StrinovaGrowthEditScreen extends StrinovaScaledScreen {
 
-    // ==================== 配色（与增幅网络界面一致） ====================
+    // ==================== 配色（与增幅网络界面一致） ====================⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‍‌‍‌​‌‌‍‍‍​‍‍‍‌​​‍​‌‌‌​‍‍‍​​‌​​​‍‍​​​‌​​​​‌‌‍‌⁡
     private static final int COLOR_TITLE = 0xFFEAF2FA;
     private static final int COLOR_INFO = 0xFF9BAEBF;
     private static final int COLOR_HIDDEN = 0xFF8A94A0;

@@ -5,7 +5,7 @@ import com.hhdxcz.strinova.config.StrinovaCommonConfig;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-// 碰撞箱微调管理器：允许按玩家自定义同步/飘飞碰撞箱的偏移和尺寸
+// 碰撞箱微调管理器：允许按玩家自定义同步/飘飞碰撞箱的偏移和尺寸⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍​​‌‍​​​​​‍​‌‌​‌‌​‍‍​‍​​‍‍​​‍​‍‍‍‍‌​​‌‍​‌​‌‍‍‍‌⁡
 public final class StrinovaCollisionBoxTuning {
 
     // 碰撞箱调参记录

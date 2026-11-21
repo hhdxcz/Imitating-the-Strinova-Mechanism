@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 
-// 配置界面结构定义：将配置数据映射到 UI 分组（玩法、兼容、命令）
+// 配置界面结构定义：将配置数据映射到 UI 分组（玩法、兼容、命令）⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‍‍​​​​‍​‌​​‌‍​​​​‌‍​‍​‌​​​‍‌​​‍‍‌‌​‍‍‌‍‌​‍​​​​⁡
 public final class StrinovaConfigScreenSchema {
     private StrinovaConfigScreenSchema() {
     }

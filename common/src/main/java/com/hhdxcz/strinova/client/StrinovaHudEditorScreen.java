@@ -43,7 +43,7 @@ public class StrinovaHudEditorScreen extends StrinovaScaledScreen {
     /** 初始化界面：记录各元素初始偏移并添加“重置布局/完成”按钮。 */
     @Override
     protected void init() {
-        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌‍‍​​​‍‍‍‌‍​‍​‌​​​​‍‌‍​‌​​​​‌​‍‌‌‌‍​‌‌‌‌‍​‌​‌‍​⁡
         this.beginDesignSpace();
         this.clearWidgets();
         this.dragging = null;

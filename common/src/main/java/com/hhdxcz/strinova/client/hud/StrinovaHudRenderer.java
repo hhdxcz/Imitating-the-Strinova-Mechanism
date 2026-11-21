@@ -70,7 +70,7 @@ public final class StrinovaHudRenderer {
         if (minecraft.player == null || minecraft.options == null || minecraft.options.hideGui) {
             return;
         }
-        // 客户端握手诊断：进入世界一段时间仍未收到服务端启用状态 → 服务端未安装/未启用模组
+        // 客户端握手诊断：进入世界一段时间仍未收到服务端启用状态 → 服务端未安装/未启用模组⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌‌‌​​​​‌​‍‌​‍‌​​​​‌‌‌‍​​​‍‍‌​​​‍‌‍‍​‍‍‍​​​‍​‌‌​⁡
         if (minecraft.player.tickCount > 100
                 && com.hhdxcz.strinova.StrinovaMod.lastRemoteEnabledMs() == 0L) {
             try {

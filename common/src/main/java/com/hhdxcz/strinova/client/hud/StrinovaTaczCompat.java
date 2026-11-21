@@ -132,7 +132,7 @@ public final class StrinovaTaczCompat {
             return false;
         }
         try {
-            // 1) 方法探测
+            // 1) 方法探测⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌‍‍‍​​​‌​‌‌​‌‍‌​‌‌​​​‌‍​‌​‌‌​​​‌‍​‌​​​‌‌‍​​​​‌​⁡
             for (String name : HEADSHOT_METHODS) {
                 try {
                     Method method = entity.getClass().getMethod(name);

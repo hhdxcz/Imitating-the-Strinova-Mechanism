@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-// 实体碰撞箱 Mixin：拦截 setBoundingBox 和 getEyeHeight 等方法，实现弦化/飘飞/段跳状态下的碰撞箱与视角调整
+// 实体碰撞箱 Mixin：拦截 setBoundingBox 和 getEyeHeight 等方法，实现弦化/飘飞/段跳状态下的碰撞箱与视角调整⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌‍‍‍‍​​​‌​‍​‌‍‍​​​‍‍‌​‌​‍‍‍‍‌​​​​‌​​‍‌‌‍‍​‌​‌​‍⁡
 @Mixin(Entity.class)
 public abstract class EntitySetBoundingBoxMixin {
 

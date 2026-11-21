@@ -4,7 +4,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-// 飘飞运行时状态追踪：记录玩家是否已使用过飘飞，防止重复触发
+// 飘飞运行时状态追踪：记录玩家是否已使用过飘飞，防止重复触发⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌‍‍‍‌​​​​‍​​‌‍‌​​‌​​​‍‍​​‍​‌‌​‍‌​‍​​​‌‍‌‍​‍‍​​‌⁡
 public final class StrinovaFlyRuntime {
     private static final Set<UUID> USED_IN_AIR = ConcurrentHashMap.newKeySet();
 

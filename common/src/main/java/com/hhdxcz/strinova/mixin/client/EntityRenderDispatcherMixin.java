@@ -31,7 +31,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.List;
 import java.util.UUID;
 
-// 实体渲染调度器 Mixin，负责纸片化渲染、贴墙变形、分段碰撞箱渲染、轮廓线强制渲染等核心渲染逻辑
+// 实体渲染调度器 Mixin，负责纸片化渲染、贴墙变形、分段碰撞箱渲染、轮廓线强制渲染等核心渲染逻辑⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍‌‌‌‍​‍‌‍‌‍​‍‍‍‍‍​‌​​‍‌​​​‍​‌​‌‌​​‌​​​​​‍​​‌‌​​⁡
 @Mixin(value = EntityRenderDispatcher.class, priority = 2000)
 public abstract class EntityRenderDispatcherMixin {
 

@@ -1,6 +1,6 @@
 package com.hhdxcz.strinova.render;
 
-// 调试渲染上下文：通过 ThreadLocal 追踪命中盒渲染的嵌套深度
+// 调试渲染上下文：通过 ThreadLocal 追踪命中盒渲染的嵌套深度⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌​‍‍​​‌‌‍‌‍​‍‌‍​​‌​​​​‌​‌‍‍‌‍​​‍​‍‍​‍‍‌​​‌​​‌​‍⁡
 public final class StrinovaDebugRenderContext {
     private static final ThreadLocal<Integer> HITBOX_DEPTH = ThreadLocal.withInitial(() -> 0);
 

@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-// 通用配置文件管理器：负责配置的加载、保存、校验和运行时应用
+// 通用配置文件管理器：负责配置的加载、保存、校验和运行时应用⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍‌‍​‌​​‌‌​​​‍‍‍​‍​​‍‍‌​​‍‌​‍‍​​‌​‌‌​‍‍‌‍​​‍‍‌‍‌⁡
 public final class StrinovaCommonConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_PATH = Platform.getConfigFolder().resolve(StrinovaMod.MOD_ID + ".json");

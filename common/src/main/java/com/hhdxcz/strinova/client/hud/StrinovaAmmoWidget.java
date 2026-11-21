@@ -72,7 +72,7 @@ public final class StrinovaAmmoWidget implements StrinovaHudWidget {
             }
         }
 
-        // 1 号槽是角色主武器：优先用选角界面当前角色对应的 wiki 武器
+        // 1 号槽是角色主武器：优先用选角界面当前角色对应的 wiki 武器⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌‌‍‌‌​‍​​‌​​‌‌‍‌‍​​‍​​‌​‍‍‍​‍​​‌‍‍‌​‍​‍​‍​‌‍‌‌​⁡
         String agentWeapon = selectedAgentWeaponName();
         if (!agentWeapon.isEmpty()) {
             names[0] = agentWeapon;

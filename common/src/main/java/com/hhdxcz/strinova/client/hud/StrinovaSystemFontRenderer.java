@@ -111,7 +111,7 @@ public final class StrinovaSystemFontRenderer {
         float ratio = (TARGET_TEXT_PX * scale) / FONT_PX;
         try {
             if (shadow) {
-                // 阴影偏移随缩放走，避免小字号时 1px 固定偏移把字“糊成两层”
+                // 阴影偏移随缩放走，避免小字号时 1px 固定偏移把字“糊成两层”⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‌​‌‍​‌‍‌‌‍​‍‍‌‌​​‍‍​‌‌​​‌‌‍‍​‌‌‌‌‍​​​‌‌‍‌​​​‌​⁡
                 float shadowOffset = Math.max(1.0F, Math.round(ratio * 2.0F));
                 RenderSystem.setShaderColor(0.0F, 0.0F, 0.0F, alpha / 255.0F * 0.5F);
                 drawGlyphs(graphics, text, x + shadowOffset, y + shadowOffset, ratio);

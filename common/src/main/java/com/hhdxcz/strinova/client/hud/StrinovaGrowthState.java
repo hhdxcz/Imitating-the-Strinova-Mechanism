@@ -134,7 +134,7 @@ public final class StrinovaGrowthState {
         if (itemIndex < 0 || itemIndex >= category.items().size()) {
             return false;
         }
-        // 每个分支只能选择一项：已选过（含已购项本身）直接拒绝
+        // 每个分支只能选择一项：已选过（含已购项本身）直接拒绝⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌​‍‍‌​​‍‍‌‌​‌‍​​‍​​​‍​‍​‌​​‍‍​‌‍‌​​​‌​​​​​​​‌‍‍⁡
         if (isCategoryLocked(categoryIndex)) {
             return false;
         }

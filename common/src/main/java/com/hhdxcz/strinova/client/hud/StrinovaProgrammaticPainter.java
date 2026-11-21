@@ -138,7 +138,7 @@ public final class StrinovaProgrammaticPainter implements StrinovaHudPainter {
         }
         graphics.fill(x, y, x + size, y + size, 0x44101820);
         border(x, y, size, size, 0x66FFFFFF, 1);
-        // 贴图版会替换为图集图标；程序化版本先用首字母占位
+        // 贴图版会替换为图集图标；程序化版本先用首字母占位⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‌‌‍‍​‍‍​​‌​‍‌‌​‌​‌‍​‍‌​​‍‍‌​​‌‌​‍‍​‍‌​‍‍​‍‌‌​​⁡
         String label = iconId == null || iconId.isEmpty() ? "?" : iconId.substring(0, 1).toUpperCase();
         text(label, x + (size - textWidth(label)) / 2, y + (size - textHeight()) / 2, argb, false);
     }

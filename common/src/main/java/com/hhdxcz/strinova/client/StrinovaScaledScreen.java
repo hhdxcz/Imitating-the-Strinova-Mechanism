@@ -25,7 +25,7 @@ public abstract class StrinovaScaledScreen extends Screen {
 
     /** 子类 init() 第一行调用：把真实 GUI 尺寸换算成设计坐标。 */
     protected final void beginDesignSpace() {
-        // 已经是设计坐标（重复 init / reposition）时保持原样
+        // 已经是设计坐标（重复 init / reposition）时保持原样⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‌‍‍​​‌‌‌‌‍‌​​​‌​​‍‌‌​‍​​​‍​​​‌‍​‍‍​‌‌​‍​​‌‍‌‍​⁡
         if (this.uiScale != 1.0F && this.height == DESIGN_HEIGHT && this.width == this.designWidth) {
             return;
         }

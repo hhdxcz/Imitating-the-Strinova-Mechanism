@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-// 本地玩家 Mixin，实现贴墙攀爬逻辑、TACZ 视角兼容、纸片化状态管理等核心客户端功能
+// 本地玩家 Mixin，实现贴墙攀爬逻辑、TACZ 视角兼容、纸片化状态管理等核心客户端功能⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍‍‌‌‍​‌​‍‍‍​‍​‌​‌​​​‌‌‍​​‌‌‌‍​‍‌‌​​​​‌‍‌​​‍‌‍​​⁡
 @Mixin(LocalPlayer.class)
 public abstract class LocalPlayerMixin {
 

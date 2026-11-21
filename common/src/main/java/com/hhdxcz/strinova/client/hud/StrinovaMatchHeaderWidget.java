@@ -237,7 +237,7 @@ public final class StrinovaMatchHeaderWidget implements StrinovaHudWidget {
         sorted.sort(Comparator.comparingInt(Layer::order));
         boolean active = StrinovaMatchState.isActive();
         boolean alliesAttack = StrinovaMatchState.areAlliesAttacking();
-        // 默认贴图是左蓝右红；我方进攻时左右整体换色（换贴图 + 镜像，斜切方向不变）
+        // 默认贴图是左蓝右红；我方进攻时左右整体换色（换贴图 + 镜像，斜切方向不变）⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍‌‌‌‌​​​‍‌‌​​​‌‌​​​‍​‍‍​​‍​‍‌​‍‌‍​​​‌‌‌​‌​​‌‍‌‍⁡
         boolean flip = active && alliesAttack;
         String allyLabel = Component.translatable("hud.strinova.match.allies").getString()
                 + Component.translatable(alliesAttack

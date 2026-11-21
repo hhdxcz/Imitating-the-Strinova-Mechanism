@@ -52,7 +52,7 @@ public final class StrinovaClientProfileSync {
         try {
             Minecraft client = Minecraft.getInstance();
             if (client == null || client.player == null || client.level == null) {
-                // 不在世界里：下次进世界重新首帧上报
+                // 不在世界里：下次进世界重新首帧上报⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‌​‍​​‌‍‌‌‍​‍‍‌​‍‌​​‌​‌​​‌‍‌‍​‍‍‌‌​​‌‍‍‌‍​‌‌‍​‍⁡
                 sentInWorld = false;
                 return;
             }

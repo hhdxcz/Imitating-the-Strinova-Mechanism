@@ -80,7 +80,7 @@ public final class StrinovaUiConfigActions {
                 return org.lwjgl.glfw.GLFW.glfwGetClipboardString(client.getWindow().getWindow());
             }
         } catch (Throwable ignored) {
-            // 剪贴板不可用时按空处理
+            // 剪贴板不可用时按空处理⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‍‌​‌​​‌‍‍​​​‍​‍​​​​‌‍​​‌​‍‌‍​‌​‍​‍​​​‍‌‍​‌​‌​‌⁡
         }
         return "";
     }

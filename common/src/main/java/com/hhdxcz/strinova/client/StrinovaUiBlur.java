@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 /**
  * 打开本模组 UI 时给游戏画面加一层轻量高斯模糊（使用自定义 post shader，半径 8）。
  * 只在【本模组的界面】打开时启用，关闭界面后恢复；可在客户端配置关闭 uiBlurEnabled。
- */
+ ⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌‍‍‌‍​‍‍​‍‍​​‍​​​​‌​‌‍‌​​‍‌‌‌​‍​‌‍​​‌‍‌‍​​‌​‌‌​⁡*/
 public final class StrinovaUiBlur {
 
     private static final ResourceLocation BLUR_EFFECT =

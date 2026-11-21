@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-// 游戏选项 Mixin，防止贴墙时切换到第一人称视角
+// 游戏选项 Mixin，防止贴墙时切换到第一人称视角⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍‌​‌‍​​‌‌‍‌​‌‍​‌‍​​‍‍‌‌​​‍‍‌​​‌‌‍‍‍​​‌‍‌‍​‍‍‍​‍⁡
 @Mixin(Options.class)
 public abstract class OptionsMixin {
     // 贴墙玩家禁止切换到第一人称，避免视角穿模

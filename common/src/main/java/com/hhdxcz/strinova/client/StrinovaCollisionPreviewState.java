@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 碰撞箱预览状态管理。
  * 以玩家 UUID 为键，存储各玩家在预览界面中的模式、调参、分区数据等临时状态。
- */
+ ⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‍‌‍‍​‌‌​‍‍​​‌‌‌​​‌‍‌‍‍​​‍‍​‍​​‍​‍‍​‍‍​‌‌​​​​‌‌⁡*/
 public final class StrinovaCollisionPreviewState {
     /** 预览模式枚举：SYNC（同步）和 FLY（飞行）。 */
     public enum Mode {

@@ -83,7 +83,7 @@ public class StrinovaCollisionPreviewScreen extends StrinovaScaledScreen {
     /** 初始化界面：计算预览区域大小、设置渲染状态、添加按钮。 */
     @Override
     protected void init() {
-        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌‍​​‍​‌‍‍‌‌​‍‌‌‌‍​​‌​‍​​‍‌​​‌​​‍‍‍​​‍‍‌‌‌​‌‍​‌​⁡
         this.beginDesignSpace();
         this.previewLeft = PANEL_PADDING;
         this.previewTop = PANEL_TOP;

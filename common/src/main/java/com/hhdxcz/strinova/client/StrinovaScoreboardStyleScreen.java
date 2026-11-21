@@ -50,7 +50,7 @@ public class StrinovaScoreboardStyleScreen extends StrinovaScaledScreen {
 
     @Override
     protected void init() {
-        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‍​​‍​‍​‌‍​​‌​​‍​​​​‌‍‌​‍‌​‌‌​​​​‌‍​​‍‌‍‍​​‍​​​⁡
         this.beginDesignSpace();
         com.hhdxcz.strinova.client.hud.StrinovaHudMockData.ensureScoreboardPreview();
     }

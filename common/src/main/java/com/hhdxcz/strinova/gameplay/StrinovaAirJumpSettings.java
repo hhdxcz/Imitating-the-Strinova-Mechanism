@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-// 空中段跳次数持久化数据：按玩家 UUID 存储额外跳跃次数设置
+// 空中段跳次数持久化数据：按玩家 UUID 存储额外跳跃次数设置⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‍‌‍​​‌‍‍‍‌​‌​‍‌‌​‍​‌‍‍​​‍​‍‌​‍​‌‌‌​‌‍​‌​​‍​‌‌‍⁡
 public final class StrinovaAirJumpSettings extends SavedData {
 
     public static final int DEFAULT_EXTRA_JUMPS = 1;

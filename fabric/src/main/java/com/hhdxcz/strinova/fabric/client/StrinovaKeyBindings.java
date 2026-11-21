@@ -58,7 +58,7 @@ public final class StrinovaKeyBindings {
         ));
         wallKeyName = "key.keyboard.r";
 
-        // B 键：打开弦能增幅网络（成长/加点）界面。
+        // B 键：打开弦能增幅网络（成长/加点）界面。⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍‌​​​‌​​‍‍‌‌‌​‌‍‍​​​‌​‌‍‌​‌‌‌​‍​‌‌​‍‍​‌‌‌​‌​​‍​‍​⁡
         // 与 TACZ 的 G/B「切换开火模式」冲突时，默认在手持 TACZ 枪械时把 B 让给 TACZ（可在配置里关闭该让位）。
         growthKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.strinova.growth",

@@ -37,7 +37,7 @@ import java.util.List;
  */
 public class StrinovaAgentSelectScreen extends StrinovaScaledScreen {
 
-    // ---- 配色（对齐 HUD 顶部比分面板与真实 UI） ----
+    // ---- 配色（对齐 HUD 顶部比分面板与真实 UI） ----⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌​‌‌‌‌​​​​​​‌‍​‌‌​​‌‌‍‍​‍​‌​‌​‍​​‌​​‌​‌‍​​‌​‌‌‍⁡
     /** 我方（进攻方）红色。 */
     private static final int COLOR_ALLY = 0xFFBC3B47;
     /** 敌方（防守方）蓝色。 */

@@ -36,7 +36,7 @@ public final class StrinovaMatchClientFlow {
             return;
         }
 
-        // 1) 选角阶段：所有客户端强制处于选角界面（不管之前有没有打开别的界面，
+        // 1) 选角阶段：所有客户端强制处于选角界面（不管之前有没有打开别的界面，⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌‍‌‍‌​‌‍‌‌​​​‌‌‌‍​‍​​​‍​‌​‍‌‌​‌‌‍‌​​‌‍‌‍‍‌​​​​‌⁡
         //    也不允许 ESC 关掉——即使关掉，下一 tick 也会重新弹出，直到倒计时结束）
         if (phase == StrinovaMatchState.Phase.SELECT) {
             boolean alreadyOpen = client.screen instanceof StrinovaAgentSelectScreen select

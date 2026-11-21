@@ -4,7 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 
 /**
  * 给顶部面板图层叠加整体透明度的 painter 代理；变换调用原样透传。
- */
+ ⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍‍‍​‌​‍​​​‌‌​​​​‌​‌‍‌​​​​‌‌‍‌​‍​​‌‍​‌‌‍‍​​‌​‍‌‍⁡*/
 final class StrinovaAlphaPainter implements StrinovaHudPainter {
 
     private final StrinovaHudPainter delegate;

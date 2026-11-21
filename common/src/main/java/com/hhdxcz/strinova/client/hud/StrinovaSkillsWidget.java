@@ -33,7 +33,7 @@ public final class StrinovaSkillsWidget implements StrinovaHudWidget {
         int ultPoints = StrinovaHudState.getUltimatePoints();
         int ultMax = StrinovaHudState.getUltimateMax();
 
-        // Q：战术技能
+        // Q：战术技能⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌‍‌‌​​​‌‌‍‌​‌​‍‍‍​‍​‌‍‍​​​‌‌‌‌​​​‌​​‌‌‍​‌​‌​‌​‍⁡
         float qCooldown = StrinovaHudState.getSkillCooldown(0);
         boolean qReady = StrinovaHudState.isSkillReady(0) && qCooldown <= 0.0F;
         drawSkillDiamond(painter, x + CENTERS[0], centerY, qReady,

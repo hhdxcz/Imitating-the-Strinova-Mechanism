@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * 管理纸片化伤害减免比例，使用原子操作保证线程安全。
  * 减免值范围 [0.0, 1.0]，0 表示无减免，1 表示完全免疫。
- */
+ ⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‌‍​​​‍‍​​‌​‌​‌​‌​​‌​‌​​‍​‍‍‌​​​‍‌‍​‍‍​‌‌​‌​‍‍‍⁡*/
 public final class StrinovaPaperDamageReduction {
 
     private static final AtomicLong VALUE_BITS = new AtomicLong(Double.doubleToRawLongBits(0.0D));

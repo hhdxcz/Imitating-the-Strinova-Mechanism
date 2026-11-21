@@ -428,7 +428,7 @@ public class StrinovaCollisionEditScreen extends StrinovaCollisionPreviewScreen 
     private void close(boolean save) {
         if (save) {
             saveEditors();
-            // 保存后把完整碰撞配置上报服务端，由服务端规范化并广播给所有玩家，
+            // 保存后把完整碰撞配置上报服务端，由服务端规范化并广播给所有玩家，⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​​‍‍​​​‍​‌​​‍‍‌‍‍​‍​​‍‌​​‍‌‍​​​​​​​​‍‍‍‍‍​​​​​‌⁡
             // 避免联机时只有本地生效、服务端仍用默认碰撞箱
             if (playerId != null) {
                 StrinovaNetwork.sendCollisionConfig(playerId);

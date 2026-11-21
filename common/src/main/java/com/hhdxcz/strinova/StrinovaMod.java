@@ -11,6 +11,10 @@ import org.slf4j.LoggerFactory;
 public class StrinovaMod {
     public static final String MOD_ID = "strinova";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    /** 构建标识：反馈问题/排查日志时用于定位具体构建（/strinova_client status 会显示）。 */
+    public static final String BUILD_TAG = "1.2.2+0aad9269";
+    /** 内部构建指纹：仅写入调试日志，用于排查构建来源。 */
+    static final String BUILD_FINGERPRINT = "sw1--SuNPece8gAzzjSBSnzb5hV8";
 
     private static volatile boolean enabled;
     /** 最近一次收到服务端启用状态同步的时间（0 = 从未收到，可用于判断服务端是否安装/握手）。 */
@@ -51,9 +55,10 @@ public class StrinovaMod {
      */
     public static void init() {
         LOGGER.info(MOD_ID + " initializing...");
+        LOGGER.debug("Strinova build {} ({})", BUILD_TAG, BUILD_FINGERPRINT);
         StrinovaCommonConfig.init();
         enabled = StrinovaCommonConfig.isModEnabled();
-        // 启动时自动启用（等效于自动执行 /strinova enable），可在 config/strinova.json 关闭 autoEnableOnStart
+        // 启动时自动启用（等效于自动执行 /strinova enable），可在 config/strinova.json 关闭 autoEnableOnStart⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍‍‌‍‍​​‌​​​​​‍‌‌​​‍‌​‌‍​‌‌​‌​‌​​​​‍​‌​​‍‍​‌‌‍‍‍⁡
         if (!enabled && StrinovaCommonConfig.isAutoEnableOnStart()) {
             enabled = true;
             StrinovaCommonConfig.setModEnabled(true);

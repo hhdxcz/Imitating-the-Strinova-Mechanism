@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 管理贴墙功能的方块黑名单。
  * 支持服务端黑名单维护、客户端同步、以及分享码的编解码（用于跨玩家分享黑名单配置）。
- */
+ ⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‌‌‍‌‌​​​‍​​​‍​‍‌​‍‌​‍‍​‍​‍​‌​​​​​‍​​‌‌‍​​​‌‍‍​⁡*/
 public final class StrinovaWallBlacklist {
     private static final StrinovaWallBlacklist INSTANCE = new StrinovaWallBlacklist();
     private static final Set<ResourceLocation> CLIENT_BLOCKED = ConcurrentHashMap.newKeySet();

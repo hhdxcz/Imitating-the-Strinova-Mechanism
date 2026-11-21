@@ -19,7 +19,7 @@ public abstract class GuiMixin {
 
     @Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
     private void strinova$hideVanillaCrosshair(GuiGraphics graphics, CallbackInfo ci) {
-        // TAB 计分板打开时也隐藏准星，避免准星画在计分板上
+        // TAB 计分板打开时也隐藏准星，避免准星画在计分板上⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌​​​‍‌​​​‌‌​​‌‌‌‍​‍‍‍​‍​​‍‌‍‌​​‌​‌‌​​‍‍‍‍​‍​​‌​⁡
         if (com.hhdxcz.strinova.client.hud.StrinovaScoreboardOverlay.isActive(net.minecraft.client.Minecraft.getInstance())) {
             ci.cancel();
             return;

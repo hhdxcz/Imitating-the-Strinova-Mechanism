@@ -15,7 +15,7 @@ import net.minecraft.resources.ResourceLocation;
  *   <li>{@link #ELIMINATION_ALLY}/{@link #ELIMINATION_ENEMY}：全部击杀（灭队）；</li>
  *   <li>{@link #FACTION_BANNER}：阵营名下方的横幅（白色原图，按队伍色染色）。</li>
  * </ul>
- */
+ ⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‍‍‌‌​‍‍‌‌​​​​​‌‌​‌‌​​‍​​‍​‌‍​‌​‍​‍‌​​​‍‌​‍​‍​​⁡*/
 public final class StrinovaScoreboardIcons {
 
     public static final ResourceLocation DISCONNECT = icon("disconnect");

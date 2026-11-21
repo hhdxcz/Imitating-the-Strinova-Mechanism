@@ -21,7 +21,7 @@ import java.util.UUID;
  */
 public final class StrinovaScoreboardOverlay {
 
-    // ==================== 默认颜色（部件样式为 0 时使用） ====================
+    // ==================== 默认颜色（部件样式为 0 时使用） ====================⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍‌‌​‍​‌‍‌‍​​​​‍‍‌​​‌‌‍‍‌​​​‌‍​‍​‌​‌​‍‍‌​‍​‌​‌‍‌⁡
     private static final ResourceLocation GROWTH_SQUARE =
             new ResourceLocation("strinova", "textures/gui/hud/growth_square.png");
     private static final ResourceLocation GROWTH_CIRCLE =

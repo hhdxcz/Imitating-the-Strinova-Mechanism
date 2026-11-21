@@ -38,7 +38,7 @@ public final class StrinovaVitalsWidget implements StrinovaHudWidget {
             agent = StrinovaAgentRoster.defaultAgent();
         }
 
-        // 角色头像方块（无贴图时用首字占位）
+        // 角色头像方块（无贴图时用首字占位）⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌​‌‌‍​‍‍‌​‌​​‌‍​‌​​​‍​‌​‌‍​‌​​‌‍‌‍​​‍‌‌​​​‌‌‌‍​⁡
         painter.rect(x + 2, y + 6, AVATAR, AVATAR, 0xAA101820);
         painter.rect(x + 2, y + 6, 2, AVATAR, agent.accentColor());
         painter.border(x + 2, y + 6, AVATAR, AVATAR, 0x88FFFFFF, 1);

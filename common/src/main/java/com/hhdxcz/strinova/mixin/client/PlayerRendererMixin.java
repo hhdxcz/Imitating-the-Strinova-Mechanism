@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-// 玩家渲染器 Mixin，在纸片化玩家静止时锁定其朝向，防止微小抖动
+// 玩家渲染器 Mixin，在纸片化玩家静止时锁定其朝向，防止微小抖动⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍‌​​​‌​​​​‌‌‌​​‍‍​​​‌‍‌​‍​‍‌​​​​‌​​​​​‍‌‌‍​​‍‍‍​‌⁡
 @Mixin(value = PlayerRenderer.class, priority = 500)
 public abstract class PlayerRendererMixin {
     // 纸片化玩家静止时的朝向锁定缓存

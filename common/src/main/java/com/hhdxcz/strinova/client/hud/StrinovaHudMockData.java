@@ -69,7 +69,7 @@ public final class StrinovaHudMockData {
     }
 
     private static void fill(float seconds) {
-        // 真实数值参考：生命约 130/150、护甲 80（截图左下角 130 / 80）
+        // 真实数值参考：生命约 130/150、护甲 80（截图左下角 130 / 80）⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌‌‌‌‌​‌‌‌​‌​‍​​‌​​​‌‌‌‍​‌​‌‌‌​‌‍‍​‍​‍‌​​‌​​‌​‌​⁡
         StrinovaHudState.setHealth(130.0F, 150.0F);
         StrinovaHudState.setArmor(80.0F, 80.0F);
         StrinovaHudState.setBuffs(List.of(

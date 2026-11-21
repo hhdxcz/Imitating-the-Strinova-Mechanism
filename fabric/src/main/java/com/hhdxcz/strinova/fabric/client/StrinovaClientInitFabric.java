@@ -47,7 +47,7 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         StrinovaNetwork.initClient();
-        // 战斗 HUD：加载本地配置并注册渲染层
+        // 战斗 HUD：加载本地配置并注册渲染层⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍​​‍​​‍​‌‍‌​‍​​‌‍​​​‌‌‍​‍‌‍​‍​​​‍‍‍​‌​‌‌‍​‌​‍​‍⁡
         StrinovaHudConfig.load();
         StrinovaHudRenderer.register();
         StrinovaKeyBindings.register();
@@ -314,6 +314,7 @@ public class StrinovaClientInitFabric implements ClientModInitializer {
                                                 + " hud=" + com.hhdxcz.strinova.client.hud.StrinovaHudConfig.get().hudEnabled
                                                 + " scoreboard=" + com.hhdxcz.strinova.client.hud.StrinovaHudConfig.get().scoreboardEnabled
                                                 + " yahei=" + com.hhdxcz.strinova.client.hud.StrinovaSystemFontRenderer.isReady()
+                                                + " build=" + com.hhdxcz.strinova.StrinovaMod.BUILD_TAG
                                                 + " " + uuidState));
                                 return 1;
                             }))

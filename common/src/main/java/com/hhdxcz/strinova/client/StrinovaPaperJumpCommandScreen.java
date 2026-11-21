@@ -25,7 +25,7 @@ public class StrinovaPaperJumpCommandScreen extends StrinovaScaledScreen {
     /** 初始化界面：纸化减伤输入区和跳跃分段输入区。 */
     @Override
     protected void init() {
-        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌​​‌​​‌‌‌​​​​‍‌‌‌​‍‌‍‌‌​‌​‍‌​​‍​‌‌​​‍​‌‍‍​‍‍​‍‍⁡
         this.beginDesignSpace();
         int centerX = this.width / 2;
         int top = 36;

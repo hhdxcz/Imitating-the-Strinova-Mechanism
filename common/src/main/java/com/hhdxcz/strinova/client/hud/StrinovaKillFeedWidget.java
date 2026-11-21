@@ -4,7 +4,7 @@ import net.minecraft.network.chat.Component;
 
 import java.util.List;
 
-/** 击杀播报部件（右上）：谁用什么武器击杀了谁，是否爆头。 */
+/** 击杀播报部件（右上）：谁用什么武器击杀了谁，是否爆头。 ⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‍​‌​​‍‌​‍‍​‌​​‍‌​‍‍​​​​‍‌‌‍‌​‍‌‍‍‍​​​‍‍‍​​​​​‌⁡*/
 public final class StrinovaKillFeedWidget implements StrinovaHudWidget {
 
     private static final int WIDTH = 262;

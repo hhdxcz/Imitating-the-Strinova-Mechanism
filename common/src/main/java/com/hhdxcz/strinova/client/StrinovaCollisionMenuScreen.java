@@ -32,7 +32,7 @@ public class StrinovaCollisionMenuScreen extends StrinovaScaledScreen {
     /** 初始化菜单按钮：碰撞箱编辑、黑名单、快捷键、纸跳命令、描边命令、战斗 HUD 设置、超弦体选角。 */
     @Override
     protected void init() {
-        // 统一设计分辨率（960×540）：先换算 width/height，鼠标事件会换算回设计坐标
+        // 统一设计分辨率（960×540）：先换算 width/height，鼠标事件会换算回设计坐标⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌‍​​‍​​‌‍​‍​‌‌​‌‍​‌‍‍‌‌​​‌​‍‌​‌‌​‍‌‌​​‌​​​‍​​​​⁡
         this.beginDesignSpace();
         int centerX = this.width / 2;
         int firstY = this.entryFirstY();

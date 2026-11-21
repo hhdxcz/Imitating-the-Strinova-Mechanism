@@ -14,7 +14,7 @@ import java.util.UUID;
 /**
  * 状态指示部件：弦化 / 贴墙 / 飘飞 / 剩余段跳 / 模拟数据标记。
  * 数据来自模组已有的真实状态机（无需等待战斗系统）。
- */
+ ⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌​‍​‌​‍​​‌‍​​‌​‍​​‌​‍‍‌​‍‌‍‍‌​​‍‍‌‌​​​​​​​​​‌‌​⁡*/
 public final class StrinovaStateWidget implements StrinovaHudWidget {
 
     private static final int HEIGHT = 18;

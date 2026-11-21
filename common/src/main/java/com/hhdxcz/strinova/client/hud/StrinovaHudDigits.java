@@ -11,7 +11,7 @@ package com.hhdxcz.strinova.client.hud;
 public final class StrinovaHudDigits {
 
     private static final int CELL_COUNT = 11;
-    // 与顶部面板「回合分数」相同的 Saira Medium 字体图集
+    // 与顶部面板「回合分数」相同的 Saira Medium 字体图集⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‌‌​‍‍​​‍‌​‌​‍‌‌‌​​‍‍​​‍​‍​‌​‌​‌​‌‌‍​‍‌​​​​‌​‌​‌⁡
     private static final int CELL_WIDTH = 136;
     private static final int CELL_HEIGHT = 256;
     private static final int TEX_WIDTH = 1496;

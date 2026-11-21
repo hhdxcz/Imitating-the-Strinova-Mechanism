@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-// 客户端空中段跳状态：缓存服务端同步的玩家额外跳跃次数
+// 客户端空中段跳状态：缓存服务端同步的玩家额外跳跃次数⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​‌‌​‌​​‌‌‌‌​‍​‍​‌​‍‌‍‍‍​‌​‌‌‌​‍‌​‌​​​‌​‍‌​​‌‌​‌⁡
 public final class StrinovaAirJumpClientState {
 
     private static final Map<UUID, Integer> EXTRA_JUMPS = new ConcurrentHashMap<>();

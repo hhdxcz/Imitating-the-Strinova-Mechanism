@@ -24,7 +24,7 @@ public class StrinovaOutlineCommandScreen extends StrinovaScaledScreen {
     /** 初始化界面：颜色输入框、目标输入框和操作按钮。 */
     @Override
     protected void init() {
-        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标
+        // 统一设计分辨率（960×540），鼠标事件会换算回设计坐标⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​​​​‍‌​‍‍‍​‍​​‍‍​‌‌​​​‌‌‌​​​‍‌‌​​​‌‌​​​‌‍‌​​‌​​‍⁡
         this.beginDesignSpace();
         int centerX = this.width / 2;
         int top = this.height / 2 - 54;

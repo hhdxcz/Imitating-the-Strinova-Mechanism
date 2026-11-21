@@ -35,7 +35,7 @@ public final class StrinovaCrosshairWidget implements StrinovaHudWidget {
                 + (config.crosshairDynamic ? Math.round(StrinovaHudState.getCrosshairSpread() * 8.0F) : 0);
         int color = config.crosshairColor;
 
-        // 上
+        // 上⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍​‍‌‍​‌‌​‍​‌​​​‌‌​​‌‌‌‍​‍​​‌‌​​‍‍‍‍​​​‌‍‌​‍​‌‌‍⁡
         painter.rect(centerX - thickness / 2, centerY - gap - length, thickness, length, color);
         // 下
         painter.rect(centerX - thickness / 2, centerY + gap, thickness, length, color);

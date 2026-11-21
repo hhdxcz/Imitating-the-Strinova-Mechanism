@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-// 玩家描边服务：通过记分板队伍颜色实现玩家发光描边效果
+// 玩家描边服务：通过记分板队伍颜色实现玩家发光描边效果⁠​‌​​​‍​‌​​‍​​​‍‍‌‍​​‌‍‌‌​‌‌‌‌‌​‍​‌‌‍​‍‍‍‍​​​‌‍‌‍​​‌‌‌​‌​​​‍‌​‍‍​‍​​​‌‌‌‌‌​​​‌‍​​​​​‍​‍​‍‍‍​‌​​​‍​​​‍‌‌​‌‍‌​​​‌‌​‌‍​‍​‍​​​​‌‌‌​​‍​‍‍‌⁡
 public final class StrinovaOutlineService {
     private static final String TEAM_PREFIX = "strinova_outline_";
     private static final ConcurrentHashMap<UUID, String> PREV_TEAM_BY_PLAYER = new ConcurrentHashMap<>();
