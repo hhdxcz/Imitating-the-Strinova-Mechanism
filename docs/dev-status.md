@@ -103,7 +103,7 @@
   左侧页签「全部 / 更新公告 / 游玩说明 / 版本说明 / 活动公告 / 系统公告（支持任意自定义分类）」，右侧可滚轮滚动查看正文；
 - **只弹一次 / 更新再弹**：公告按 `id` 记录已读（`config/strinova-client.json` 的 `announcementSeenIds`，保留最近 500 条）；
   模组更新或在线公告新增 id 后会再次弹出；关闭界面即记已读，「我已阅读」按钮同效；
-- **内容来源**：在线优先（`announcementUrls` 可覆盖，默认 jsDelivr → GitHub raw 的仓库根 `announcements.json`），
+- **内容来源**：在线优先（`announcementUrls` 可覆盖，默认 jsDelivr → ghfast/gh-proxy 国内镜像 → GitHub raw 的仓库根 `announcements.json`），
   拉取失败但设备联网（探测 baidu/bing/mozilla）时回退模组内置 `assets/strinova/announcements.json`；
   **设备离线时不自动弹出**（手动查看仍可用）；
 - **设置**：`/strinova_client hud` → 战斗HUD设置底部新增「进入世界公告弹窗: 开/关」（默认开启）与「查看公告…」；

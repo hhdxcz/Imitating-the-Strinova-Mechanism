@@ -13,8 +13,10 @@
 
 1. **在线**（优先）：按顺序尝试以下地址，取第一个成功的 JSON：
    - `https://cdn.jsdelivr.net/gh/hhdxcz/Imitating-the-Strinova-Mechanism@main/announcements.json`
+   - `https://ghfast.top/https://raw.githubusercontent.com/hhdxcz/Imitating-the-Strinova-Mechanism/main/announcements.json`（国内镜像）
+   - `https://gh-proxy.com/https://raw.githubusercontent.com/hhdxcz/Imitating-the-Strinova-Mechanism/main/announcements.json`（国内镜像）
    - `https://raw.githubusercontent.com/hhdxcz/Imitating-the-Strinova-Mechanism/main/announcements.json`
-   - 可在 `config/strinova-client.json` 用 `announcementUrls`（字符串数组）覆盖。
+   - 可在 `config/strinova-client.json` 用 `announcementUrls`（字符串数组）覆盖；镜像只把内容当纯文本展示（不可点链接）。
 2. **内置回退**：`common/src/main/resources/assets/strinova/announcements.json`（随 jar 打包）。
    在线拉取失败但设备联网（探测 baidu / bing / mozilla）时显示内置内容；**设备离线时不自动弹出**。
 

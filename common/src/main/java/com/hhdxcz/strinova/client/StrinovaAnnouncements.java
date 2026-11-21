@@ -36,9 +36,12 @@ public final class StrinovaAnnouncements {
 
     /** 模组内置公告（随 jar 打包，离线/远程不可达时的兜底内容）。 */
     public static final String BUNDLED_RESOURCE = "/assets/strinova/announcements.json";
-    /** 默认在线公告地址（中文网络环境优先 jsDelivr，其次 GitHub raw）。 */
+    /** 默认在线公告地址（jsDelivr 优先，其次国内 GitHub 镜像，最后 GitHub raw）。 */
     public static final String[] DEFAULT_URLS = {
             "https://cdn.jsdelivr.net/gh/hhdxcz/Imitating-the-Strinova-Mechanism@main/announcements.json",
+            // 第三方 GitHub 加速镜像：内容只当纯文本展示（不可点链接），用于 raw/ jsDelivr 不可达的网络
+            "https://ghfast.top/https://raw.githubusercontent.com/hhdxcz/Imitating-the-Strinova-Mechanism/main/announcements.json",
+            "https://gh-proxy.com/https://raw.githubusercontent.com/hhdxcz/Imitating-the-Strinova-Mechanism/main/announcements.json",
             "https://raw.githubusercontent.com/hhdxcz/Imitating-the-Strinova-Mechanism/main/announcements.json"
     };
     /** 联网探测地址（任意一个返回 HTTP 响应即视为设备在线）。 */
